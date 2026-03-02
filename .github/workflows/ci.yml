@@ -1,0 +1,56 @@
+# ForsaLaw – CI : build backend + frontend sur chaque push/PR
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend (Spring Boot)
+    runs-on: ubuntu-latest
+    if: hashFiles('backend/pom.xml') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build
+        run: mvn -q -B compile -f backend/pom.xml
+      - name: Tests
+        run: mvn -q -B test -f backend/pom.xml
+
+  frontend:
+    name: Frontend (Angular)
+    runs-on: ubuntu-latest
+    if: hashFiles('frontend/package.json') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install & build
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+  quality:
+    name: Repo quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check structure
+        run: |
+          echo "ForsaLaw repo structure check"
+          [ -d backend ] && echo "  backend/ OK" || true
+          [ -d frontend ] && echo "  frontend/ OK" || true
+          [ -d docker ] && echo "  docker/ OK" || true
