@@ -1,0 +1,44 @@
+# Build
+target/
+build/
+out/
+node_modules/
+dist/
+.angular/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.launch
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.env
+application-local.yml
+application-local.properties
+
+# Logs & OS
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Misc
+*.swp
+*.bak
+*.tmp
