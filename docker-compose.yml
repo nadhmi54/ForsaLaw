@@ -1,0 +1,38 @@
+# ForsaLaw - PostgreSQL + pgAdmin (ports distincts pour ne pas toucher à l'autre projet)
+# Lancer : docker-compose up -d
+# Arrêter : docker-compose down
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: forsalaw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: forsalaw
+      POSTGRES_USER: forsalaw
+      POSTGRES_PASSWORD: forsalaw
+    ports:
+      - "5433:5432"
+    volumes:
+      - forsalaw_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forsalaw -d forsalaw"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: forsalaw-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@forsalaw.com
+      PGADMIN_DEFAULT_PASSWORD: forsalaw
+    ports:
+      - "5051:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  forsalaw_pgdata:
