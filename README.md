@@ -96,4 +96,6 @@ Toutes les commandes et les cas particuliers (corriger un bug avec `fix/xxx`, re
 
 ## Démarrage
 
-À venir (Docker Compose, etc.).
+1. **Base de données (Docker)** : à la racine du projet, lancer `docker-compose up -d`.  
+   Détails complets (pourquoi, comment, pgAdmin) : **[docs/DOCKER.md](docs/DOCKER.md)**.
+2. **Backend** : lancer `ForsaLawApplication` (IntelliJ) ou `mvn spring-boot:run` (le backend se connecte à PostgreSQL sur le port 5433).
