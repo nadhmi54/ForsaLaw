@@ -1,21 +1,21 @@
 package com.forsalaw.userManagement.model;
 
 import com.forsalaw.userManagement.entity.RoleUser;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class UserDTO {
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResponse {
 
+    private String token;
     private Long id;
+    private String email;
     private String nom;
     private String prenom;
-    private String email;
     private RoleUser roleUser;
-    private boolean actif;
-    private LocalDateTime dateCreation;
-    private LocalDateTime dateMiseAJour;
 }
