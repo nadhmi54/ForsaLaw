@@ -60,6 +60,71 @@ git branch -d feature/nom-de-la-feature
 
 ---
 
+## Quand ta branche est « behind » (en retard)
+
+Sur GitHub tu peux voir par exemple : **« This branch is 2 commits ahead and 1 commit behind main »**.  
+Ça veut dire : ta branche a des commits que l’autre n’a pas (ahead), et l’autre branche a des commits que ta branche n’a pas (behind). Pour rester à jour, il faut **récupérer** ces commits dans ta branche.
+
+### Cas 1 : c’est **develop** qui est behind **main**
+
+Tu travailles sur `develop` et GitHub affiche « develop is X commit(s) behind main ».  
+Tu veux que `develop` ait aussi tout ce qui est sur `main` (souvent après une release ou un merge vers main).
+
+**Commandes :**
+
+```bash
+git checkout develop
+git pull origin develop
+git fetch origin
+git merge origin/main -m "Merge main into develop to sync"
+git push origin develop
+```
+
+- `git fetch origin` met à jour la référence de `main` sur ton PC.
+- `git merge origin/main` ramène les commits de `main` dans `develop`.
+- `git push origin develop` envoie le résultat sur GitHub.
+
+Si Git refuse le merge parce que tu as des **fichiers modifiés non commités** :
+
+```bash
+# Option A : committer tes modifs d’abord
+git add .
+git commit -m "chore: description des changements"
+git merge origin/main -m "Merge main into develop to sync"
+git push origin develop
+
+# Option B : mettre de côté temporairement (stash)
+git stash
+git fetch origin
+git merge origin/main -m "Merge main into develop to sync"
+git push origin develop
+git stash pop
+```
+
+### Cas 2 : c’est ta **branche feature** qui est behind **develop**
+
+Tu es sur `feature/ma-feature` et `develop` a avancé (d’autres PR mergées). Tu veux que ta branche contienne les derniers changements de `develop` pour éviter les conflits au moment de la PR.
+
+**Commandes :**
+
+```bash
+git checkout feature/ma-feature
+git fetch origin
+git merge origin/develop
+# en cas de conflits : les résoudre, puis git add . && git commit
+git push origin feature/ma-feature
+```
+
+Ou en une ligne après `git checkout feature/ma-feature` :
+
+```bash
+git pull origin develop
+```
+
+Ensuite tu continues à travailler et tu ouvres ta PR **feature/ma-feature** → **develop** comme d’habitude.
+
+---
+
 ## Corriger un bug (fix)
 
 ```bash
