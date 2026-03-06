@@ -4,11 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * DTO réponse User - structure uniquement.
+ * DTO requête création User - structure uniquement.
  */
 @Getter
 @Setter
-public class UserDTO {
-    private Long id;
+public class CreateUserRequest {
     // champs à ajouter
 }
