@@ -3,6 +3,7 @@ package com.forsalaw.userManagement.controller;
 import com.forsalaw.userManagement.model.AdminUpdateUserRequest;
 import com.forsalaw.userManagement.model.UserDTO;
 import com.forsalaw.userManagement.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class AdminUserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Liste des utilisateurs", description = "Retourne une liste paginée de tous les utilisateurs, avec recherche optionnelle par nom, prénom ou email.")
     @GetMapping
     public ResponseEntity<Page<UserDTO>> listUsers(
             @RequestParam(required = false) String search,
@@ -52,12 +54,14 @@ public class AdminUserController {
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orders));
     }
 
+    @Operation(summary = "Détail utilisateur", description = "Retourne les informations d'un utilisateur par son identifiant.")
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userService.getById(id);
         return ResponseEntity.ok(user);
     }
 
+    @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur (nom, prénom, email, rôle, actif, mot de passe).")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
@@ -67,24 +71,28 @@ public class AdminUserController {
         return ResponseEntity.ok(user);
     }
 
+    @Operation(summary = "Désactiver un utilisateur par email", description = "Désactive le compte de l'utilisateur dont l'email est fourni (soft delete).")
     @DeleteMapping("/by-email")
     public ResponseEntity<Void> deleteUserByEmail(@RequestParam String email) {
         userService.deactivateByAdminEmail(email);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Désactiver un utilisateur par id", description = "Désactive le compte de l'utilisateur dont l'identifiant est fourni (soft delete).")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deactivateByAdmin(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Réactiver un utilisateur par email", description = "Réactive le compte d'un utilisateur désactivé en fournissant son email.")
     @PatchMapping("/by-email/reactivate")
     public ResponseEntity<Void> reactivateUserByEmail(@RequestParam String email) {
         userService.reactivateByAdminEmail(email);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Réactiver un utilisateur par id", description = "Réactive le compte d'un utilisateur désactivé en fournissant son identifiant.")
     @PatchMapping("/{id}/reactivate")
     public ResponseEntity<Void> reactivateUser(@PathVariable Long id) {
         userService.reactivateByAdmin(id);
