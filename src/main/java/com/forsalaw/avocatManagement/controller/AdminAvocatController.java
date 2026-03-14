@@ -61,7 +61,7 @@ public class AdminAvocatController {
 
     @Operation(summary = "Détail d'un avocat (admin)", description = "Retourne les informations complètes d'un avocat par son identifiant (y compris si inactif).")
     @GetMapping("/{id}")
-    public ResponseEntity<AvocatDTO> getAvocatById(@PathVariable Long id) {
+    public ResponseEntity<AvocatDTO> getAvocatById(@PathVariable String id) {
         AvocatDTO avocat = avocatService.getByIdAdmin(id);
         return ResponseEntity.ok(avocat);
     }
@@ -69,7 +69,7 @@ public class AdminAvocatController {
     @Operation(summary = "Modifier un avocat", description = "Met à jour le profil d'un avocat (profil, vérification, actif).")
     @PutMapping("/{id}")
     public ResponseEntity<AvocatDTO> updateAvocat(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody AdminUpdateAvocatRequest request
     ) {
         AvocatDTO avocat = avocatService.updateByAdmin(id, request);
@@ -85,7 +85,7 @@ public class AdminAvocatController {
 
     @Operation(summary = "Désactiver un avocat par id", description = "Désactive le profil d'un avocat (soft delete). Il n'apparaîtra plus dans la liste publique.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivateAvocat(@PathVariable Long id) {
+    public ResponseEntity<Void> deactivateAvocat(@PathVariable String id) {
         avocatService.deactivateByAdmin(id);
         return ResponseEntity.noContent().build();
     }
@@ -99,7 +99,7 @@ public class AdminAvocatController {
 
     @Operation(summary = "Réactiver un avocat par id", description = "Réactive le profil d'un avocat désactivé. Il réapparaîtra dans la liste publique.")
     @PatchMapping("/{id}/reactivate")
-    public ResponseEntity<Void> reactivateAvocat(@PathVariable Long id) {
+    public ResponseEntity<Void> reactivateAvocat(@PathVariable String id) {
         avocatService.reactivateByAdmin(id);
         return ResponseEntity.noContent().build();
     }

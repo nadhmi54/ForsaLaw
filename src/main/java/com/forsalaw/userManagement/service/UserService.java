@@ -1,11 +1,15 @@
 package com.forsalaw.userManagement.service;
 
+import com.forsalaw.userManagement.entity.IdSequence;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.model.AdminUpdateUserRequest;
 import com.forsalaw.userManagement.model.UpdateUserRequest;
 import com.forsalaw.userManagement.model.UserDTO;
+import com.forsalaw.userManagement.repository.IdSequenceRepository;
 import com.forsalaw.userManagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +21,30 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final IdSequenceRepository idSequenceRepository;
     private final PasswordEncoder passwordEncoder;
+
+    /** Génère le prochain ID au format AAAA-XXX-NNNNN (ex: 2025-USR-00001). */
+    @Transactional
+    public String generateNextId(String prefix) {
+        int year = LocalDate.now().getYear();
+        var seq = idSequenceRepository.findByEntityTypeAndYearForUpdate(prefix, year);
+        long nextVal;
+        if (seq.isEmpty()) {
+            IdSequence newSeq = new IdSequence();
+            newSeq.setEntityType(prefix);
+            newSeq.setYear(year);
+            newSeq.setNextVal(2); // prochain numéro à attribuer
+            idSequenceRepository.save(newSeq);
+            nextVal = 1; // premier id de l'année
+        } else {
+            IdSequence s = seq.get();
+            nextVal = s.getNextVal();
+            s.setNextVal(nextVal + 1);
+            idSequenceRepository.save(s);
+        }
+        return year + "-" + prefix + "-" + String.format("%05d", nextVal);
+    }
 
     public UserDTO getByEmail(String email) {
         User user = userRepository.findByEmail(email)
@@ -61,14 +88,14 @@ public class UserService {
         return userRepository.searchByNomOrPrenomOrEmail(search.trim(), pageable).map(this::toDTO);
     }
 
-    public UserDTO getById(Long id) {
+    public UserDTO getById(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
         return toDTO(user);
     }
 
     @Transactional
-    public UserDTO updateByAdmin(Long id, AdminUpdateUserRequest request) {
+    public UserDTO updateByAdmin(String id, AdminUpdateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
 
@@ -107,7 +134,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deactivateByAdmin(Long id) {
+    public void deactivateByAdmin(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
         user.setActif(false);
@@ -123,7 +150,7 @@ public class UserService {
     }
 
     @Transactional
-    public void reactivateByAdmin(Long id) {
+    public void reactivateByAdmin(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
         user.setActif(true);

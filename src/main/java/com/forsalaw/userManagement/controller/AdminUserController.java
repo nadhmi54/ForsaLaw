@@ -56,7 +56,7 @@ public class AdminUserController {
 
     @Operation(summary = "Détail utilisateur", description = "Retourne les informations d'un utilisateur par son identifiant.")
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable String id) {
         UserDTO user = userService.getById(id);
         return ResponseEntity.ok(user);
     }
@@ -64,7 +64,7 @@ public class AdminUserController {
     @Operation(summary = "Modifier un utilisateur", description = "Met à jour les informations d'un utilisateur (nom, prénom, email, rôle, actif, mot de passe).")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody AdminUpdateUserRequest request
     ) {
         UserDTO user = userService.updateByAdmin(id, request);
@@ -80,7 +80,7 @@ public class AdminUserController {
 
     @Operation(summary = "Désactiver un utilisateur par id", description = "Désactive le compte de l'utilisateur dont l'identifiant est fourni (soft delete).")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deactivateByAdmin(id);
         return ResponseEntity.noContent().build();
     }
@@ -94,7 +94,7 @@ public class AdminUserController {
 
     @Operation(summary = "Réactiver un utilisateur par id", description = "Réactive le compte d'un utilisateur désactivé en fournissant son identifiant.")
     @PatchMapping("/{id}/reactivate")
-    public ResponseEntity<Void> reactivateUser(@PathVariable Long id) {
+    public ResponseEntity<Void> reactivateUser(@PathVariable String id) {
         userService.reactivateByAdmin(id);
         return ResponseEntity.noContent().build();
     }

@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 20)
+    private String id; // Format: AAAA-USR-NNNNN (année-type-numéro)
 
     @Column(nullable = false)
     private String nom;

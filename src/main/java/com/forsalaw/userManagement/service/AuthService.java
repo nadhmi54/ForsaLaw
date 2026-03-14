@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
@@ -24,6 +25,7 @@ public class AuthService {
             throw new IllegalArgumentException("Un compte existe déjà avec cet email.");
         }
         User user = new User();
+        user.setId(userService.generateNextId("USR"));
         user.setNom(request.getNom());
         user.setPrenom(request.getPrenom());
         user.setEmail(request.getEmail());

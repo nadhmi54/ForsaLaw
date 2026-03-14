@@ -12,11 +12,11 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AvocatRepository extends JpaRepository<Avocat, Long> {
+public interface AvocatRepository extends JpaRepository<Avocat, String> {
 
-    Optional<Avocat> findByUserId(Long userId);
+    Optional<Avocat> findByUserId(String userId);
 
-    boolean existsByUserId(Long userId);
+    boolean existsByUserId(String userId);
 
     @Query(value = "SELECT a FROM Avocat a JOIN FETCH a.user WHERE a.actif = true " +
            "AND (:specialite IS NULL OR a.specialite = :specialite) " +

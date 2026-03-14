@@ -6,6 +6,7 @@ import com.forsalaw.avocatManagement.model.*;
 import com.forsalaw.avocatManagement.repository.AvocatRepository;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
+import com.forsalaw.userManagement.service.UserService;
 import com.forsalaw.userManagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ public class AvocatService {
 
     private final AvocatRepository avocatRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @Transactional
     public AvocatDTO createProfile(String userEmail, CreateAvocatRequest request) {
@@ -31,6 +33,7 @@ public class AvocatService {
             throw new IllegalArgumentException("Un profil avocat existe déjà pour ce compte.");
         }
         Avocat avocat = new Avocat();
+        avocat.setId(userService.generateNextId("AVC"));
         avocat.setUser(user);
         avocat.setSpecialite(request.getSpecialite());
         avocat.setAnneesExperience(request.getAnneesExperience());
@@ -79,7 +82,7 @@ public class AvocatService {
     }
 
     @Transactional(readOnly = true)
-    public AvocatDTO getById(Long id) {
+    public AvocatDTO getById(String id) {
         Avocat avocat = avocatRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
         if (!avocat.isActif()) {
@@ -94,14 +97,14 @@ public class AvocatService {
     }
 
     @Transactional(readOnly = true)
-    public AvocatDTO getByIdAdmin(Long id) {
+    public AvocatDTO getByIdAdmin(String id) {
         Avocat avocat = avocatRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
         return toDTO(avocat);
     }
 
     @Transactional
-    public AvocatDTO updateByAdmin(Long id, AdminUpdateAvocatRequest request) {
+    public AvocatDTO updateByAdmin(String id, AdminUpdateAvocatRequest request) {
         Avocat avocat = avocatRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
         if (request.getSpecialite() != null) avocat.setSpecialite(request.getSpecialite());
@@ -115,7 +118,7 @@ public class AvocatService {
     }
 
     @Transactional
-    public void deactivateByAdmin(Long id) {
+    public void deactivateByAdmin(String id) {
         Avocat avocat = avocatRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
         avocat.setActif(false);
@@ -133,7 +136,7 @@ public class AvocatService {
     }
 
     @Transactional
-    public void reactivateByAdmin(Long id) {
+    public void reactivateByAdmin(String id) {
         Avocat avocat = avocatRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
         avocat.setActif(true);
