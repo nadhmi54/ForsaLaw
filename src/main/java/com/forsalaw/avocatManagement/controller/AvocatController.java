@@ -80,7 +80,7 @@ public class AvocatController {
 
     @Operation(summary = "Détail d'un avocat (public)", description = "Retourne la fiche d'un avocat par son identifiant (avocats actifs uniquement). Accessible sans authentification.")
     @GetMapping("/{id}")
-    public ResponseEntity<AvocatDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<AvocatDTO> getById(@PathVariable String id) {
         AvocatDTO avocat = avocatService.getById(id);
         return ResponseEntity.ok(avocat);
     }

@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 public class Avocat {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 20)
+    private String id; // Format: AAAA-AVC-NNNNN (année-type-numéro)
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)

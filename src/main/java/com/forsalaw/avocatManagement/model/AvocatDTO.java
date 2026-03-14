@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 @Setter
 public class AvocatDTO {
 
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userNom;
     private String userPrenom;
     private String userEmail;
