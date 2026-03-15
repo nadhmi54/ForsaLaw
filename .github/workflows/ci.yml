@@ -1,4 +1,4 @@
-# ForsaLaw – CI : build backend + frontend sur chaque push/PR
+# ForsaLaw – CI : build backend (Spring Boot à la racine) sur chaque push/PR
 name: CI
 
 on:
@@ -11,7 +11,7 @@ jobs:
   backend:
     name: Backend (Spring Boot)
     runs-on: ubuntu-latest
-    if: hashFiles('backend/pom.xml') != ''
+    if: hashFiles('pom.xml') != ''
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -21,9 +21,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build
-        run: mvn -q -B compile -f backend/pom.xml
+        run: mvn -q -B compile
       - name: Tests
-        run: mvn -q -B test -f backend/pom.xml
+        run: mvn -q -B test
 
   frontend:
     name: Frontend (Angular)
@@ -51,6 +51,6 @@ jobs:
       - name: Check structure
         run: |
           echo "ForsaLaw repo structure check"
-          [ -d backend ] && echo "  backend/ OK" || true
-          [ -d frontend ] && echo "  frontend/ OK" || true
+          [ -f pom.xml ] && echo "  pom.xml (backend) OK" || true
+          [ -d src ] && echo "  src/ OK" || true
           [ -d docker ] && echo "  docker/ OK" || true
