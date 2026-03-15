@@ -19,7 +19,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <flyway-database-postgresql.version>9.22.3</flyway-database-postgresql.version>
     </properties>
 
     <dependencies>
@@ -64,11 +63,6 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-            <version>${flyway-database-postgresql.version}</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
