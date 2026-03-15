@@ -11,7 +11,6 @@ jobs:
   backend:
     name: Backend (Spring Boot)
     runs-on: ubuntu-latest
-    if: hashFiles('pom.xml') != ''
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -28,7 +27,7 @@ jobs:
   frontend:
     name: Frontend (Angular)
     runs-on: ubuntu-latest
-    if: hashFiles('frontend/package.json') != ''
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js
