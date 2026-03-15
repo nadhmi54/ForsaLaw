@@ -1,7 +1,10 @@
 package com.forsalaw.avocatManagement.controller;
 
+import com.forsalaw.avocatManagement.entity.DomaineJuridique;
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
 import com.forsalaw.avocatManagement.model.AvocatDTO;
+import com.forsalaw.avocatManagement.model.DomaineAvecSpecialitesDTO;
+import com.forsalaw.avocatManagement.model.SpecialiteItem;
 import com.forsalaw.avocatManagement.model.CreateAvocatRequest;
 import com.forsalaw.avocatManagement.model.UpdateAvocatRequest;
 import com.forsalaw.avocatManagement.service.AvocatService;
@@ -17,12 +20,42 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/avocats")
 @RequiredArgsConstructor
 public class AvocatController {
 
     private final AvocatService avocatService;
+
+    @Operation(summary = "Liste des domaines avec sous-domaines", description = "Retourne les domaines du droit avec la liste de leurs spécialités (sous-domaines). Pour cocher d'abord le droit puis le sous-domaine dans Swagger. Public.")
+    @GetMapping("/domaines")
+    public ResponseEntity<List<DomaineAvecSpecialitesDTO>> listDomaines() {
+        List<DomaineAvecSpecialitesDTO> list = Arrays.stream(DomaineJuridique.values())
+                .map(d -> {
+                    List<SpecialiteItem> specialites = Arrays.stream(SpecialiteJuridique.values())
+                            .filter(s -> s.getDomaine() == d)
+                            .sorted(Comparator.comparing(SpecialiteJuridique::getLibelle))
+                            .map(s -> new SpecialiteItem(s.name(), s.getLibelle()))
+                            .collect(Collectors.toList());
+                    return new DomaineAvecSpecialitesDTO(d.name(), d.getLibelle(), specialites);
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
+    }
+
+    @Operation(summary = "Liste des spécialités juridiques", description = "Retourne toutes les spécialités (code + libellé) en liste plate. Public.")
+    @GetMapping("/specialites")
+    public ResponseEntity<List<SpecialiteItem>> listSpecialites() {
+        List<SpecialiteItem> list = Arrays.stream(SpecialiteJuridique.values())
+                .map(s -> new SpecialiteItem(s.name(), s.getLibelle()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
+    }
 
     @Operation(summary = "Liste des avocats (public)", description = "Retourne une liste paginée des avocats actifs, avec filtres optionnels (spécialité, ville, vérifié). Accessible sans authentification.")
     @GetMapping

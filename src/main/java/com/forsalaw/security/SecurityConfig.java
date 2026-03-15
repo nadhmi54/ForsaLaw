@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/avocats/domaines", "/api/avocats/specialites").permitAll()
                         .requestMatchers(getAvocatsPublicMatcher()).permitAll()
                         .requestMatchers("/api/avocats/me", "/api/avocats/me/**").hasRole("AVOCAT")
                         .requestMatchers(HttpMethod.POST, "/api/avocats/*/avis").hasRole("CLIENT")
