@@ -4,7 +4,8 @@
 
 services:
   postgres:
-    image: postgres:16-alpine
+    # Image avec extension pgvector pour le RAG (recherche vectorielle)
+    image: pgvector/pgvector:pg16
     container_name: forsalaw-postgres
     restart: unless-stopped
     environment:
