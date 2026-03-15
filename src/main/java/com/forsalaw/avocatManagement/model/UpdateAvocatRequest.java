@@ -1,6 +1,8 @@
 package com.forsalaw.avocatManagement.model;
 
+import com.forsalaw.avocatManagement.entity.DomaineJuridique;
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -10,6 +12,10 @@ import lombok.Setter;
 @Setter
 public class UpdateAvocatRequest {
 
+    @Schema(description = "Domaine du droit (optionnel, pour cocher domaine + sous-domaine dans Swagger)")
+    private DomaineJuridique domaine;
+
+    @Schema(description = "Spécialité (sous-domaine) juridique")
     private SpecialiteJuridique specialite;
     @Min(0)
     private Integer anneesExperience;

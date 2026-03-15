@@ -32,6 +32,15 @@ public class AvocatService {
         if (avocatRepository.existsByUserId(user.getId())) {
             throw new IllegalArgumentException("Un profil avocat existe déjà pour ce compte.");
         }
+        if (request.getDomaine() == null) {
+            throw new IllegalArgumentException("Le domaine du droit est requis lors de la création du profil.");
+        }
+        if (request.getSpecialite() == null) {
+            throw new IllegalArgumentException("La spécialité (sous-domaine) est requise lors de la création du profil.");
+        }
+        if (request.getSpecialite().getDomaine() != request.getDomaine()) {
+            throw new IllegalArgumentException("La spécialité choisie doit appartenir au domaine sélectionné. Domaine choisi : " + request.getDomaine().getLibelle() + ".");
+        }
         Avocat avocat = new Avocat();
         avocat.setId(userService.generateNextId("AVC"));
         avocat.setUser(user);
@@ -161,6 +170,15 @@ public class AvocatService {
         dto.setUserPrenom(a.getUser().getPrenom());
         dto.setUserEmail(a.getUser().getEmail());
         dto.setSpecialite(a.getSpecialite());
+        if (a.getSpecialite() != null) {
+            dto.setSpecialiteLibelle(a.getSpecialite().getLibelle());
+            dto.setDomaine(a.getSpecialite().getDomaine());
+            dto.setDomaineLibelle(a.getSpecialite().getDomaine().getLibelle());
+        } else {
+            dto.setSpecialiteLibelle(null);
+            dto.setDomaine(null);
+            dto.setDomaineLibelle(null);
+        }
         dto.setAnneesExperience(a.getAnneesExperience());
         dto.setVille(a.getVille());
         dto.setDescription(a.getDescription());
