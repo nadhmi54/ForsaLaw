@@ -26,6 +26,10 @@ public class OpenApiConfig {
                                         .name(securitySchemeName)
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                                        .bearerFormat("JWT")
+                                        .description(
+                                                "Après login, copiez **uniquement** le token (chaîne commençant souvent par eyJ...). "
+                                                        + "Ne préfixez pas par « Bearer » : Swagger l’ajoute tout seul. "
+                                                        + "Si vous mettez « Bearer eyJ... », le header peut devenir « Bearer Bearer ... » et le token sera refusé (401).")));
     }
 }
