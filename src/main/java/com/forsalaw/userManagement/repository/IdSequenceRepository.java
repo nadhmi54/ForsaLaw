@@ -13,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface IdSequenceRepository extends JpaRepository<IdSequence, IdSequence.IdSequencePK> {
 
+    boolean existsByEntityTypeAndYear(String entityType, int year);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM IdSequence s WHERE s.entityType = :entityType AND s.year = :year")
     Optional<IdSequence> findByEntityTypeAndYearForUpdate(

@@ -85,7 +85,7 @@ public class SecurityConfig {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.getWriter().write(objectMapper.writeValueAsString(
-                    Map.of("message", "Accès refusé : seul un client peut déposer un avis. Connectez-vous avec un compte ayant le rôle 'client'.")
+                    Map.of("message", "Accès refusé : Vous n'avez pas les permissions nécessaires pour consulter ou modifier cette ressource.")
             ));
         };
     }
