@@ -89,6 +89,77 @@ Ensuite tu continues à travailler et tu ouvres ta PR **feature/ma-feature** →
 
 ---
 
+## Se mettre à jour après merge d'un coéquipier
+
+Cas fréquent : toi ou ton ami merge une nouvelle gestion (ex. réclamation) dans `develop`, la branche feature est supprimée, et l'autre personne ne voit pas encore les nouveaux fichiers en local.
+
+### Procédure recommandée (sans perdre son travail local)
+
+1. Aller à la racine du repo et vérifier l'état local :
+
+```bash
+cd "C:\Users\...\ForsaLaw\ForsaLaw"
+git status
+```
+
+2. Si `git status` montre des modifications locales, les mettre de côté temporairement :
+
+```bash
+git stash
+```
+
+3. Récupérer l'état distant (et nettoyer les branches supprimées) :
+
+```bash
+git fetch --all --prune
+```
+
+4. Se placer sur `develop` et récupérer la version complète :
+
+```bash
+git checkout develop
+git pull origin develop
+```
+
+5. Vérifier que le merge est bien présent :
+
+```bash
+git log --oneline -n 20
+```
+
+6. Remettre ses modifications locales si un stash a été fait :
+
+```bash
+git stash list
+git stash pop
+git status
+```
+
+### Si la nouvelle gestion n'apparaît toujours pas
+
+Vérifier que tu tires du bon dépôt distant :
+
+```bash
+git remote -v
+```
+
+Si besoin, corriger `origin`, puis refaire fetch/pull :
+
+```bash
+git remote set-url origin https://github.com/ForsaLaw/ForsaLaw.git
+git fetch --all --prune
+git checkout develop
+git pull origin develop
+```
+
+### Notes importantes
+
+- Les warnings `LF will be replaced by CRLF` sous Windows sont informatifs, pas bloquants.
+- Si la branche feature de ton ami est supprimée après merge, c'est normal : il faut tirer `develop`, pas la feature.
+- Toujours faire `git stash` avant `pull` si tu as des modifications non commitées.
+
+---
+
 ## Quand le build CI échoue
 
 Quand la CI (ex. « Backend (Spring Boot) ») est en échec après un push ou une PR :
