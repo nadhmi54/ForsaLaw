@@ -1,0 +1,88 @@
+<div class="folder-hub">
+  @if (view() === 'role_pick') {
+    <div
+      class="folder-hub__roles"
+      role="group"
+      aria-label="Choisir un espace client ou avocat"
+    >
+      <button
+        type="button"
+        class="folder-hub__role-card"
+        (click)="openClientGuides()"
+      >
+        <span class="folder-hub__role-visual" aria-hidden="true">
+          <app-folder
+            [color]="clientFolderColor"
+            [size]="0.95"
+            [items]="['Client']"
+            [interactive]="false"
+          />
+        </span>
+        <span class="folder-hub__role-label">Client</span>
+        <span class="folder-hub__role-desc">Voir les points clés</span>
+      </button>
+
+      <button
+        type="button"
+        class="folder-hub__role-card"
+        (click)="openAvocatGuides()"
+      >
+        <span class="folder-hub__role-visual" aria-hidden="true">
+          <app-folder
+            [color]="avocatFolderColor"
+            [size]="0.95"
+            [items]="['Avocat']"
+            [interactive]="false"
+          />
+        </span>
+        <span class="folder-hub__role-label">Avocat</span>
+        <span class="folder-hub__role-desc">Voir les points clés</span>
+      </button>
+    </div>
+  }
+
+  <div class="folder-hub__main">
+    <app-folder
+      [color]="color"
+      [size]="size"
+      [items]="mainItems"
+      [className]="className"
+      [controlledOpen]="mainOpen()"
+      (openChange)="onMainOpenChange($event)"
+    />
+  </div>
+
+  @if (view() === 'client_guides') {
+    <div class="folder-hub__guides" role="region" aria-labelledby="folder-hub-client-title">
+      <h3 id="folder-hub-client-title" class="folder-hub__guides-title">
+        Espace clients
+      </h3>
+      <ul class="folder-hub__guides-list">
+        @for (line of clientGuides; track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+      <button type="button" class="folder-hub__back" (click)="backToRolePick()">
+        ← Retour au choix Client / Avocat
+      </button>
+    </div>
+  }
+
+  @if (view() === 'avocat_guides') {
+    <div class="folder-hub__guides" role="region" aria-labelledby="folder-hub-avocat-title">
+      <h3 id="folder-hub-avocat-title" class="folder-hub__guides-title">
+        Espace avocats
+      </h3>
+      <ul class="folder-hub__guides-list">
+        @for (line of avocatGuides; track $index) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+      <button type="button" class="folder-hub__back" (click)="backToRolePick()">
+        ← Retour au choix Client / Avocat
+      </button>
+    </div>
+  }
+
+  <p class="folder-hub__hint">{{ hintText() }}</p>
+</div>

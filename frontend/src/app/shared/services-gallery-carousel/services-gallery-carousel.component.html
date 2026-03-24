@@ -1,0 +1,24 @@
+<div
+  class="services-carousel"
+  role="region"
+  aria-roledescription="carrousel"
+  aria-label="Visuels de nos domaines d’intervention — faites défiler horizontalement"
+>
+  <div class="services-carousel__track">
+    @for (item of items; track $index) {
+      <figure class="services-carousel__slide">
+        <div class="services-carousel__img-wrap">
+          <img
+            [src]="item.image"
+            [alt]="'Visuel : ' + item.text"
+            loading="lazy"
+            decoding="async"
+            width="800"
+            height="600"
+          />
+        </div>
+        <figcaption class="services-carousel__caption">{{ item.text }}</figcaption>
+      </figure>
+    }
+  </div>
+</div>

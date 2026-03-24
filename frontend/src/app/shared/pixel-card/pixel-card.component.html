@@ -1,0 +1,16 @@
+<div
+  #containerRef
+  class="pixel-card"
+  [ngClass]="className"
+  [style.--pixel-active-color]="activeVariantColor"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+  (focus)="onFocus($event)"
+  (blur)="onBlur($event)"
+  [attr.tabindex]="finalNoFocus ? -1 : 0"
+>
+  <canvas #canvasRef class="pixel-canvas" aria-hidden="true"></canvas>
+  <div class="pixel-card__content">
+    <ng-content />
+  </div>
+</div>

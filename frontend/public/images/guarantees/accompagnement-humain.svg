@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Accompagnement humain</title>
+  <desc id="desc">Illustration d'un accompagnement humain entre expert et client.</desc>
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2436"/>
+      <stop offset="100%" stop-color="#1f5c6e"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="520" rx="28" fill="url(#bg3)"/>
+  <rect x="96" y="102" width="608" height="316" rx="24" fill="#ffffff10" stroke="#91d4cc66"/>
+  <circle cx="290" cy="214" r="54" fill="#f3d4b3"/>
+  <rect x="228" y="274" width="126" height="92" rx="28" fill="#d9edf3"/>
+  <circle cx="514" cy="214" r="54" fill="#f1c7a0"/>
+  <rect x="452" y="274" width="126" height="92" rx="28" fill="#f0e5da"/>
+  <path d="M355 300c22 14 36 20 48 20s26-6 48-20" stroke="#f4d889" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <rect x="218" y="156" width="144" height="16" rx="8" fill="#9ec2e2"/>
+  <rect x="442" y="156" width="144" height="16" rx="8" fill="#9ec2e2"/>
+  <rect x="340" y="348" width="120" height="28" rx="14" fill="#f4d889"/>
+</svg>

@@ -1,0 +1,212 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.folder-hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  overflow: visible;
+}
+
+.folder-hub__main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  overflow: visible;
+}
+
+.folder-hub__roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 3vw, 1.25rem);
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 0.25rem;
+  animation: folderHubRolesEnter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes folderHubRolesEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.folder-hub__role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem 1.1rem;
+  margin: 0;
+  border: 1px solid var(--fl-border, #e2e6ef);
+  border-radius: 14px;
+  background: var(--fl-surface, #fff);
+  box-shadow: 0 6px 24px rgba(26, 31, 46, 0.07);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 12px 32px rgba(26, 31, 46, 0.1);
+    transform: translateY(-2px);
+    border-color: rgba(82, 39, 255, 0.25);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5227ff;
+    outline-offset: 3px;
+  }
+}
+
+.folder-hub__role-visual {
+  display: flex;
+  justify-content: center;
+  min-height: 88px;
+  align-items: flex-end;
+}
+
+.folder-hub__role-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fl-text, #1a1f2e);
+}
+
+.folder-hub__role-desc {
+  font-size: 0.78rem;
+  color: var(--fl-text-muted, #5c6478);
+  line-height: 1.35;
+}
+
+.folder-hub__guides {
+  width: 100%;
+  text-align: left;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--fl-border, #e2e6ef);
+  border-radius: 14px;
+  background: var(--fl-surface, #fff);
+  box-shadow: 0 8px 28px rgba(26, 31, 46, 0.07);
+}
+
+.folder-hub__guides-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fl-text, #1a1f2e);
+}
+
+.folder-hub__guides-list {
+  margin: 0 0 1.35rem;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--fl-text-muted, #5c6478);
+
+  li + li {
+    margin-top: 0.45rem;
+  }
+}
+
+.folder-hub__back {
+  --back-accent: #5227ff;
+  --back-accent-deep: #3b1bb8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  padding: 0.65rem 1.35rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--back-accent) 0%,
+    var(--back-accent-deep) 100%
+  );
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  color: #fff;
+  box-shadow:
+    0 4px 14px rgba(82, 39, 255, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px rgba(82, 39, 255, 0.45),
+      0 1px 0 rgba(255, 255, 255, 0.15) inset;
+    filter: brightness(1.05);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow:
+      0 2px 10px rgba(82, 39, 255, 0.35),
+      0 1px 0 rgba(255, 255, 255, 0.1) inset;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+    box-shadow:
+      0 0 0 3px rgba(82, 39, 255, 0.55),
+      0 8px 24px rgba(82, 39, 255, 0.4);
+  }
+}
+
+.folder-hub__hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--fl-text-muted, #5c6478);
+  line-height: 1.55;
+  text-align: center;
+  max-width: 28rem;
+}
+
+@media (max-width: 520px) {
+  .folder-hub__roles {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folder-hub__role-card {
+    transition: none;
+  }
+
+  .folder-hub__roles {
+    animation: none;
+  }
+
+  .folder-hub__back {
+    transition: none;
+
+    &:hover,
+    &:active {
+      transform: none;
+    }
+  }
+}
