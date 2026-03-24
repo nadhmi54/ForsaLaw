@@ -1,0 +1,45 @@
+<div class="auth-page auth-page--gradient-bg">
+  <div class="auth-card">
+    <h1 class="auth-card__title">Connexion</h1>
+    <p class="auth-card__subtitle">
+      Pas encore de compte ?
+      <a routerLink="/inscription">Créer un compte</a>
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="field">
+        <label for="login-email">E-mail</label>
+        <input
+          id="login-email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+        />
+        @if (form.controls.email.touched && form.controls.email.errors; as err) {
+          <span class="field__error" role="alert">
+            @if (err['required']) { L’e-mail est requis. }
+            @else if (err['email']) { Format d’e-mail invalide. }
+            @else if (err['maxlength']) { E-mail trop long. }
+          </span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="login-password">Mot de passe</label>
+        <input
+          id="login-password"
+          type="password"
+          formControlName="motDePasse"
+          autocomplete="current-password"
+          [attr.aria-invalid]="form.controls.motDePasse.invalid && form.controls.motDePasse.touched"
+        />
+        @if (form.controls.motDePasse.touched && form.controls.motDePasse.errors?.['required']) {
+          <span class="field__error" role="alert">Le mot de passe est requis.</span>
+        }
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--block">Se connecter</button>
+    </form>
+  </div>
+</div>

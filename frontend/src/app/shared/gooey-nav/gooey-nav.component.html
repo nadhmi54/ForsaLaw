@@ -1,0 +1,18 @@
+<div class="gooey-nav-container" #container>
+  <nav>
+    <ul #navList>
+      @for (item of items; track item.href; let i = $index) {
+        <li [class.active]="activeIndex() === i">
+          <a
+            [routerLink]="item.href"
+            (click)="onClick($event, i)"
+          >
+            {{ item.label }}
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+  <span class="effect filter" #filter></span>
+  <span class="effect text" #text></span>
+</div>

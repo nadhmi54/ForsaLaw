@@ -1,0 +1,16 @@
+Visuels « Nous vous proposons » (carrousel d’accueil)
+=====================================================
+
+Fichiers utilisés par défaut (chemins dans src/app/pages/home/home-services.data.ts) :
+
+  contentieux.jpg       — thème contentieux / justice
+  notre-approche.jpg    — échange professionnel
+  regles-de-base.jpg    — cadre / collaboration
+  clientele-privee.jpg  — accompagnement client
+
+Emplacement : public/images/services/
+
+Remplacez ces fichiers par vos propres visuels (même nom, JPG ou adaptez les chemins dans home-services.data.ts).
+Les images sont servies par Angular à l’URL /images/services/…
+
+Licence des visuels fournis (Unsplash) : https://unsplash.com/license
