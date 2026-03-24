@@ -60,6 +60,94 @@ git branch -d feature/nom-de-la-feature
 
 ---
 
+## Workflow Frontend (Angular) dans le même repo
+
+Cette section décrit le workflow recommandé quand tu travailles sur `frontend/` dans ce monorepo (backend + frontend).
+
+### 1. Créer ta branche depuis `develop`
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/front-nom-feature
+```
+
+Exemples :
+- `feature/front-auth-ui`
+- `feature/front-admin-audit-page`
+
+### 2. Travailler uniquement dans `frontend/`
+
+- Code Angular : `frontend/src/...`
+- Assets : `frontend/public/...`
+- Dépendances : `frontend/package.json` et `frontend/package-lock.json`
+
+### 3. Vérifier le front avant commit
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+Notes :
+- Les warnings `LF will be replaced by CRLF` sous Windows ne bloquent pas.
+- Les warnings de budget Angular n'empêchent pas le build tant qu'ils restent des warnings.
+
+### 4. Commit propre
+
+Depuis la racine du repo :
+
+```bash
+git add frontend
+git status
+git commit -m "feat(front): add homepage and auth pages"
+```
+
+### 5. Push + PR vers `develop`
+
+```bash
+git push -u origin feature/front-nom-feature
+```
+
+Sur GitHub :
+- Base : `develop`
+- Compare : `feature/front-nom-feature`
+
+### 6. Après merge de la PR frontend
+
+```bash
+git checkout develop
+git pull origin develop
+git branch -d feature/front-nom-feature
+```
+
+Ensuite (optionnel) :
+
+```bash
+git push origin --delete feature/front-nom-feature
+```
+
+### 7. Ton collègue pour récupérer le frontend
+
+```bash
+git checkout develop
+git pull origin develop
+cd frontend
+npm install
+npm run build
+```
+
+### Bonnes pratiques front pour rester structuré
+
+- Une branche = une feature front claire.
+- PR petite et lisible (UI, routing, services, etc.).
+- Toujours commit `package-lock.json` si `package.json` change.
+- Ne pas committer `frontend/node_modules` ni `frontend/dist` (déjà ignorés).
+- Utiliser des messages explicites : `feat(front): ...`, `fix(front): ...`, `chore(front): ...`.
+
+---
+
 ## Quand ta branche est « behind » (en retard)
 
 Sur GitHub tu peux voir par exemple : **« This branch is 2 commits ahead and 1 commit behind main »**.  
