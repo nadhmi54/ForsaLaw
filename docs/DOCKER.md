@@ -11,7 +11,7 @@
 
 ### 1. Démarrer les conteneurs
 
-À la **racine du projet** (où se trouve `docker-compose.yml`) :
+Dans le dossier **`backend/`** (où se trouve `docker-compose.yml`) :
 
 ```bash
 docker-compose up -d
@@ -48,7 +48,7 @@ Tu dois voir **forsalaw-postgres** et **forsalaw-pgadmin** en état **Up**.
 ### 5. Lancer le backend
 
 - IntelliJ : lancer **ForsaLawApplication**
-- Ou en terminal : `mvn spring-boot:run`
+- Ou en terminal (depuis `backend/`) : `mvn spring-boot:run`
 
 Au premier démarrage, **Flyway** crée la table RAG (`legal_document_chunk`) ; rien à faire à la main.
 

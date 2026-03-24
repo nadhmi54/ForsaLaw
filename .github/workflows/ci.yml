@@ -1,4 +1,4 @@
-# ForsaLaw – CI : build backend (Spring Boot à la racine) sur chaque push/PR
+# ForsaLaw – CI : build backend/frontend sur chaque push/PR
 name: CI
 
 on:
@@ -11,6 +11,9 @@ jobs:
   backend:
     name: Backend (Spring Boot)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -51,6 +54,6 @@ jobs:
       - name: Check structure
         run: |
           echo "ForsaLaw repo structure check"
-          [ -f pom.xml ] && echo "  pom.xml (backend) OK" || true
-          [ -d src ] && echo "  src/ OK" || true
-          [ -d docker ] && echo "  docker/ OK" || true
+          [ -f backend/pom.xml ] && echo "  backend/pom.xml OK" || true
+          [ -d backend/src ] && echo "  backend/src OK" || true
+          [ -d frontend ] && echo "  frontend/ OK" || true
