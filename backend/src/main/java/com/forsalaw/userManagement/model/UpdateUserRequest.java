@@ -16,6 +16,9 @@ public class UpdateUserRequest {
     @Size(max = 255)
     private String email;
 
+    @Size(min = 6, max = 100, message = "Le mot de passe actuel doit contenir entre 6 et 100 caractères")
+    private String motDePasseActuel;
+
     @Size(min = 6, max = 100, message = "Le mot de passe doit contenir entre 6 et 100 caractères")
     private String nouveauMotDePasse; // optionnel : si rempli, on met à jour le mot de passe
 }

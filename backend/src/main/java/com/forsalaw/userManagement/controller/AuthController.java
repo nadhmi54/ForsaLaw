@@ -1,8 +1,10 @@
 package com.forsalaw.userManagement.controller;
 
 import com.forsalaw.userManagement.model.AuthResponse;
+import com.forsalaw.userManagement.model.ForgotPasswordRequest;
 import com.forsalaw.userManagement.model.LoginRequest;
 import com.forsalaw.userManagement.model.RegisterRequest;
+import com.forsalaw.userManagement.model.ResetPasswordRequest;
 import com.forsalaw.userManagement.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -30,6 +32,18 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Mot de passe oublie", description = "Genere un token temporaire de reinitialisation pour l'email fourni.")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request));
+    }
+
+    @Operation(summary = "Reinitialiser le mot de passe", description = "Reinitialise le mot de passe a partir d'un token valide.")
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 
     @Operation(summary = "Login with Google", description = "Redirige vers Google OAuth2 pour authentification.")

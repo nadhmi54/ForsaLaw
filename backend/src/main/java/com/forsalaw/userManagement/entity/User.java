@@ -31,6 +31,12 @@ public class User {
     @Column(name = "motdepasse", nullable = false)
     private String motDePasse; // stocké hashé (BCrypt)
 
+    @Column(name = "password_reset_token", length = 120)
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_expires_at")
+    private LocalDateTime passwordResetExpiresAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoleUser roleUser = RoleUser.client;
