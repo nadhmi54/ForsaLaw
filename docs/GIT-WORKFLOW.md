@@ -381,3 +381,164 @@ git reset --soft HEAD~1
 5. Pour une release : PR **develop** → **main**, puis merger.
 
 Voir aussi **docs/DEVOPS.md** pour la vue d’ensemble (CI, protection des branches, paramétrage GitHub).
+
+---
+
+## Workflow complet (avec sécurité secrets)
+
+Cette section est la version opérationnelle recommandée pour le monorepo ForsaLaw (backend + frontend), avec un focus sur la sécurité des clés/API secrets.
+
+### 1) Version `.gitignore` recommandée
+
+```gitignore
+# =========================
+# Java / Spring Boot
+# =========================
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.log
+
+# =========================
+# Frontend / Node
+# =========================
+node_modules/
+dist/
+.angular/
+coverage/
+.nyc_output/
+*.lcov
+
+# =========================
+# IDE / Editor
+# =========================
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.launch
+.cursor/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Env / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+application-local.properties
+application-local.yml
+application-local.yaml
+application-secret.properties
+application-secret.yml
+application-secret.yaml
+
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.crt
+
+*credentials*.json
+*service-account*.json
+
+# =========================
+# Misc
+# =========================
+*.swp
+*.bak
+*.tmp
+```
+
+### 2) Règles sécurité obligatoires
+
+- Ne jamais committer de vraie clé (`JWT_SECRET`, `GOOGLE_CLIENT_SECRET`, etc.).
+- Mettre les vraies valeurs uniquement dans les variables d’environnement (IntelliJ Run Configuration ou terminal local).
+- Garder `backend/.env.example` en placeholders uniquement.
+- Vérifier le diff staged avant commit.
+
+### 3) Démarrer une nouvelle feature
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/nom-feature
+```
+
+### 4) Commit propre et sécurisé
+
+Staging sélectif (exemple backend auth) :
+
+```bash
+git reset
+git add backend/.env.example backend/src/main/resources/application.properties backend/src/main/java/com/forsalaw/security/JwtService.java
+git diff --staged
+```
+
+Contrôle anti-secrets :
+
+```bash
+git diff --staged | findstr /I "GOCSPX GOOGLE_CLIENT_SECRET JWT_SECRET"
+git check-ignore -v .env
+```
+
+Puis commit :
+
+```bash
+git commit -m "chore(security): sanitize env examples and keep secrets in env vars"
+```
+
+### 5) Push + Pull Request
+
+```bash
+git push -u origin feature/nom-feature
+```
+
+Sur GitHub :
+- Base : `develop`
+- Compare : `feature/nom-feature`
+- Ouvrir PR, faire review, merger quand CI est verte.
+
+### 6) Après merge PR (nettoyage)
+
+```bash
+git checkout develop
+git pull origin develop
+git branch -d feature/nom-feature
+git push origin --delete feature/nom-feature
+```
+
+### 7) Si tu as des modifications locales qui bloquent un checkout
+
+```bash
+git stash
+git checkout develop
+git pull origin develop
+git stash list
+```
+
+Puis soit :
+
+```bash
+git stash pop
+```
+
+ou supprimer le stash si inutile :
+
+```bash
+git stash drop
+```
