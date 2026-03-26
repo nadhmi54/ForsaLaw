@@ -1,0 +1,233 @@
+/* ============================================================
+   ForsaLaw – App-level layout styles
+   All layout is done here (no Tailwind)
+   ============================================================ */
+
+/* --- Main wrapper --- */
+.app-root {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background-color: var(--charcoal);
+}
+
+/* --- Fixed Controls --- */
+.nav-toggle-btn {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  background: var(--gold);
+  color: var(--black);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-sm);
+  font-weight: 800;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.nav-toggle-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--black);
+  background: var(--white);
+}
+
+.nav-toggle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.lang-toggle-btn {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 50;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  font-family: 'Lexend', sans-serif;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.lang-toggle-btn:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+/* --- Fellawra intro overlay --- */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--charcoal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.intro-dialogue {
+  background: var(--white);
+  color: var(--black);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem 3rem;
+  max-width: 600px;
+  text-align: center;
+  position: relative;
+}
+
+.intro-dialogue::before {
+  content: '⚖';
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  background: var(--charcoal);
+  padding: 0 0.5rem;
+  color: var(--gold);
+}
+
+.intro-dialogue p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+.intro-name {
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 1rem;
+  display: block;
+}
+
+.intro-continue-btn {
+  margin-top: 2rem;
+}
+
+/* --- Hero --- */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem 2rem;
+  min-height: 100vh;
+}
+
+.hero-title {
+  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  color: var(--white);
+  text-align: center;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  color: var(--gold);
+  text-align: center;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  text-transform: none;
+}
+
+/* --- Full-screen Nav Gallery --- */
+.nav-gallery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(10, 10, 10, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.nav-gallery-title {
+  color: var(--gold);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.nav-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 900px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .nav-gallery-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.nav-gallery-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem;
+  background: var(--white);
+  color: var(--black);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: 'Lexend', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nav-gallery-item:hover {
+  background: var(--gold);
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0px 0px var(--black);
+}
+
+.nav-gallery-item svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* --- Architectural column lines background --- */
+.arch-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+}
+
+.arch-column {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(212, 175, 55, 0.08), transparent);
+}

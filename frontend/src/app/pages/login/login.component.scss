@@ -1,7 +1,0 @@
-/* Remplit la zone sous la navbar pour centrer le formulaire (voir .app-main--auth) */
-:host {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 100%;
-}
