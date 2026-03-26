@@ -33,7 +33,6 @@ public class AuthService {
         user.setRoleUser(request.getRoleUser() != null ? request.getRoleUser() : RoleUser.client);
         user.setActif(true);
         user = userRepository.save(user);
-
         String token = jwtService.generateToken(user.getEmail(), user.getRoleUser().name());
         return toAuthResponse(user, token);
     }

@@ -33,15 +33,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final ObjectMapper objectMapper;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/avocats/domaines", "/api/avocats/specialites").permitAll()
@@ -62,6 +64,9 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
