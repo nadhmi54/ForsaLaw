@@ -25,19 +25,21 @@ public class GoogleOAuth2UserService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Google n'a pas fourni d'email.");
         }
+        String normalizedEmail = email.trim().toLowerCase();
 
-        return userRepository.findByEmail(email).map(existing -> {
+        return userRepository.findByEmail(normalizedEmail).map(existing -> {
             existing.setActif(true);
+            existing.setRoleUser(resolveRoleForEmail(normalizedEmail));
             return userRepository.save(existing);
         }).orElseGet(() -> {
             User user = new User();
             user.setId(generateNextId("USR"));
-            user.setEmail(email);
+            user.setEmail(normalizedEmail);
             user.setNom(resolveNom(oauthUser));
             user.setPrenom(resolvePrenom(oauthUser));
             // Compte OAuth2 : mot de passe local non utilise
             user.setMotDePasse("{noop}GOOGLE_OAUTH2_ACCOUNT");
-            user.setRoleUser(RoleUser.client);
+            user.setRoleUser(resolveRoleForEmail(normalizedEmail));
             user.setActif(true);
             return userRepository.save(user);
         });
@@ -87,5 +89,12 @@ public class GoogleOAuth2UserService {
             return parts[0];
         }
         return "User";
+    }
+
+    private RoleUser resolveRoleForEmail(String email) {
+        if (email.endsWith("@forsalaw") || email.endsWith("@forsalaw.com")) {
+            return RoleUser.admin;
+        }
+        return RoleUser.client;
     }
 }

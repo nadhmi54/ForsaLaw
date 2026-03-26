@@ -69,18 +69,18 @@ public class AvocatController {
         return ResponseEntity.ok(page);
     }
 
-    @Operation(summary = "Mon profil avocat", description = "Retourne le profil avocat de l'utilisateur connecté (rôle AVOCAT requis).")
+    @Operation(summary = "Ma demande/profil avocat", description = "Retourne la demande ou le profil avocat de l'utilisateur connecté (client ou avocat).")
     @GetMapping("/me")
-    @PreAuthorize("hasRole('AVOCAT')")
+    @PreAuthorize("hasAnyRole('CLIENT','AVOCAT')")
     public ResponseEntity<AvocatDTO> getMyProfile(Authentication authentication) {
         String email = authentication.getName();
         AvocatDTO avocat = avocatService.getMyProfile(email);
         return ResponseEntity.ok(avocat);
     }
 
-    @Operation(summary = "Créer mon profil avocat", description = "Crée le profil avocat pour le compte connecté (un seul profil par compte, rôle AVOCAT requis).")
+    @Operation(summary = "Soumettre ma demande avocat", description = "Soumet une demande avocat pour le compte connecté. Le compte reste client tant que l'admin ne valide pas.")
     @PostMapping("/me")
-    @PreAuthorize("hasRole('AVOCAT')")
+    @PreAuthorize("hasAnyRole('CLIENT','AVOCAT')")
     public ResponseEntity<AvocatDTO> createMyProfile(
             Authentication authentication,
             @Valid @RequestBody CreateAvocatRequest request
@@ -90,9 +90,9 @@ public class AvocatController {
         return ResponseEntity.ok(avocat);
     }
 
-    @Operation(summary = "Modifier mon profil avocat", description = "Met à jour le profil avocat de l'utilisateur connecté (spécialité, expérience, ville, description).")
+    @Operation(summary = "Modifier ma demande/profil avocat", description = "Met à jour la demande/profil avocat de l'utilisateur connecté.")
     @PutMapping("/me")
-    @PreAuthorize("hasRole('AVOCAT')")
+    @PreAuthorize("hasAnyRole('CLIENT','AVOCAT')")
     public ResponseEntity<AvocatDTO> updateMyProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateAvocatRequest request

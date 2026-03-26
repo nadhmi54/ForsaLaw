@@ -32,4 +32,16 @@ public class CreateAvocatRequest {
 
     @Size(max = 2000)
     private String description;
+
+    @NotBlank(message = "Le numero de carte professionnelle est requis")
+    @Size(max = 100)
+    private String numeroCarteProfessionnelle;
+
+    @NotBlank(message = "Le CIN est requis")
+    @Size(max = 50)
+    private String cin;
+
+    @NotBlank(message = "Le barreau est requis")
+    @Size(max = 100)
+    private String barreau;
 }

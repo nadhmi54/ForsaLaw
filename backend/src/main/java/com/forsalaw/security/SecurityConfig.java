@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/messenger/avocat/**").hasRole("AVOCAT")
                         .requestMatchers("/api/messenger/**").hasRole("CLIENT")
                         .requestMatchers("/api/audit-logs/**").authenticated()
-                        .requestMatchers("/api/avocats/me", "/api/avocats/me/**").hasRole("AVOCAT")
+                        .requestMatchers("/api/avocats/me", "/api/avocats/me/**").hasAnyRole("CLIENT", "AVOCAT")
                         .requestMatchers(HttpMethod.POST, "/api/avocats/*/avis").hasRole("CLIENT")
                         .anyRequest().authenticated()
                 )

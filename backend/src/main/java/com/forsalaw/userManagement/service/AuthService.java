@@ -24,13 +24,14 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Un compte existe déjà avec cet email.");
         }
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
         User user = new User();
         user.setId(userService.generateNextId("USR"));
         user.setNom(request.getNom());
         user.setPrenom(request.getPrenom());
-        user.setEmail(request.getEmail());
+        user.setEmail(normalizedEmail);
         user.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
-        user.setRoleUser(request.getRoleUser() != null ? request.getRoleUser() : RoleUser.client);
+        user.setRoleUser(resolveRoleForEmail(normalizedEmail));
         user.setActif(true);
         user = userRepository.save(user);
         String token = jwtService.generateToken(user.getEmail(), user.getRoleUser().name());
@@ -59,5 +60,12 @@ public class AuthService {
                 user.getPrenom(),
                 user.getRoleUser()
         );
+    }
+
+    private RoleUser resolveRoleForEmail(String email) {
+        if (email.endsWith("@forsalaw") || email.endsWith("@forsalaw.com")) {
+            return RoleUser.admin;
+        }
+        return RoleUser.client;
     }
 }

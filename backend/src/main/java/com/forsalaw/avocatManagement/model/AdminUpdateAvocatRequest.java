@@ -2,6 +2,7 @@ package com.forsalaw.avocatManagement.model;
 
 import com.forsalaw.avocatManagement.entity.DomaineJuridique;
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
+import com.forsalaw.avocatManagement.entity.AvocatVerificationStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -23,6 +24,9 @@ public class AdminUpdateAvocatRequest {
     private String ville;
     @Size(max = 2000)
     private String description;
+    @Size(max = 1000)
+    private String verificationComment;
     private Boolean verifie;
+    private AvocatVerificationStatus verificationStatus;
     private Boolean actif;
 }

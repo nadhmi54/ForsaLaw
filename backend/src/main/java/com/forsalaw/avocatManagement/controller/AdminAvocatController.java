@@ -27,7 +27,7 @@ public class AdminAvocatController {
 
     private static final List<String> ALLOWED_SORT_FIELDS = List.of(
             "id", "specialite", "anneesExperience", "ville", "noteMoyenne", "totalDossiers",
-            "verifie", "actif", "dateCreation", "dateMiseAJour"
+            "verifie", "verificationStatus", "actif", "dateCreation", "dateMiseAJour"
     );
 
     private final AvocatService avocatService;
