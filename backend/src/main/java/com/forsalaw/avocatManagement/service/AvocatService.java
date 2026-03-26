@@ -1,6 +1,7 @@
 package com.forsalaw.avocatManagement.service;
 
 import com.forsalaw.avocatManagement.entity.Avocat;
+import com.forsalaw.avocatManagement.entity.AvocatVerificationStatus;
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
 import com.forsalaw.avocatManagement.model.*;
 import com.forsalaw.avocatManagement.repository.AvocatRepository;
@@ -26,11 +27,17 @@ public class AvocatService {
     public AvocatDTO createProfile(String userEmail, CreateAvocatRequest request) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
-        if (user.getRoleUser() != RoleUser.avocat) {
-            throw new IllegalArgumentException("Seul un utilisateur avec le rôle avocat peut créer un profil avocat.");
+        if (user.getRoleUser() == RoleUser.admin) {
+            throw new IllegalArgumentException("Un compte admin ne peut pas soumettre une demande avocat.");
         }
         if (avocatRepository.existsByUserId(user.getId())) {
-            throw new IllegalArgumentException("Un profil avocat existe déjà pour ce compte.");
+            throw new IllegalArgumentException("Une demande/profil avocat existe déjà pour ce compte.");
+        }
+        if (avocatRepository.existsByNumeroCarteProfessionnelleIgnoreCase(request.getNumeroCarteProfessionnelle().trim())) {
+            throw new IllegalArgumentException("Ce numero de carte professionnelle est deja utilise.");
+        }
+        if (avocatRepository.existsByCinIgnoreCase(request.getCin().trim())) {
+            throw new IllegalArgumentException("Ce CIN est deja utilise.");
         }
         if (request.getDomaine() == null) {
             throw new IllegalArgumentException("Le domaine du droit est requis lors de la création du profil.");
@@ -48,6 +55,12 @@ public class AvocatService {
         avocat.setAnneesExperience(request.getAnneesExperience());
         avocat.setVille(request.getVille() != null ? request.getVille() : "");
         avocat.setDescription(request.getDescription());
+        avocat.setNumeroCarteProfessionnelle(request.getNumeroCarteProfessionnelle().trim());
+        avocat.setCin(request.getCin().trim());
+        avocat.setBarreau(request.getBarreau().trim());
+        avocat.setVerificationStatus(AvocatVerificationStatus.PENDING);
+        avocat.setVerificationComment("Demande en attente de validation admin.");
+        avocat.setVerifie(false);
         avocat = avocatRepository.save(avocat);
         return toDTO(avocat);
     }
@@ -120,7 +133,13 @@ public class AvocatService {
         if (request.getAnneesExperience() != null) avocat.setAnneesExperience(request.getAnneesExperience());
         if (request.getVille() != null) avocat.setVille(request.getVille());
         if (request.getDescription() != null) avocat.setDescription(request.getDescription());
-        if (request.getVerifie() != null) avocat.setVerifie(request.getVerifie());
+        if (request.getVerificationComment() != null) avocat.setVerificationComment(request.getVerificationComment());
+        if (request.getVerificationStatus() != null) {
+            applyVerificationStatus(avocat, request.getVerificationStatus());
+        }
+        if (request.getVerifie() != null) {
+            applyVerificationStatus(avocat, request.getVerifie() ? AvocatVerificationStatus.APPROVED : AvocatVerificationStatus.REJECTED);
+        }
         if (request.getActif() != null) avocat.setActif(request.getActif());
         avocat = avocatRepository.save(avocat);
         return toDTO(avocat);
@@ -182,12 +201,42 @@ public class AvocatService {
         dto.setAnneesExperience(a.getAnneesExperience());
         dto.setVille(a.getVille());
         dto.setDescription(a.getDescription());
+        dto.setNumeroCarteProfessionnelle(a.getNumeroCarteProfessionnelle());
+        dto.setCin(a.getCin());
+        dto.setBarreau(a.getBarreau());
         dto.setNoteMoyenne(a.getNoteMoyenne());
         dto.setTotalDossiers(a.getTotalDossiers());
         dto.setVerifie(a.isVerifie());
+        dto.setVerificationStatus(resolveStatus(a));
+        dto.setVerificationComment(a.getVerificationComment());
         dto.setActif(a.isActif());
         dto.setDateCreation(a.getDateCreation());
         dto.setDateMiseAJour(a.getDateMiseAJour());
         return dto;
+    }
+
+    private void applyVerificationStatus(Avocat avocat, AvocatVerificationStatus status) {
+        avocat.setVerificationStatus(status);
+        switch (status) {
+            case APPROVED -> {
+                avocat.setVerifie(true);
+                avocat.getUser().setRoleUser(RoleUser.avocat);
+                userRepository.save(avocat.getUser());
+            }
+            case PENDING, REJECTED -> {
+                avocat.setVerifie(false);
+                if (avocat.getUser().getRoleUser() == RoleUser.avocat) {
+                    avocat.getUser().setRoleUser(RoleUser.client);
+                    userRepository.save(avocat.getUser());
+                }
+            }
+        }
+    }
+
+    private AvocatVerificationStatus resolveStatus(Avocat avocat) {
+        if (avocat.getVerificationStatus() != null) {
+            return avocat.getVerificationStatus();
+        }
+        return avocat.isVerifie() ? AvocatVerificationStatus.APPROVED : AvocatVerificationStatus.PENDING;
     }
 }

@@ -18,6 +18,10 @@ public interface AvocatRepository extends JpaRepository<Avocat, String> {
 
     boolean existsByUserId(String userId);
 
+    boolean existsByNumeroCarteProfessionnelleIgnoreCase(String numeroCarteProfessionnelle);
+
+    boolean existsByCinIgnoreCase(String cin);
+
     @Query(value = "SELECT a FROM Avocat a JOIN FETCH a.user WHERE a.actif = true " +
            "AND (:specialite IS NULL OR a.specialite = :specialite) " +
            "AND (:ville IS NULL OR :ville = '' OR LOWER(a.ville) LIKE LOWER(CONCAT('%', :ville, '%'))) " +

@@ -11,7 +11,11 @@ import java.time.LocalDateTime;
  * Entité Avocat (profil métier lié à un User avec rôle avocat).
  */
 @Entity
-@Table(name = "avocats", indexes = @Index(unique = true, columnList = "user_id"))
+@Table(name = "avocats", indexes = {
+        @Index(unique = true, columnList = "user_id"),
+        @Index(unique = true, columnList = "numero_carte_professionnelle"),
+        @Index(unique = true, columnList = "cin")
+})
 @Getter
 @Setter
 public class Avocat {
@@ -37,6 +41,15 @@ public class Avocat {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "numero_carte_professionnelle", length = 100)
+    private String numeroCarteProfessionnelle;
+
+    @Column(name = "cin", length = 50)
+    private String cin;
+
+    @Column(name = "barreau", length = 100)
+    private String barreau;
+
     @Column(name = "notemoyenne", nullable = false)
     private double noteMoyenne = 0.0;
 
@@ -45,6 +58,13 @@ public class Avocat {
 
     @Column(nullable = false)
     private boolean verifie = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", length = 20)
+    private AvocatVerificationStatus verificationStatus = AvocatVerificationStatus.PENDING;
+
+    @Column(name = "verification_comment", length = 1000)
+    private String verificationComment;
 
     @Column(nullable = false)
     private boolean actif = true;

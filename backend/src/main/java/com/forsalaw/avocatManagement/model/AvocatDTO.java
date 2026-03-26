@@ -2,6 +2,7 @@ package com.forsalaw.avocatManagement.model;
 
 import com.forsalaw.avocatManagement.entity.DomaineJuridique;
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
+import com.forsalaw.avocatManagement.entity.AvocatVerificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,9 +24,14 @@ public class AvocatDTO {
     private int anneesExperience;
     private String ville;
     private String description;
+    private String numeroCarteProfessionnelle;
+    private String cin;
+    private String barreau;
     private double noteMoyenne;
     private int totalDossiers;
     private boolean verifie;
+    private AvocatVerificationStatus verificationStatus;
+    private String verificationComment;
     private boolean actif;
     private LocalDateTime dateCreation;
     private LocalDateTime dateMiseAJour;
