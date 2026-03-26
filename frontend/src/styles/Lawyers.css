@@ -1,0 +1,321 @@
+/* ============================================================
+   ForsaLaw – Trading Card Lawyer Directory
+   ============================================================ */
+
+/* ── Page Layout ─────────────────────────────────────────── */
+.lawyers-page {
+  min-height: 100vh;
+  background-color: var(--charcoal);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+}
+
+.lawyers-header {
+  border-bottom: var(--border-width) solid rgba(212, 175, 55, 0.3);
+  padding: 6rem 2rem 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.lawyers-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(212,175,55,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.lawyers-header-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+  border: 1.5px solid var(--gold);
+  padding: 0.4rem 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+}
+
+.lawyers-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--white);
+  margin-bottom: 1rem;
+}
+
+.lawyers-subtitle {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.5);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Main Content Grid ───────────────────────────────────── */
+.lawyers-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .lawyers-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Filters Sidebar ─────────────────────────────────────── */
+.lawyers-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(212,175,55,0.3);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  transition: color var(--transition-fast);
+}
+
+.filter-checkbox:hover {
+  color: var(--white);
+}
+
+.filter-checkbox input {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+.filter-checkbox input:checked {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.filter-checkbox input:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 5px;
+  width: 4px;
+  height: 9px;
+  border: solid var(--black);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ── Trading Cards Grid ──────────────────────────────────── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+/* ── The Trading Card ────────────────────────────────────── */
+.lawyer-card-wrapper {
+  perspective: 1000px; /* For 3D tilt effect */
+  width: 100%;
+}
+
+.lawyer-card {
+  position: relative;
+  background: linear-gradient(145deg, #1f1f1f 0%, #0d0d0d 100%);
+  border: 4px solid #333;
+  border-radius: 8px; /* Slight rounding for a playing card feel */
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+  cursor: pointer;
+}
+
+.lawyer-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 15px 40px -5px var(--gold-glow);
+}
+
+/* Foil / Holographic reflection effect */
+.lawyer-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(125deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 40%, rgba(212,175,55,0.05) 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Card Header (Photo area) */
+.card-header {
+  height: 160px;
+  background: #111;
+  border-bottom: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-header-bg {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    #151515,
+    #151515 10px,
+    #111 10px,
+    #111 20px
+  );
+  opacity: 0.5;
+}
+
+.card-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: #222;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.card-rank {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--gold);
+  color: var(--black);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--black);
+  z-index: 2;
+  box-shadow: 2px 2px 0 #000;
+}
+
+/* Card Body */
+.card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.card-specialty {
+  font-size: 0.8rem;
+  color: var(--gold);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+}
+
+/* Base Stats (Trading Card RPG Style) */
+.card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  background: rgba(0,0,0,0.3);
+  padding: 1rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--white);
+  font-family: monospace;
+}
+
+.stat-label {
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.2rem;
+}
+
+.card-location {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-action {
+  margin-top: auto;
+  width: 100%;
+  padding: 0.85rem;
+  background: transparent;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.lawyer-card:hover .card-action {
+  background: var(--gold);
+  color: var(--black);
+}
