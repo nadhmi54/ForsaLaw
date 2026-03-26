@@ -13,7 +13,7 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    @Value("${forsalaw.jwt.secret:change-me-in-env}")
+    @Value("${forsalaw.jwt.secret:forsalaw-secret-key-min-256-bits-pour-hs256-utilisation}")
     private String secret;
 
     @Value("${forsalaw.jwt.expiration-ms:86400000}") // 24h
