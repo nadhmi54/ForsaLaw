@@ -70,6 +70,12 @@ public class UserService {
             user.setEmail(request.getEmail());
         }
         if (request.getNouveauMotDePasse() != null && !request.getNouveauMotDePasse().isBlank()) {
+            if (request.getMotDePasseActuel() == null || request.getMotDePasseActuel().isBlank()) {
+                throw new IllegalArgumentException("Le mot de passe actuel est requis pour changer le mot de passe.");
+            }
+            if (!passwordEncoder.matches(request.getMotDePasseActuel(), user.getMotDePasse())) {
+                throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
+            }
             user.setMotDePasse(passwordEncoder.encode(request.getNouveauMotDePasse()));
         }
 
