@@ -1,0 +1,262 @@
+/* ============================================================
+   ForsaLaw – Fellawra Sanctum (AI Interface)
+   Visual Novel / RPG Dialogue Aesthetic
+   ============================================================ */
+
+.sanctum-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #050505 100%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; /* Anchor dialogue box to bottom */
+}
+
+/* ── The Oracle Character Sprite ───────────────────────────── */
+.sanctum-sprite-container {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 65vh;
+  z-index: 1;
+  pointer-events: none; /* so clicks pass through to background */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.sanctum-sprite {
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.15));
+  animation: float-sprite 6s ease-in-out infinite;
+}
+
+@keyframes float-sprite {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* ── Dialogue Interface ────────────────────────────────────── */
+.dialogue-interface {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 2rem 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Scrollable History Log (Hidden by default, shown when scrolling up) */
+.dialogue-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+  padding-right: 1rem;
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black);
+}
+
+/* Custom Scrollbar for history */
+.dialogue-history::-webkit-scrollbar { width: 6px; }
+.dialogue-history::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+.dialogue-history::-webkit-scrollbar-thumb { background: var(--gold); }
+
+.history-bubble {
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(212,175,55,0.3);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: var(--white);
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  backdrop-filter: blur(4px);
+  position: relative;
+}
+
+.history-bubble.user {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--gold);
+  align-self: flex-end;
+  border-bottom-right-radius: 0;
+}
+
+.history-bubble.ai {
+  align-self: flex-start;
+  border-bottom-left-radius: 0;
+}
+
+.history-sender {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+/* The Active RPG Dialogue Box */
+.dialogue-box {
+  position: relative;
+  background: rgba(15, 15, 15, 0.95);
+  border: 4px solid var(--gold);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,0.8);
+  padding: 2.5rem 3rem;
+  min-height: 180px;
+  backdrop-filter: blur(10px);
+  cursor: pointer; /* Click to skip typing animation */
+}
+
+.dialogue-name-tab {
+  position: absolute;
+  top: -38px;
+  left: -4px;
+  background: var(--gold);
+  color: var(--black);
+  padding: 0.6rem 2rem;
+  font-family: 'Lexend', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  border: 4px solid var(--gold);
+  border-bottom: none;
+  box-shadow: 4px -4px 0 rgba(0,0,0,0.5);
+  text-transform: uppercase;
+}
+
+.dialogue-text {
+  font-family: 'Lexend', sans-serif;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  color: var(--white);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  min-height: 2.6rem; /* Keep box from collapsing */
+}
+
+.dialogue-cursor {
+  display: inline-block;
+  width: 10px;
+  height: 1.2rem;
+  background: var(--gold);
+  margin-left: 5px;
+  vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* RPG Continue Indicator (triangle bouncing at bottom right) */
+.dialogue-continue {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 2rem;
+  width: 0; 
+  height: 0; 
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid var(--gold);
+  animation: bounce-triangle 1.5s infinite;
+}
+
+@keyframes bounce-triangle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* ── User Input Prompt ─────────────────────────────────────── */
+.sanctum-input-container {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  position: relative;
+}
+
+.sanctum-input {
+  flex-grow: 1;
+  background: rgba(10, 10, 10, 0.9);
+  border: 2px solid #333;
+  padding: 1.2rem 2rem;
+  font-family: 'Lexend', sans-serif;
+  font-size: 1.1rem;
+  color: var(--white);
+  transition: all var(--transition-fast);
+  outline: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.sanctum-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 5px 25px rgba(212,175,55,0.2);
+}
+
+.sanctum-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  font-weight: 300;
+}
+
+.sanctum-submit {
+  background: var(--gold);
+  border: none;
+  color: var(--black);
+  padding: 0 2rem;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sanctum-submit:hover:not(:disabled) {
+  background: var(--white);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.sanctum-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+/* Responsive constraints */
+@media (max-width: 768px) {
+  .sanctum-sprite-container {
+    height: 45vh;
+    top: 5%;
+  }
+  
+  .dialogue-interface {
+    padding: 0 1rem 1rem 1rem;
+  }
+  
+  .dialogue-box {
+    padding: 2rem 1.5rem;
+    min-height: 140px;
+  }
+  
+  .dialogue-name-tab {
+    font-size: 0.9rem;
+    padding: 0.4rem 1.5rem;
+    top: -30px;
+  }
+  
+  .dialogue-text {
+    font-size: 1rem;
+  }
+}
