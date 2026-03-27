@@ -2,6 +2,7 @@ package com.forsalaw.userManagement.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +17,19 @@ public class AuthExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleAuthError(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+    }
+
+    /**
+     * Corps JSON illisible (ex. {@code LocalDateTime} avec suffixe {@code Z} : Jackson echoue avant d'atteindre le service).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadableJson(HttpMessageNotReadableException e) {
+        Throwable cause = e.getMostSpecificCause();
+        String detail = cause != null && cause.getMessage() != null ? cause.getMessage() : "";
+        String message = "JSON invalide ou format de date refuse. Pour dateHeureDebut/dateHeureFin, utilisez un format sans fuseau, "
+                + "ex. \"2026-03-27T10:00:00\" (pas de \"Z\" a la fin). "
+                + (detail.isEmpty() ? "" : "Detail: " + detail);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", message));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

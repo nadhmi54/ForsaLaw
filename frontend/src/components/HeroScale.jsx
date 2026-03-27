@@ -36,7 +36,6 @@ const HeroScale = ({ onNavigate }) => {
         <JusticeSilhouette
           className="justice-silhouette-root"
           onHoverSide={handleHoverSide}
-          activeSide={hoverSide}
           onLeftClick={() => onNavigate?.('cases')}
           onRightClick={() => onNavigate?.('lawyers')}
           leftSlot={

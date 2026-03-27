@@ -1,6 +1,7 @@
 package com.forsalaw.avocatManagement.controller;
 
 import com.forsalaw.avocatManagement.entity.SpecialiteJuridique;
+import com.forsalaw.avocatManagement.model.AdminAvocatVerificationRequest;
 import com.forsalaw.avocatManagement.model.AdminUpdateAvocatRequest;
 import com.forsalaw.avocatManagement.model.AvocatDTO;
 import com.forsalaw.avocatManagement.service.AvocatService;
@@ -66,7 +67,7 @@ public class AdminAvocatController {
         return ResponseEntity.ok(avocat);
     }
 
-    @Operation(summary = "Modifier un avocat", description = "Met à jour le profil d'un avocat (profil, vérification, actif).")
+    @Operation(summary = "Modifier un avocat", description = "Met à jour le profil (spécialité, expérience, ville, description, actif). La vérification / accès espace avocat se fait via PATCH /{id}/verification.")
     @PutMapping("/{id}")
     public ResponseEntity<AvocatDTO> updateAvocat(
             @PathVariable String id,
@@ -74,6 +75,15 @@ public class AdminAvocatController {
     ) {
         AvocatDTO avocat = avocatService.updateByAdmin(id, request);
         return ResponseEntity.ok(avocat);
+    }
+
+    @Operation(summary = "Décidier la vérification (accès espace avocat)", description = "Met à jour verificationStatus et verifie (cohérents : APPROVED + true, sinon false). Met à jour le rôle utilisateur (avocat si APPROVED).")
+    @PatchMapping("/{id}/verification")
+    public ResponseEntity<AvocatDTO> updateAvocatVerification(
+            @PathVariable String id,
+            @Valid @RequestBody AdminAvocatVerificationRequest request
+    ) {
+        return ResponseEntity.ok(avocatService.updateVerificationByAdmin(id, request));
     }
 
     @Operation(summary = "Désactiver un avocat par email", description = "Désactive le profil avocat de l'utilisateur dont l'email est fourni (soft delete).")

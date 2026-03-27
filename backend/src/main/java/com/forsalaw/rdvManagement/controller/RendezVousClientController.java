@@ -1,6 +1,7 @@
 package com.forsalaw.rdvManagement.controller;
 
 import com.forsalaw.rdvManagement.model.*;
+import com.forsalaw.rdvManagement.service.AvocatAgendaService;
 import com.forsalaw.rdvManagement.service.RendezVousService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,7 +13,12 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+
+import static org.springframework.format.annotation.DateTimeFormat.ISO;
 
 @RestController
 @RequestMapping("/api/rendezvous")
@@ -22,6 +28,17 @@ import org.springframework.web.bind.annotation.*;
 public class RendezVousClientController {
 
     private final RendezVousService rendezVousService;
+    private final AvocatAgendaService avocatAgendaService;
+
+    @Operation(summary = "Lister les creneaux disponibles pour un avocat (selon son agenda, fuseau horaire de l'avocat)")
+    @GetMapping("/avocats/{idAvocat}/creneaux-disponibles")
+    public ResponseEntity<CreneauxDisponiblesResponse> listerCreneauxDisponibles(
+            @PathVariable String idAvocat,
+            @RequestParam @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime fin
+    ) {
+        return ResponseEntity.ok(avocatAgendaService.listerCreneauxDisponiblesPourAvocat(idAvocat, debut, fin));
+    }
 
     @Operation(summary = "Creer une demande depuis le profil avocat")
     @PostMapping("/avocats/{idAvocat}/demandes")

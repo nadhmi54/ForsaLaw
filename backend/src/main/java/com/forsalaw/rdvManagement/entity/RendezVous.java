@@ -59,6 +59,12 @@ public class RendezVous {
     @Column(nullable = false)
     private LocalDateTime dateMiseAJour;
 
+    @Column(name = "rappel_j1_envoye", nullable = false)
+    private boolean rappelJ1Envoye = false;
+
+    @Column(name = "rappel_h1_envoye", nullable = false)
+    private boolean rappelH1Envoye = false;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
