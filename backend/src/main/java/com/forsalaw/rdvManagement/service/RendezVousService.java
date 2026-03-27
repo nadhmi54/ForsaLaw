@@ -27,6 +27,8 @@ public class RendezVousService {
     private final UserRepository userRepository;
     private final AvocatRepository avocatRepository;
     private final UserService userService;
+    private final AvocatAgendaService avocatAgendaService;
+    private final RdvNotificationEmailService rdvNotificationEmailService;
 
     private static final Set<StatutRendezVous> STATUTS_OCCUPES = Set.of(StatutRendezVous.PROPOSE, StatutRendezVous.CONFIRME);
 
@@ -51,6 +53,7 @@ public class RendezVousService {
         rdv.setCreePar(CreePar.CLIENT);
 
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyDemandeRecue(rdv.getIdRendezVous());
         return toDTO(rdv);
     }
 
@@ -110,6 +113,8 @@ public class RendezVousService {
             throw new IllegalArgumentException("La date proposee doit etre dans le futur.");
         }
 
+        avocatAgendaService.validerPropositionCreneau(avocat.getId(), rdv.getIdRendezVous(), debut, fin);
+
         boolean conflit = rendezVousRepository.hasConflitCreneauAvocat(
                 avocat.getId(),
                 STATUTS_OCCUPES,
@@ -128,6 +133,7 @@ public class RendezVousService {
         rdv.setStatutRendezVous(StatutRendezVous.PROPOSE);
 
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyCreneauPropose(rdv.getIdRendezVous());
         return toDTO(rdv);
     }
 
@@ -161,6 +167,7 @@ public class RendezVousService {
         rdv.setStatutRendezVous(StatutRendezVous.ANNULE);
         rdv.setRaisonAnnulation(trimOrNull(request.getRaisonRefus()));
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyAnnulation(rdv.getIdRendezVous(), true);
         return toDTO(rdv);
     }
 
@@ -178,6 +185,7 @@ public class RendezVousService {
         rdv.setStatutRendezVous(StatutRendezVous.ANNULE);
         rdv.setRaisonAnnulation(trimOrNull(request.getRaisonAnnulation()));
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyAnnulation(rdv.getIdRendezVous(), true);
         return toDTO(rdv);
     }
 
@@ -194,6 +202,7 @@ public class RendezVousService {
         rdv.setStatutRendezVous(StatutRendezVous.ANNULE);
         rdv.setRaisonAnnulation(trimOrNull(request.getRaisonAnnulation()));
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyAnnulation(rdv.getIdRendezVous(), false);
         return toDTO(rdv);
     }
 

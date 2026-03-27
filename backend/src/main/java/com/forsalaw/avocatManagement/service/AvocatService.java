@@ -133,16 +133,31 @@ public class AvocatService {
         if (request.getAnneesExperience() != null) avocat.setAnneesExperience(request.getAnneesExperience());
         if (request.getVille() != null) avocat.setVille(request.getVille());
         if (request.getDescription() != null) avocat.setDescription(request.getDescription());
-        if (request.getVerificationComment() != null) avocat.setVerificationComment(request.getVerificationComment());
-        if (request.getVerificationStatus() != null) {
-            applyVerificationStatus(avocat, request.getVerificationStatus());
-        }
-        if (request.getVerifie() != null) {
-            applyVerificationStatus(avocat, request.getVerifie() ? AvocatVerificationStatus.APPROVED : AvocatVerificationStatus.REJECTED);
-        }
         if (request.getActif() != null) avocat.setActif(request.getActif());
         avocat = avocatRepository.save(avocat);
         return toDTO(avocat);
+    }
+
+    /**
+     * Décision admin : verification / acces espace avocat uniquement ({@code verifie} + {@code verificationStatus} + role user).
+     */
+    @Transactional
+    public AvocatDTO updateVerificationByAdmin(String id, AdminAvocatVerificationRequest request) {
+        Avocat avocat = avocatRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Avocat non trouvé."));
+        assertVerifieCoherentAvecStatut(request.getVerificationStatus(), request.getVerifie());
+        applyVerificationStatus(avocat, request.getVerificationStatus());
+        avocat = avocatRepository.save(avocat);
+        return toDTO(avocat);
+    }
+
+    private static void assertVerifieCoherentAvecStatut(AvocatVerificationStatus status, boolean verifie) {
+        boolean attendu = status == AvocatVerificationStatus.APPROVED;
+        if (verifie != attendu) {
+            throw new IllegalArgumentException(
+                    "verifie doit etre " + attendu + " lorsque verificationStatus est " + status + "."
+            );
+        }
     }
 
     @Transactional

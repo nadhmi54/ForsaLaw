@@ -29,7 +29,7 @@ public class GoogleOAuth2UserService {
 
         return userRepository.findByEmail(normalizedEmail).map(existing -> {
             existing.setActif(true);
-            existing.setRoleUser(resolveRoleForEmail(normalizedEmail));
+            applyRoleOnOAuthLogin(existing, normalizedEmail);
             return userRepository.save(existing);
         }).orElseGet(() -> {
             User user = new User();
@@ -96,5 +96,21 @@ public class GoogleOAuth2UserService {
             return RoleUser.admin;
         }
         return RoleUser.client;
+    }
+
+    /**
+     * Ne pas ecraser le role {@code avocat} (ou {@code admin}) a chaque login Google :
+     * sinon les comptes valides par l'admin redeviennent {@code client} dans {@code users}.
+     */
+    private void applyRoleOnOAuthLogin(User existing, String normalizedEmail) {
+        RoleUser fromEmail = resolveRoleForEmail(normalizedEmail);
+        if (fromEmail == RoleUser.admin) {
+            existing.setRoleUser(RoleUser.admin);
+            return;
+        }
+        if (existing.getRoleUser() == RoleUser.avocat || existing.getRoleUser() == RoleUser.admin) {
+            return;
+        }
+        existing.setRoleUser(fromEmail);
     }
 }

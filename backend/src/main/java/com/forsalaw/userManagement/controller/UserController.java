@@ -1,7 +1,10 @@
 package com.forsalaw.userManagement.controller;
 
+import com.forsalaw.userManagement.model.NotificationPreferencesDTO;
+import com.forsalaw.userManagement.model.UpdateNotificationPreferencesRequest;
 import com.forsalaw.userManagement.model.UpdateUserRequest;
 import com.forsalaw.userManagement.model.UserDTO;
+import com.forsalaw.userManagement.service.NotificationPreferencesService;
 import com.forsalaw.userManagement.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final NotificationPreferencesService notificationPreferencesService;
 
     @Operation(summary = "Mon profil", description = "Retourne les informations du compte de l'utilisateur connecté (nom, prénom, email, rôle, etc.).")
     @GetMapping("/me")
@@ -23,6 +27,21 @@ public class UserController {
         String email = authentication.getName();
         UserDTO user = userService.getByEmail(email);
         return ResponseEntity.ok(user);
+    }
+
+    @Operation(summary = "Preferences de notification email (rendez-vous)")
+    @GetMapping("/me/notification-preferences")
+    public ResponseEntity<NotificationPreferencesDTO> getNotificationPreferences(Authentication authentication) {
+        return ResponseEntity.ok(notificationPreferencesService.getForCurrentUser(authentication.getName()));
+    }
+
+    @Operation(summary = "Mettre a jour les preferences de notification email (RDV)")
+    @PutMapping("/me/notification-preferences")
+    public ResponseEntity<NotificationPreferencesDTO> updateNotificationPreferences(
+            Authentication authentication,
+            @RequestBody UpdateNotificationPreferencesRequest request
+    ) {
+        return ResponseEntity.ok(notificationPreferencesService.updateForCurrentUser(authentication.getName(), request));
     }
 
     @Operation(summary = "Modifier mon profil", description = "Met à jour le profil de l'utilisateur connecté (nom, prénom, email, mot de passe).")
