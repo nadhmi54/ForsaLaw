@@ -43,11 +43,40 @@
   box-shadow: none;
 }
 
-.lang-toggle-btn {
+.top-right-controls {
   position: fixed;
   top: 2rem;
   right: 2rem;
-  z-index: 50;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.auth-top-btn {
+  padding: 0.7rem 0.95rem;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auth-top-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.auth-top-btn-primary {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.lang-toggle-btn {
   padding: 0.75rem 1.25rem;
   background: transparent;
   color: var(--gold);
@@ -63,6 +92,113 @@
 .lang-toggle-btn:hover {
   background: var(--gold);
   color: var(--black);
+}
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(7, 7, 8, 0.82);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem;
+}
+
+.auth-modal-card {
+  width: min(560px, 100%);
+  background: #141414;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.auth-modal-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.26);
+}
+
+.auth-modal-tabs button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.9rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.auth-modal-tabs button.active {
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.auth-modal-form {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.auth-modal-form label {
+  margin-top: 0.7rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.auth-modal-form input {
+  background: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--white);
+  padding: 0.68rem 0.8rem;
+  outline: none;
+}
+
+.auth-modal-form input:focus {
+  border-color: var(--gold);
+}
+
+.auth-link-btn {
+  margin-top: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--gold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.auth-submit-main {
+  margin-top: 1rem;
+  background: var(--gold);
+  color: var(--black);
+  border: 1px solid var(--gold);
+  padding: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.auth-google-btn {
+  margin-top: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.76rem;
+  color: var(--white);
+  text-decoration: none;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
 }
 
 /* --- Fellawra intro overlay --- */
@@ -119,6 +255,140 @@
 
 .intro-continue-btn {
   margin-top: 2rem;
+}
+
+/* Contenu principal (les pages ne sont montées que quand !isPageLoading) */
+.app-main-shell {
+  width: 100%;
+}
+
+/* --- ForsaLaw loading : overlay transparent (le fond app / colonnes reste visible) --- */
+.forsalaw-loading-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.forsalaw-loading-inner {
+  position: relative;
+  width: min(360px, 88vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.forsalaw-loading-float,
+.forsalaw-loading-swing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.forsalaw-loading-logo-wrap {
+  position: relative;
+  border-radius: 14px;
+  padding: 0.45rem;
+  /* Petit panneau crème uniquement autour du logo (lisibilité), pas tout l’écran */
+  background:
+    radial-gradient(circle at 50% 38%, rgba(196, 231, 230, 0.35) 0%, transparent 58%),
+    linear-gradient(145deg, rgba(246, 243, 235, 0.94) 0%, rgba(246, 243, 235, 0.82) 100%);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(201, 162, 39, 0.22),
+    0 0 32px rgba(196, 231, 230, 0.25);
+}
+
+.forsalaw-loading-logo-img {
+  width: min(128px, 36vw);
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  filter:
+    drop-shadow(0 2px 1px rgba(0, 0, 0, 0.04))
+    drop-shadow(0 10px 22px rgba(0, 0, 0, 0.07))
+    drop-shadow(0 0 28px rgba(201, 162, 39, 0.18))
+    drop-shadow(0 0 42px rgba(196, 231, 230, 0.35));
+}
+
+.forsalaw-loading-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 3.75rem;
+  text-align: center;
+}
+
+.forsalaw-loading-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+}
+
+.forsalaw-loading-tagline {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.forsalaw-loading-indicators {
+  width: 100%;
+  max-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.forsalaw-loading-dots {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.forsalaw-loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b8942e, #c4e7e6);
+  box-shadow: 0 0 10px rgba(196, 231, 230, 0.6);
+}
+
+.forsalaw-loading-bar-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.forsalaw-loading-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 38%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(196, 231, 230, 0.2),
+    rgba(201, 162, 39, 0.85),
+    rgba(196, 231, 230, 0.45)
+  );
+  box-shadow: 0 0 12px rgba(201, 162, 39, 0.25);
 }
 
 /* --- Hero --- */

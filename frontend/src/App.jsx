@@ -1,24 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, FileText, Users, Sparkles, Settings, Menu, X, MessageCircle, Award } from 'lucide-react'
-import HeroScale from './components/HeroScale'
+import { LayoutGrid, FileText, Users, Sparkles, Shield, Menu, X, MessageCircle, Award, UserCog, ArrowRight, Mail, Lock, User } from 'lucide-react'
 import ForumPage from './pages/ForumPage'
 import LawyersPage from './pages/LawyersPage'
 import DossierPage from './pages/DossierPage'
 import AiSanctumPage from './pages/AiSanctumPage'
-import AuthPage from './pages/AuthPage'
 import LawyerDashboardPage from './pages/LawyerDashboardPage'
+import ClientSpacePage from './pages/ClientSpacePage'
+import AdminSpacePage from './pages/AdminSpacePage'
+import ForsaLawLoadingScreen from './components/ForsaLawLoadingScreen'
+import HomePage from './pages/HomePage'
 import './styles/App.css'
 
 const NAV_ITEMS = [
-  { key: 'nav_home',    page: 'home',    icon: <LayoutGrid size={28} /> },
-  { key: 'nav_cases',  page: 'cases',   icon: <FileText   size={28} /> },
-  { key: 'nav_counsel',page: 'lawyers', icon: <Users      size={28} /> },
-  { key: 'nav_forum',  page: 'forum',   icon: <MessageCircle size={28} /> },
-  { key: 'nav_ai',     page: 'ai',      icon: <Sparkles   size={28} /> },
+  { key: 'nav_home', page: 'home', icon: <LayoutGrid size={28} /> },
+  { key: 'nav_cases', page: 'cases', icon: <FileText size={28} /> },
+  { key: 'nav_lawyers', page: 'lawyers', icon: <Users size={28} /> },
+  { key: 'nav_client_space', page: 'client-space', icon: <UserCog size={28} /> },
   { key: 'nav_lawyer_space', page: 'lawyer-space', icon: <Award size={28} /> },
-  { key: 'nav_settings',page:'settings', icon: <Settings   size={28} /> },
+  { key: 'nav_forum', page: 'forum', icon: <MessageCircle size={28} /> },
+  { key: 'nav_ai', page: 'ai', icon: <Sparkles size={28} /> },
+  { key: 'nav_admin', page: 'admin-space', icon: <Shield size={28} /> },
 ]
 
 // Whether user has seen the intro
@@ -33,15 +36,55 @@ function App() {
   const [isNavOpen,   setIsNavOpen]   = useState(false)
   const [showIntro,   setShowIntro]   = useState(true)
   const [currentPage, setCurrentPage] = useState('home')
+  const [isPageLoading, setIsPageLoading] = useState(true)
+  /** D’abord logo seul, puis texte (timing juridique premium) */
+  const [loadingShowMessage, setLoadingShowMessage] = useState(false)
+  const [authMode, setAuthMode] = useState(null) // 'login' | 'register' | 'forgot' | null
+  const loadTimerRef = useRef(null)
+  const loadMsgTimerRef = useRef(null)
 
   const navigateTo = (page) => {
-    setCurrentPage(page)
     setIsNavOpen(false)
+    if (page === currentPage) return
+
+    if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
+    if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
+
+    setIsPageLoading(true)
+    setLoadingShowMessage(false)
+
+    loadMsgTimerRef.current = window.setTimeout(() => {
+      setLoadingShowMessage(true)
+    }, 1500)
+
+    loadTimerRef.current = window.setTimeout(() => {
+      setCurrentPage(page)
+      setIsPageLoading(false)
+      setLoadingShowMessage(false)
+    }, 3000)
   }
 
   useEffect(() => {
     document.body.dir = i18n.dir()
   }, [i18n.language])
+
+  useEffect(() => {
+    if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
+    if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
+
+    const tLogoOnly = setTimeout(() => setLoadingShowMessage(true), 1500)
+    const tEnd = setTimeout(() => {
+      setIsPageLoading(false)
+      setLoadingShowMessage(false)
+    }, 3200)
+
+    return () => {
+      clearTimeout(tLogoOnly)
+      clearTimeout(tEnd)
+      if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
+      if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
+    }
+  }, [])
 
   const toggleLanguage = () => {
     const cycle = { fr: 'ar', ar: 'en', en: 'fr' }
@@ -59,9 +102,9 @@ function App() {
         ))}
       </div>
 
-      {/* Fellawra Introduction Overlay */}
+      {/* Fellawra Introduction Overlay — après le loading initial */}
       <AnimatePresence>
-        {showIntro && (
+        {showIntro && !isPageLoading && (
           <motion.div
             className="intro-overlay"
             initial={{ opacity: 1 }}
@@ -100,6 +143,13 @@ function App() {
         )}
       </AnimatePresence>
 
+      {/* Global loading — LegalTech premium (voir ForsaLawLoadingScreen) */}
+      <AnimatePresence mode="wait">
+        {isPageLoading && (
+          <ForsaLawLoadingScreen key="loading" showBrandText={loadingShowMessage} />
+        )}
+      </AnimatePresence>
+
       {/* Nav Toggle Button */}
       <motion.button
         className="nav-toggle-btn"
@@ -111,33 +161,25 @@ function App() {
         {isNavOpen ? <X size={22} /> : <Menu size={22} />}
       </motion.button>
 
-      {/* Language Toggle */}
-      <button className="lang-toggle-btn" onClick={toggleLanguage}>
-        {i18n.language.toUpperCase()}
-      </button>
+      {/* Auth and language controls */}
+      <div className="top-right-controls">
+        <button className="auth-top-btn" onClick={() => setAuthMode('login')}>
+          Connexion
+        </button>
+        <button className="auth-top-btn auth-top-btn-primary" onClick={() => setAuthMode('register')}>
+          Inscription
+        </button>
+        <button className="lang-toggle-btn" onClick={toggleLanguage}>
+          {i18n.language.toUpperCase()}
+        </button>
+      </div>
 
-      {/* Main content — switches based on currentPage */}
+      {/* Pendant le loading : aucune page montée (sinon l’ancienne page joue son exit et flash) */}
+      <div className="app-main-shell">
+      {!isPageLoading && (
       <AnimatePresence mode="wait">
         {currentPage === 'home' ? (
-          <motion.main
-            key="home"
-            className="hero-section"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-            >
-              <h1 className="hero-title">{t('welcome')}</h1>
-              <p className="hero-subtitle">{t('subtitle')}</p>
-              <HeroScale onNavigate={navigateTo} />
-            </motion.div>
-          </motion.main>
+          <HomePage key="home" onNavigate={navigateTo} />
         ) : currentPage === 'forum' ? (
           <motion.div
             key="forum"
@@ -148,15 +190,15 @@ function App() {
           >
             <ForumPage />
           </motion.div>
-        ) : currentPage === 'login' ? (
+        ) : currentPage === 'client-space' ? (
           <motion.div
-            key="login"
+            key="client-space"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <AuthPage />
+            <ClientSpacePage />
           </motion.div>
         ) : currentPage === 'lawyer-space' ? (
           <motion.div
@@ -198,6 +240,16 @@ function App() {
           >
             <LawyersPage />
           </motion.div>
+        ) : currentPage === 'admin-space' ? (
+          <motion.div
+            key="admin-space"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <AdminSpacePage />
+          </motion.div>
         ) : (
           <motion.main
             key="placeholder"
@@ -213,6 +265,8 @@ function App() {
           </motion.main>
         )}
       </AnimatePresence>
+      )}
+      </div>
 
       {/* Full-screen Navigation Gallery */}
       <AnimatePresence>
@@ -247,6 +301,75 @@ function App() {
                   <span>{t(item.key)}</span>
                 </motion.button>
               ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Authentication modal without dedicated page */}
+      <AnimatePresence>
+        {authMode && (
+          <motion.div
+            className="auth-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setAuthMode(null)}
+          >
+            <motion.div
+              className="auth-modal-card"
+              initial={{ y: 22, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 22, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="auth-modal-tabs">
+                <button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>Connexion</button>
+                <button className={authMode === 'register' ? 'active' : ''} onClick={() => setAuthMode('register')}>Inscription</button>
+                <button className={authMode === 'forgot' ? 'active' : ''} onClick={() => setAuthMode('forgot')}>Mdp oublie</button>
+              </div>
+
+              <form className="auth-modal-form" onSubmit={(e) => e.preventDefault()}>
+                {authMode === 'register' && (
+                  <>
+                    <label><User size={14} /> Nom</label>
+                    <input type="text" placeholder="Nom" />
+                    <label><User size={14} /> Prenom</label>
+                    <input type="text" placeholder="Prenom" />
+                  </>
+                )}
+
+                <label><Mail size={14} /> Email</label>
+                <input type="email" placeholder="vous@domaine.com" />
+
+                {authMode !== 'forgot' && (
+                  <>
+                    <label><Lock size={14} /> Mot de passe</label>
+                    <input type="password" placeholder="••••••••" />
+                  </>
+                )}
+
+                {authMode === 'login' && (
+                  <button type="button" className="auth-link-btn" onClick={() => setAuthMode('forgot')}>
+                    Mot de passe oublie ?
+                  </button>
+                )}
+
+                <button className="auth-submit-main" type="submit">
+                  {authMode === 'login'
+                    ? 'Se connecter'
+                    : authMode === 'register'
+                      ? 'S inscrire'
+                      : 'Envoyer lien reset'}
+                  <ArrowRight size={17} />
+                </button>
+
+                {(authMode === 'login' || authMode === 'register') && (
+                  <a className="auth-google-btn" href="/api/auth/google">
+                    Continuer avec Google
+                  </a>
+                )}
+              </form>
             </motion.div>
           </motion.div>
         )}

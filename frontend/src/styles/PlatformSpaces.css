@@ -1,0 +1,126 @@
+.space-page {
+  min-height: 100vh;
+  padding: 7.5rem 2rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.space-header {
+  margin-bottom: 2rem;
+}
+
+.space-tag {
+  display: inline-block;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.space-header h1 {
+  color: var(--white);
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  margin-bottom: 0.6rem;
+}
+
+.space-header p {
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 760px;
+}
+
+.space-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.space-card {
+  background: linear-gradient(180deg, #181818, #101010);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+  padding: 1.2rem;
+}
+
+.space-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.space-icon {
+  color: var(--gold);
+}
+
+.space-endpoint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.space-card h3 {
+  color: var(--white);
+  font-size: 1.05rem;
+  margin-bottom: 0.35rem;
+}
+
+.space-subtitle {
+  color: var(--gold);
+  margin-bottom: 0.25rem;
+  font-size: 0.84rem;
+}
+
+.space-card p {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.space-btn {
+  margin-top: 1rem;
+  padding: 0.65rem 0.9rem;
+  width: 100%;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.space-btn:hover {
+  background: var(--gold);
+  color: var(--black);
+}
+
+.space-roadmap {
+  margin-top: 1.3rem;
+  border: 1px dashed rgba(212, 175, 55, 0.4);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.space-roadmap div {
+  display: flex;
+  gap: 0.6rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.85rem;
+}
+
+.space-roadmap svg {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+@media (max-width: 900px) {
+  .space-grid {
+    grid-template-columns: 1fr;
+  }
+}

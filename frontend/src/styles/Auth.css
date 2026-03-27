@@ -28,7 +28,7 @@
 /* ── The Great Gate (Auth Container) ───────────────────────── */
 .auth-gate {
   width: 100%;
-  max-width: 500px;
+  max-width: 760px;
   background: #151515;
   border: 6px solid var(--black);
   box-shadow: 12px 12px 0 var(--black), 0 30px 60px rgba(0,0,0,0.8);
@@ -68,12 +68,13 @@
 /* ── Tab Switcher (Login / Register) ───────────────────────── */
 .auth-tabs {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 4px solid var(--black);
 }
 
 .auth-tab {
-  flex: 1;
-  padding: 1.5rem;
+  flex: 1 1 50%;
+  padding: 1rem;
   background: transparent;
   border: none;
   font-family: 'Lexend', sans-serif;
@@ -195,6 +196,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
+  .auth-tab {
+    flex: 1 1 100%;
+  }
+
   .auth-content {
     padding: 2rem;
   }

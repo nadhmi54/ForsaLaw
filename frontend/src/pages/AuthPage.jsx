@@ -1,16 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Lock, Mail, ShieldCheck, ArrowRight, Fingerprint } from 'lucide-react'
+import { User, Lock, Mail, ShieldCheck, ArrowRight, Fingerprint, KeyRound } from 'lucide-react'
 import '../styles/Auth.css'
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('login')
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    role: 'CLIENT' // Default role
-  })
 
   return (
     <div className="auth-page">
@@ -23,8 +17,8 @@ const AuthPage = () => {
       >
         {/* Header Ritual */}
         <header className="auth-gate-header">
-          <div className="auth-gate-title">Le Palais de Justice</div>
-          <div className="auth-gate-subtitle">Entrez dans votre Sanctuaire</div>
+          <div className="auth-gate-title">Authentification ForsaLaw</div>
+          <div className="auth-gate-subtitle">Maquettes pretes pour integration API</div>
           
           {/* Decorative Corner Elements */}
           <div style={{ position: 'absolute', top: '10px', left: '10px', opacity: 0.2 }}><ShieldCheck size={24} /></div>
@@ -37,13 +31,25 @@ const AuthPage = () => {
             className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
             onClick={() => setActiveTab('login')}
           >
-            S'Identifier
+            Connexion
           </button>
           <button 
             className={`auth-tab ${activeTab === 'register' ? 'active' : ''}`}
             onClick={() => setActiveTab('register')}
           >
-            S'Inscrire
+            Inscription
+          </button>
+          <button
+            className={`auth-tab ${activeTab === 'forgot' ? 'active' : ''}`}
+            onClick={() => setActiveTab('forgot')}
+          >
+            Mot de passe oublie
+          </button>
+          <button
+            className={`auth-tab ${activeTab === 'reset' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reset')}
+          >
+            Reset token
           </button>
         </nav>
 
@@ -62,43 +68,64 @@ const AuthPage = () => {
               {activeTab === 'register' && (
                 <div className="input-group">
                   <label className="input-label"><User size={14} /> Nom Complet</label>
-                  <input type="text" className="ritual-input" placeholder="Maître ou Citoyen..." />
+                  <input type="text" className="ritual-input" placeholder="Nom et prenom" />
                 </div>
               )}
 
               <div className="input-group">
-                <label className="input-label"><Mail size={14} /> Email Official</label>
-                <input type="email" className="ritual-input" placeholder="votre@justice.tn" />
+                <label className="input-label"><Mail size={14} /> Email</label>
+                <input type="email" className="ritual-input" placeholder="vous@domaine.com" />
               </div>
 
-              <div className="input-group">
-                <label className="input-label"><Lock size={14} /> Sceau Secret</label>
-                <input type="password" className="ritual-input" placeholder="••••••••" />
-              </div>
+              {(activeTab === 'login' || activeTab === 'register') && (
+                <div className="input-group">
+                  <label className="input-label"><Lock size={14} /> Mot de passe</label>
+                  <input type="password" className="ritual-input" placeholder="••••••••" />
+                </div>
+              )}
 
               {activeTab === 'register' && (
                 <div className="input-group">
-                  <label className="input-label"><ShieldCheck size={14} /> Votre Rôle</label>
-                  <select className="ritual-input" style={{ appearance: 'none' }}>
-                    <option value="CLIENT">CITOYEN (RECLAIMANT)</option>
-                    <option value="LAWYER">AVOCAT (CONSEILLER)</option>
-                  </select>
+                  <label className="input-label"><ShieldCheck size={14} /> Role initial</label>
+                  <input type="text" className="ritual-input" value="CLIENT (automatique)" readOnly />
                 </div>
               )}
 
+              {activeTab === 'forgot' && (
+                <div className="input-group">
+                  <label className="input-label"><Mail size={14} /> Endpoint</label>
+                  <input type="text" className="ritual-input" value="POST /api/auth/forgot-password" readOnly />
+                </div>
+              )}
+
+              {activeTab === 'reset' && (
+                <>
+                  <div className="input-group">
+                    <label className="input-label"><KeyRound size={14} /> Token</label>
+                    <input type="text" className="ritual-input" placeholder="Token recu par email" />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label"><Lock size={14} /> Nouveau mot de passe</label>
+                    <input type="password" className="ritual-input" placeholder="Nouveau mot de passe" />
+                  </div>
+                </>
+              )}
+
               <button type="submit" className="auth-submit-btn">
-                {activeTab === 'login' ? 'SCELLER L\'IDENTITÉ' : 'SIGNER LE REGISTRE'}
+                {activeTab === 'login'
+                  ? 'POST /api/auth/login'
+                  : activeTab === 'register'
+                    ? 'POST /api/auth/register'
+                    : activeTab === 'forgot'
+                      ? 'Envoyer email reset'
+                      : 'POST /api/auth/reset-password'}
                 <ArrowRight size={20} />
               </button>
             </motion.form>
           </AnimatePresence>
 
           <footer className="auth-footer">
-            {activeTab === 'login' ? (
-              <p>Oublié votre sceau ? <a href="#">Restaurer l'accès</a></p>
-            ) : (
-              <p>En signant, vous jurez de respecter la <a href="#">Charte du Palais</a></p>
-            )}
+            <p>UI mock uniquement. Integration API backend a brancher ensuite.</p>
           </footer>
         </div>
       </motion.div>
