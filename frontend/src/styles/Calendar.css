@@ -1,0 +1,227 @@
+/* ─── CALENDRIER DE JUSTICE (Legal Calendar) ──────────────── */
+.calendar-page {
+  min-height: 100vh;
+  padding: 7.5rem 2rem 4rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  font-family: 'Lexend', sans-serif;
+}
+
+.calendar-top {
+  margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.calendar-eyebrow {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.75;
+  margin-bottom: 0.6rem;
+  font-family: ui-monospace, monospace;
+}
+
+.calendar-title {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height: 1.05;
+}
+
+.calendar-title-divider {
+  width: 60px;
+  height: 4px;
+  background: var(--gold);
+  margin: 1.2rem 0;
+}
+
+.platform-subtitle {
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.45);
+  max-width: 680px;
+  line-height: 1.7;
+}
+
+.calendar-nav-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.calendar-month-label {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: var(--white);
+  text-transform: uppercase;
+  min-width: 200px;
+  text-align: center;
+}
+
+/* --- Calendar Grid --- */
+.calendar-grid-wrapper {
+  background: #0d0d0d;
+  border: 4px solid var(--black);
+  box-shadow: var(--shadow-lg);
+}
+
+.calendar-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--black);
+  border-bottom: 4px solid var(--black);
+}
+
+.calendar-day-name {
+  padding: 14px;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-transform: uppercase;
+  font-family: ui-monospace, monospace;
+  border-right: 4px solid var(--black);
+}
+.calendar-day-name:last-child { border-right: none; }
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+}
+
+.calendar-day-cell {
+  min-height: 130px;
+  background: var(--charcoal);
+  border-right: 2px solid var(--black);
+  border-bottom: 2px solid var(--black);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.calendar-day-cell:nth-child(7n) { border-right: none; }
+.calendar-grid .calendar-day-cell:nth-last-child(-n+7) { border-bottom: none; }
+
+.calendar-day-cell:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.calendar-day-cell.inactive {
+  background: rgba(13,13,13,0.8);
+}
+.calendar-day-cell.inactive .calendar-day-number {
+  color: rgba(255,255,255,0.15);
+}
+
+.calendar-day-number {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--white);
+  font-family: ui-monospace, monospace;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+
+/* --- Slots / Appointments --- */
+.calendar-appt {
+  background: var(--gold);
+  color: var(--black);
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0px 0px var(--black);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.calendar-appt:hover {
+  transform: translateY(-1px);
+  background: var(--white);
+}
+
+.calendar-available {
+  margin-top: auto;
+  padding: 6px;
+  background: transparent;
+  border: 1px dashed rgba(212,175,55,0.3);
+  color: var(--gold);
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.calendar-available:hover {
+  background: rgba(212,175,55,0.1);
+  border-style: solid;
+}
+
+/* --- Legend --- */
+.calendar-legend {
+  margin-top: 2rem;
+  display: flex;
+  gap: 2rem;
+  justify-content: flex-end;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: ui-monospace, monospace;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+}
+.legend-swatch.booked { background: var(--gold); border: 2px solid var(--black); }
+.legend-swatch.available { border: 1px dashed rgba(212,175,55,0.4); }
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .calendar-day-cell { min-height: 100px; }
+  .calendar-day-name { padding: 10px; font-size: 0.55rem; }
+}
+
+@media (max-width: 768px) {
+  .calendar-top { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .calendar-nav-controls { width: 100%; justify-content: space-between; }
+  .calendar-grid-wrapper { border-width: 2px; }
+  .calendar-days-header { display: none; }
+  .calendar-grid { grid-template-columns: 1fr; }
+  .calendar-day-cell { border-right: none; min-height: auto; padding: 16px; border-bottom: 2px solid var(--black); }
+  .calendar-day-cell.inactive { display: none; }
+  .calendar-day-number { align-self: flex-start; margin-bottom: 12px; font-size: 1.25rem; }
+}

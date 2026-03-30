@@ -7,7 +7,9 @@
 .app-root {
   min-height: 100vh;
   position: relative;
-  overflow-x: hidden;
+  /* clip instead of hidden — prevents the implicit overflow-y: auto
+     that causes a second scrollbar when child elements overflow */
+  overflow: clip;
   background-color: var(--charcoal);
 }
 
@@ -55,7 +57,7 @@
 
 .auth-top-btn {
   padding: 0.7rem 0.95rem;
-  background: transparent;
+  background: var(--black);
   color: var(--white);
   border: 1px solid rgba(255, 255, 255, 0.35);
   font-family: 'Lexend', sans-serif;
@@ -67,6 +69,7 @@
 }
 
 .auth-top-btn:hover {
+  background: #111108;
   border-color: var(--gold);
   color: var(--gold);
 }
@@ -78,7 +81,7 @@
 
 .lang-toggle-btn {
   padding: 0.75rem 1.25rem;
-  background: transparent;
+  background: var(--black);
   color: var(--gold);
   border: 2px solid var(--gold);
   font-family: 'Lexend', sans-serif;
@@ -107,61 +110,84 @@
 
 .auth-modal-card {
   width: min(560px, 100%);
-  background: #141414;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  background: var(--charcoal);
+  border: 4px solid var(--black);
+  box-shadow: 12px 12px 0px 0px var(--black);
+  position: relative;
+}
+
+.auth-modal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: var(--gold);
 }
 
 .auth-modal-tabs {
   display: flex;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.26);
+  border-bottom: 4px solid var(--black);
 }
 
 .auth-modal-tabs button {
   flex: 1;
-  background: transparent;
+  background: var(--charcoal);
   border: none;
+  border-right: 4px solid var(--black);
   color: rgba(255, 255, 255, 0.7);
-  padding: 0.9rem;
-  font-size: 0.75rem;
+  padding: 1.25rem 0.9rem;
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auth-modal-tabs button:last-child {
+  border-right: none;
 }
 
 .auth-modal-tabs button.active {
-  color: var(--gold);
-  background: rgba(212, 175, 55, 0.06);
+  color: var(--black);
+  background: var(--gold);
 }
 
 .auth-modal-form {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 2rem;
+  gap: 0.5rem;
 }
 
 .auth-modal-form label {
   margin-top: 0.7rem;
-  margin-bottom: 0.35rem;
-  font-size: 0.72rem;
+  font-family: 'Lexend', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
   color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.15em;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .auth-modal-form input {
-  background: #0f0f0f;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--charcoal);
+  border: 4px solid var(--black);
   color: var(--white);
-  padding: 0.68rem 0.8rem;
+  padding: 0.85rem;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
   outline: none;
+  transition: all var(--transition-fast);
+  box-shadow: inset 4px 4px 0px rgba(0,0,0,0.5);
 }
 
 .auth-modal-form input:focus {
   border-color: var(--gold);
+  box-shadow: inset 4px 4px 0px rgba(212, 175, 55, 0.2);
 }
 
 .auth-link-btn {
@@ -171,34 +197,63 @@
   color: var(--gold);
   text-align: left;
   cursor: pointer;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  opacity: 0.8;
 }
 
 .auth-submit-main {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   background: var(--gold);
   color: var(--black);
-  border: 1px solid var(--gold);
-  padding: 0.8rem;
-  font-weight: 700;
+  border: 4px solid var(--black);
+  padding: 1rem;
+  font-family: 'Lexend', sans-serif;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.15em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
+  box-shadow: 6px 6px 0px 0px var(--black);
+  transition: all var(--transition-fast);
+}
+
+.auth-submit-main:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px 0px var(--black);
+  background: var(--white);
+}
+
+.auth-submit-main:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .auth-google-btn {
-  margin-top: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.76rem;
-  color: var(--white);
+  margin-top: 1rem;
+  background: var(--white);
+  border: 4px solid var(--black);
+  padding: 0.85rem;
+  color: var(--black);
   text-decoration: none;
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  font-weight: 800;
   font-size: 0.75rem;
+  box-shadow: 4px 4px 0px 0px var(--black);
+  transition: all var(--transition-fast);
+}
+
+.auth-google-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--black);
+  background: #f0f0f0;
 }
 
 /* --- Fellawra intro overlay --- */

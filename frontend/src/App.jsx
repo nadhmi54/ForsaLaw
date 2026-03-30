@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, FileText, Users, Sparkles, Shield, Menu, X, MessageCircle, Award, UserCog, ArrowRight, Mail, Lock, User } from 'lucide-react'
+import { LayoutGrid, FileText, Users, Sparkles, Shield, Menu, X, MessageCircle, Award, UserCog, ArrowRight, Mail, Lock, User, MessageSquare, Calendar as LucideCalendar } from 'lucide-react'
 import ForumPage from './pages/ForumPage'
 import LawyersPage from './pages/LawyersPage'
 import DossierPage from './pages/DossierPage'
@@ -9,6 +9,9 @@ import AiSanctumPage from './pages/AiSanctumPage'
 import LawyerDashboardPage from './pages/LawyerDashboardPage'
 import ClientSpacePage from './pages/ClientSpacePage'
 import AdminSpacePage from './pages/AdminSpacePage'
+import SupportPage from './pages/SupportPage'
+import CalendarPage from './pages/CalendarPage'
+import InboxPage from './pages/InboxPage'
 import ForsaLawLoadingScreen from './components/ForsaLawLoadingScreen'
 import HomePage from './pages/HomePage'
 import './styles/App.css'
@@ -16,6 +19,9 @@ import './styles/App.css'
 const NAV_ITEMS = [
   { key: 'nav_home', page: 'home', icon: <LayoutGrid size={28} /> },
   { key: 'nav_cases', page: 'cases', icon: <FileText size={28} /> },
+  { key: 'nav_support', page: 'support', icon: <MessageSquare size={28} /> },
+  { key: 'nav_calendar', page: 'calendar', icon: <LucideCalendar size={28} /> },
+  { key: 'nav_inbox', page: 'inbox', icon: <Mail size={28} /> },
   { key: 'nav_lawyers', page: 'lawyers', icon: <Users size={28} /> },
   { key: 'nav_client_space', page: 'client-space', icon: <UserCog size={28} /> },
   { key: 'nav_lawyer_space', page: 'lawyer-space', icon: <Award size={28} /> },
@@ -94,7 +100,7 @@ function App() {
   const introText = INTRO_TEXT[i18n.language] ?? INTRO_TEXT.fr
 
   return (
-    <div className="app-root">
+    <div className={`app-root${currentPage === 'inbox' ? ' app-root--inbox' : ''}`}>
       {/* Architectural background columns */}
       <div className="arch-bg">
         {[...Array(8)].map((_, i) => (
@@ -161,18 +167,17 @@ function App() {
         {isNavOpen ? <X size={22} /> : <Menu size={22} />}
       </motion.button>
 
-      {/* Auth and language controls */}
-      <div className="top-right-controls">
-        <button className="auth-top-btn" onClick={() => setAuthMode('login')}>
-          Connexion
-        </button>
-        <button className="auth-top-btn auth-top-btn-primary" onClick={() => setAuthMode('register')}>
-          Inscription
-        </button>
-        <button className="lang-toggle-btn" onClick={toggleLanguage}>
-          {i18n.language.toUpperCase()}
-        </button>
-      </div>
+      {/* Auth and language controls — hidden on inbox (app owns the full screen there) */}
+      {currentPage !== 'inbox' && (
+        <div className="top-right-controls">
+          <button className="auth-top-btn" onClick={() => setAuthMode('login')}>
+            Connexion
+          </button>
+          <button className="lang-toggle-btn" onClick={toggleLanguage}>
+            {i18n.language.toUpperCase()}
+          </button>
+        </div>
+      )}
 
       {/* Pendant le loading : aucune page montée (sinon l’ancienne page joue son exit et flash) */}
       <div className="app-main-shell">
@@ -209,6 +214,36 @@ function App() {
             transition={{ duration: 0.4 }}
           >
             <LawyerDashboardPage />
+          </motion.div>
+        ) : currentPage === 'support' ? (
+          <motion.div
+            key="support"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <SupportPage />
+          </motion.div>
+        ) : currentPage === 'calendar' ? (
+          <motion.div
+            key="calendar"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <CalendarPage />
+          </motion.div>
+        ) : currentPage === 'inbox' ? (
+          <motion.div
+            key="inbox"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <InboxPage />
           </motion.div>
         ) : currentPage === 'ai' ? (
           <motion.div

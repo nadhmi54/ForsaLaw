@@ -1,206 +1,195 @@
 /* ============================================================
-   ForsaLaw – Hero scale unified
+   ForsaLaw – Scale of Fate (Lottie Professional Version)
    ============================================================ */
 
-.scale-wrapper {
+.scale-root.lottie-version {
   position: relative;
   width: 100%;
-  max-width: 960px;
-  min-height: 420px;
+  max-width: 100%; /* Fill whatever column width the parent gives */
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 auto;
+  gap: 0;
+  user-select: none;
 }
 
-.fellawra-placeholder {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+/* ── ForsaLaw Plaque ─────────────────────────────────────────────── */
+.scale-forsa-plaque {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.4rem;
   z-index: 10;
   pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
 }
 
-.fellawra-figure {
-  width: 130px;
-  height: auto;
-  filter:
-    drop-shadow(0 0 18px rgba(212, 175, 55, 0.45))
-    drop-shadow(0 0 40px rgba(212, 175, 55, 0.15));
-}
-
-.fellawra-name-tag {
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.25em;
+.scale-plaque-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.6em;
   color: var(--gold);
-  text-transform: uppercase;
-  opacity: 0.7;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  padding-bottom: 6px;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
 
-.scale-arm-container {
-  margin-top: 154px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  transform-origin: 50% 8%;
-}
-
-.justice-silhouette-root {
+/* ── Lottie Container ──────────────────────────────────────── */
+.scale-container {
   position: relative;
-  width: 560px;
-  max-width: 95%;
-}
-
-.justice-unified-svg {
   width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 4px 18px rgba(212, 175, 55, 0.2));
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.justice-pan-overlay {
-  position: absolute;
-  inset: 0;
+.scale-lottie-asset {
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  /* Gold-Leaf Metal Filter */
+  filter: 
+    brightness(1.5) 
+    contrast(1.2) 
+    sepia(0.8) 
+    saturate(0.5) 
+    hue-rotate(-15deg)
+    drop-shadow(0 0 20px rgba(212, 175, 55, 0.1));
 }
 
-.justice-pan-btn {
+/* ── Invisible Hit Zones — Mapped to the pans ──────────────── */
+.scale-hit-overlay {
   position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none; /* Only the buttons inside should be clickable */
+}
+
+.scale-hit-zone {
   pointer-events: auto;
-  width: 152px;
-  min-height: 74px;
-  padding: 0.7rem 0.65rem;
+  cursor: pointer;
+  background: transparent /* uncomment for debugging: rgba(255,0,0,0.2) */;
+  border: none;
+  padding: 0;
+  outline: none;
+  position: absolute; /* Lock to explicit coordinates relative to the 1024x1024 lottie */
+  width: 25%;
+  height: 35%;
+  top: 60%; /* Pushes the hitbox all the way down to the hanging weights, off the arms */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scale-hit-left {
+  left: 10%;
+}
+
+.scale-hit-right {
+  right: 10%;
+}
+
+/* ── Constant Labels ─────────────────────────────────────────── */
+.scale-label-constant {
+  position: absolute;
+  top: 90%; /* Sits below the pans */
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.32rem;
-  background: linear-gradient(135deg, #171717 0%, #0f0f0f 100%);
-  color: var(--white);
-  border: 2px solid rgba(212, 175, 55, 0.26);
-  border-bottom: 3px solid var(--gold);
-  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.8);
-  cursor: pointer;
-  transition: all var(--transition-fast);
+  gap: 0.2rem;
+  padding: 1rem;
+  width: 220px;
+  pointer-events: none;
+  z-index: 20;
+
+  /* Rest state - visible button styling */
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  opacity: 1;
+  border-radius: 4px; /* Slight polish */
+  transition: all 0.3s ease;
 }
 
-.justice-pan-btn--left {
-  left: 6%;
-  top: 40%;
+.scale-label-constant.is-hovered {
+  opacity: 1;
+  /* Glowing Premium Modal style */
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.6);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  transform: translateX(-50%) translateY(4px);
 }
 
-.justice-pan-btn--right {
-  right: 6%;
-  top: 40%;
-}
-
-.justice-pan-btn:hover,
-.justice-pan-btn.is-active {
-  border-color: var(--gold);
-  background: linear-gradient(135deg, #211b0e 0%, #151104 100%);
-  box-shadow: 0 14px 32px -10px rgba(212, 175, 55, 0.45);
-}
-
-.justice-pan-label {
-  font-size: 0.52rem;
+.scale-pan-label {
+  font-size: 0.5rem;
   font-weight: 800;
-  letter-spacing: 0.19em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--gold);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.34);
+  border-bottom: 1px solid rgba(212,175,55,0.2);
   width: 100%;
   text-align: center;
-  padding-bottom: 0.22rem;
+  padding-bottom: 4px;
+  transition: all 0.3s ease;
 }
 
-.justice-pan-text {
-  font-size: 0.88rem;
-  line-height: 1.15;
+.scale-label-constant.is-hovered .scale-pan-label {
+  border-bottom-color: rgba(212,175,55,0.6);
+}
+
+.scale-pan-action {
+  font-size: 0.85rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: var(--white);
   text-align: center;
-}
-
-.justice-pan-arrow {
   opacity: 0;
-  transform: translateY(5px);
-  color: var(--gold);
-  transition: all var(--transition-fast);
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.justice-pan-btn:hover .justice-pan-arrow,
-.justice-pan-btn.is-active .justice-pan-arrow {
+.scale-label-constant.is-hovered .scale-pan-action {
   opacity: 1;
-  transform: translateY(0);
+  max-height: 20px;
+  margin-top: 4px;
 }
 
-.scale-base {
-  display: none;
+/* ── Hint Text ────────────────────────────────────────────── */
+.scale-atrium-hint {
+  margin-top: -100px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.4);
+  animation: pulseHint 3s ease-in-out infinite;
 }
 
-@media (max-width: 760px) {
-  .scale-wrapper {
-    min-height: 380px;
-  }
-
-  .fellawra-placeholder {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    margin-bottom: 0.6rem;
-  }
-
-  .scale-arm-container {
-    margin-top: 0;
-  }
-
-  .justice-silhouette-root {
-    width: 430px;
-  }
-
-  .justice-pan-btn {
-    width: 132px;
-    min-height: 66px;
-    top: 38%;
-  }
-
-  .justice-pan-text {
-    font-size: 0.74rem;
-  }
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
-@media (max-width: 560px) {
-  .justice-silhouette-root {
-    width: 360px;
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .scale-root.lottie-version {
+    max-width: 400px;
   }
-
-  .justice-pan-btn {
-    width: 112px;
-    min-height: 60px;
-    top: 36%;
+  .scale-hit-zone {
+    width: 35%;
   }
-
-  .justice-pan-btn--left {
-    left: 4%;
-  }
-
-  .justice-pan-btn--right {
-    right: 4%;
-  }
-
-  .justice-pan-label {
-    font-size: 0.46rem;
-  }
-
-  .justice-pan-text {
-    font-size: 0.67rem;
+  .scale-label-popup {
+    width: 140px;
+    padding: 0.75rem;
   }
 }

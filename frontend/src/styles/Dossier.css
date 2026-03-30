@@ -1,77 +1,56 @@
-/* ============================================================
-   ForsaLaw – Archive of Truth (Case Dossier)
-   ============================================================ */
-
-/* ── Page Layout ─────────────────────────────────────────── */
+/* ─── DOSSIER PAGE OVERHAUL (Archive of Truth) ──────────────── */
 .dossier-page {
+  padding: 100px 4rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
   min-height: 100vh;
-  background-color: var(--charcoal);
-  color: var(--white);
-  display: flex;
-  flex-direction: column;
 }
 
 .dossier-header {
-  border-bottom: var(--border-width) solid rgba(212, 175, 55, 0.3);
-  padding: 6rem 2rem 3rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(ellipse at top, #1a1a1a 0%, var(--charcoal) 100%);
+  margin-bottom: 4rem;
+  border-left: 8px solid var(--gold);
+  padding-left: 2.5rem;
 }
 
 .dossier-header-tag {
-  display: inline-block;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.35em;
   color: var(--gold);
   text-transform: uppercase;
-  border: 1.5px solid var(--gold);
-  padding: 0.4rem 1rem;
-  margin-bottom: 1.5rem;
-  box-shadow: inset 0 0 10px rgba(212,175,55,0.1);
 }
 
 .dossier-title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 4rem);
   color: var(--white);
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin-top: 0.5rem;
 }
 
-/* ── Content Grid ────────────────────────────────────────── */
+/* --- Content Layout --- */
 .dossier-content {
   display: grid;
   grid-template-columns: 350px 1fr;
-  gap: 2rem;
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 3rem 2rem;
-  width: 100%;
+  gap: 3rem;
+  align-items: start;
 }
 
-@media (max-width: 1024px) {
-  .dossier-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Left: The Archive Index (My Cases) ───────────────────── */
+/* --- Left Archive List --- */
 .dossier-list {
+  background: var(--charcoal);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 }
 
 .dossier-list-header {
-  font-size: 1rem;
-  font-weight: 800;
-  text-transform: uppercase;
+  background: var(--black);
+  padding: 1.5rem;
   color: var(--gold);
-  border-bottom: 2px solid var(--gold);
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -80,251 +59,197 @@
 .new-case-btn {
   background: var(--gold);
   color: var(--black);
-  border: none;
-  font-family: 'Lexend', sans-serif;
-  font-weight: 800;
-  font-size: 0.7rem;
-  padding: 0.4rem 0.8rem;
+  border: 2px solid var(--black);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.55rem;
+  font-weight: 900;
   cursor: pointer;
-  transition: transform var(--transition-fast);
+  box-shadow: 2px 2px 0px var(--black);
 }
 
-.new-case-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(212,175,55,0.4);
-}
-
-/* The Manila Folder Design */
 .case-folder {
-  background: #deb887; /* Classic Manila color */
-  border: 4px solid #8b4513; /* Dark brown structural border */
-  border-radius: 4px;
   padding: 1.5rem;
-  position: relative;
+  border-bottom: 2px solid rgba(255,255,255,0.05);
   cursor: pointer;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.8);
-  transition: all var(--transition-fast);
-  color: #1a1a1a;
-  clip-path: polygon(
-    0 0,
-    30% 0,
-    35% 15px,
-    100% 15px,
-    100% 100%,
-    0 100%
-  );
-  margin-top: 10px; /* Space for the tab */
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.case-folder:hover {
+  background: #1a1a1a;
 }
 
 .case-folder.active {
-  transform: translateX(10px);
-  background: #f0e6d2; /* Slightly lighter when active */
-  box-shadow: -10px 10px 30px rgba(0,0,0,0.8), 4px 4px 0 var(--gold);
-  border-color: var(--black);
-}
-
-.folder-tab-text {
-  position: absolute;
-  top: -22px;
-  left: 10px;
-  font-family: monospace;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: var(--gold);
-  letter-spacing: 0.1em;
+  background: #1a1a0a;
+  border-left: 6px solid var(--gold);
 }
 
 .case-folder-id {
-  font-family: monospace;
-  font-size: 1rem;
-  font-weight: bold;
-  border-bottom: 2px dashed rgba(0,0,0,0.3);
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.75rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  color: var(--gold);
+  margin-bottom: 0.4rem;
 }
 
 .case-folder-title {
-  font-size: 1.1rem;
   font-weight: 800;
-  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--white);
   line-height: 1.3;
 }
 
-.case-folder-meta {
-  font-size: 0.75rem;
-  color: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: space-between;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-/* Status Badges (Wax Seal Style) */
-.status-seal {
-  position: absolute;
-  top: 25px;
-  right: 15px;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  border: 2px solid rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.5), 2px 2px 5px rgba(0,0,0,0.3);
-  font-size: 1rem;
-  color: var(--white);
-}
-
-.status-OUVERTE { background: #b22222; }      /* Red */
-.status-EN_COURS { background: #d4af37; }     /* Gold */
-.status-RESOLUE { background: #228b22; }      /* Green */
-.status-FERMEE { background: #555555; }       /* Grey */
-
-/* ── Right: The Opened Record (Case Details) ─────────────── */
+/* --- Main Dossier Paper --- */
 .dossier-record {
-  background: #151515;
-  border: 4px solid #333;
-  padding: 3rem 4rem;
+  background: var(--charcoal);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-lg);
   position: relative;
-  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
-  font-family: 'Lexend', sans-serif;
 }
 
-/* Typewriter paper aesthetic */
-.dossier-paper {
-  background: #fdfbf7;
-  color: #1a1a1a;
-  padding: 2.5rem;
-  border: 1px solid #d4c4a8;
-  box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-  position: relative;
-  min-height: 400px;
-}
-
-/* Red double lines like legal cap paper */
-.dossier-paper::before {
-  content: '';
+.dossier-record::before {
+  content: "SCELLEMENT NUMERIQUE APPLIQUE";
   position: absolute;
-  top: 0; left: 40px; bottom: 0;
-  width: 3px;
-  border-left: 1px solid #ff9999;
-  border-right: 1px solid #ff9999;
+  top: 1.5rem;
+  right: 2rem;
+  font-size: 0.5rem;
+  font-weight: 900;
+  color: var(--gold);
+  opacity: 0.3;
+  letter-spacing: 0.2em;
 }
 
-.dossier-paper-content {
-  margin-left: 30px; /* Push past the red line */
+.dossier-paper {
+  padding: 4rem;
 }
 
 .dossier-meta-stamp {
-  font-family: monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #555;
-  text-transform: uppercase;
-  border: 2px solid #555;
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem;
+  color: var(--gold);
+  border: 1px dashed var(--gold);
+  padding: 1rem;
   display: inline-block;
-  padding: 0.5rem 1rem;
-  transform: rotate(-2deg);
   margin-bottom: 2rem;
+  line-height: 1.5;
+  text-transform: uppercase;
 }
 
 .dossier-record-title {
   font-size: 2rem;
-  font-weight: 800;
   margin-bottom: 1.5rem;
-  line-height: 1.2;
+  border-bottom: 4px solid var(--black);
+  padding-bottom: 1rem;
 }
 
 .dossier-record-desc {
   font-size: 1.05rem;
-  line-height: 1.7;
-  color: #333;
-  margin-bottom: 3rem;
-  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 4rem;
   white-space: pre-wrap;
 }
 
-/* The Timeline */
+/* --- Timeline --- */
 .dossier-timeline {
-  margin-left: 30px;
-  border-top: 2px dashed #ccc;
-  padding-top: 2rem;
+  border-top: 8px solid var(--black);
+  padding-top: 3rem;
 }
 
 .timeline-title {
-  font-family: 'Lexend', sans-serif;
-  font-weight: 800;
-  color: var(--black);
-  margin-bottom: 1.5rem;
-  display: inline-block;
-  background: var(--gold);
-  padding: 0.2rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 2rem;
+  display: block;
 }
 
 .timeline-item {
   display: flex;
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .timeline-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--charcoal);
+  width: 42px;
+  height: 42px;
+  background: var(--black);
   color: var(--gold);
+  border: 2px solid var(--gold);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid var(--black);
 }
 
 .timeline-content {
-  background: #fff;
-  border: 2px solid #ddd;
-  padding: 1rem 1.5rem;
-  border-radius: 4px;
-  flex-grow: 1;
-  position: relative;
-}
-
-.timeline-content::before {
-  content: '';
-  position: absolute;
-  top: 12px;
-  left: -10px;
-  border-width: 10px 10px 10px 0;
-  border-style: solid;
-  border-color: transparent #ddd transparent transparent;
+  flex: 1;
 }
 
 .timeline-meta {
-  font-size: 0.75rem;
-  color: #777;
-  margin-bottom: 0.5rem;
   display: flex;
   justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.timeline-meta strong {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--white);
+}
+
+.timeline-meta span {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
 }
 
 .timeline-text {
-  font-size: 0.95rem;
-  line-height: 1.5;
+  background: #0a0a0a;
+  padding: 1rem 1.5rem;
+  border: 2px solid var(--black);
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
 }
 
-/* Empty State */
+/* --- Empty State --- */
 .dossier-empty {
+  text-align: center;
+  padding: 8rem 0;
+  color: rgba(255,255,255,0.1);
+}
+
+/* --- Status Seals (Waxy Stamps) --- */
+.status-seal {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: rgba(255,255,255,0.4);
-  text-align: center;
+  border: 2px solid var(--black);
 }
 
-.dossier-empty svg {
-  margin-bottom: 1rem;
-  opacity: 0.5;
+.status-OUVERTE { background: #b91c1c; color: white; }
+.status-EN_COURS { background: var(--gold); color: black; }
+.status-RESOLUE { background: #15803d; color: white; }
+.status-FERMEE { background: #374151; color: white; }
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .dossier-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dossier-page {
+    padding: 80px 1.5rem 2rem;
+  }
+  .dossier-paper {
+    padding: 2rem;
+  }
 }

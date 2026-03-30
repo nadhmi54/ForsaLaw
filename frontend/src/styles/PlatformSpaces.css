@@ -1,126 +1,523 @@
-.space-page {
+/* ============================================================
+   ForsaLaw — Admin & Client Platform Spaces
+   Brutalist DNA: 4px borders, hard shadows, gold/charcoal
+   ============================================================ */
+
+/* ── Shared Page Shell ── */
+.platform-page {
   min-height: 100vh;
-  padding: 7.5rem 2rem 3rem;
-  max-width: 1200px;
+  padding: 7.5rem 2rem 4rem;
+  max-width: 1300px;
   margin: 0 auto;
+  font-family: 'Lexend', sans-serif;
 }
 
-.space-header {
-  margin-bottom: 2rem;
-}
-
-.space-tag {
-  display: inline-block;
+.platform-eyebrow {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
   color: var(--gold);
-  border: 1px solid var(--gold);
-  padding: 0.3rem 0.7rem;
-  font-size: 0.7rem;
+  opacity: 0.75;
+  margin-bottom: 0.6rem;
+  font-family: ui-monospace, monospace;
+}
+
+.platform-title {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height: 1.05;
+}
+
+.platform-title-divider {
+  width: 60px;
+  height: 4px;
+  background: var(--gold);
+  margin: 1.2rem 0;
+}
+
+.platform-subtitle {
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.45);
+  max-width: 680px;
+  line-height: 1.7;
+  margin-bottom: 3rem;
+}
+
+/* ── Stats Row (Admin) ── */
+.admin-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-bottom: 3rem;
+  border: 4px solid var(--black);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-stat-card {
+  padding: 1.5rem 1.75rem;
+  background: var(--charcoal);
+  border-right: 4px solid var(--black);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.admin-stat-card:last-child {
+  border-right: none;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.admin-stat-label {
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  font-family: ui-monospace, monospace;
+}
+
+.admin-stat-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.admin-stat-value.gold { color: var(--gold); }
+.admin-stat-value.alert { color: #ff6b6b; }
+
+.admin-stat-delta {
+  font-size: 0.6rem;
+  font-family: ui-monospace, monospace;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.1em;
+}
+
+/* ── Two-Column Admin Layout ── */
+.admin-columns {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 0;
+  border: 4px solid var(--black);
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-main-col {
+  border-right: 4px solid var(--black);
+}
+
+.admin-side-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Section Header (shared) ── */
+.platform-section-header {
+  padding: 14px 20px;
+  background: var(--black);
+  border-bottom: 4px solid var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.platform-section-title {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-family: ui-monospace, monospace;
+}
+
+.platform-section-badge {
+  font-size: 0.55rem;
+  font-weight: 900;
+  background: var(--gold);
+  color: var(--black);
+  padding: 2px 8px;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.1em;
+}
+
+.platform-section-badge.alert {
+  background: #ff6b6b;
+  color: #fff;
+}
+
+/* ── Lawyer Verification Table ── */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  padding: 10px 18px;
+  background: #0d0d0d;
+  border-bottom: 2px solid var(--black);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  font-family: ui-monospace, monospace;
+  text-align: left;
+}
+
+.admin-table td {
+  padding: 12px 18px;
+  border-bottom: 2px solid var(--black);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.75);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.admin-table td:last-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Role badge */
+.role-badge {
+  display: inline-block;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  font-family: ui-monospace, monospace;
+  border: 2px solid;
+}
+
+.role-badge.client  { color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.15); }
+.role-badge.avocat  { color: var(--gold); border-color: rgba(212,175,55,0.4); }
+.role-badge.admin   { color: #ff6b6b; border-color: rgba(255,107,107,0.4); }
+.role-badge.pending { color: #aaa; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); }
+
+/* Status badge */
+.status-badge-admin {
+  display: inline-block;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  font-family: ui-monospace, monospace;
+  background: rgba(212,175,55,0.1);
+  color: var(--gold);
+  border: 2px solid rgba(212,175,55,0.25);
+}
+
+.status-badge-admin.open       { background: rgba(212,175,55,0.1); color: var(--gold); border-color: rgba(212,175,55,0.25); }
+.status-badge-admin.in-progress { background: rgba(100,150,255,0.08); color: #7ca4ff; border-color: rgba(100,150,255,0.2); }
+.status-badge-admin.closed     { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.08); }
+
+/* Action buttons in table */
+.tbl-btn {
+  font-size: 0.5rem;
+  font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 0.8rem;
+  padding: 5px 10px;
+  border: 2px solid var(--black);
+  cursor: pointer;
+  font-family: 'Lexend', sans-serif;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 
-.space-header h1 {
-  color: var(--white);
-  font-size: clamp(1.6rem, 3vw, 2.5rem);
-  margin-bottom: 0.6rem;
+.tbl-btn.approve {
+  background: var(--gold);
+  color: var(--black);
+  box-shadow: 2px 2px 0px 0px var(--black);
 }
+.tbl-btn.approve:hover { background: var(--white); }
 
-.space-header p {
-  color: rgba(255, 255, 255, 0.72);
-  max-width: 760px;
-}
-
-.space-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.space-card {
-  background: linear-gradient(180deg, #181818, #101010);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
-  padding: 1.2rem;
-}
-
-.space-card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.7rem;
-}
-
-.space-icon {
-  color: var(--gold);
-}
-
-.space-endpoint {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-}
-
-.space-card h3 {
-  color: var(--white);
-  font-size: 1.05rem;
-  margin-bottom: 0.35rem;
-}
-
-.space-subtitle {
-  color: var(--gold);
-  margin-bottom: 0.25rem;
-  font-size: 0.84rem;
-}
-
-.space-card p {
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.space-btn {
-  margin-top: 1rem;
-  padding: 0.65rem 0.9rem;
-  width: 100%;
-  border: 1px solid var(--gold);
+.tbl-btn.reject {
   background: transparent;
+  color: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.1);
+}
+.tbl-btn.reject:hover { color: #ff6b6b; border-color: rgba(255,107,107,0.4); }
+
+/* ── Side Panel (Audit Log) ── */
+.admin-audit-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-entry {
+  padding: 12px 18px;
+  border-bottom: 2px solid var(--black);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.audit-entry:last-child { border-bottom: none; }
+
+.audit-method {
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  font-family: ui-monospace, monospace;
+  display: inline-block;
+  padding: 2px 6px;
+}
+
+.audit-method.GET    { background: rgba(100,200,100,0.12); color: #7dff7d; }
+.audit-method.POST   { background: rgba(212,175,55,0.12); color: var(--gold); }
+.audit-method.PUT    { background: rgba(100,150,255,0.12); color: #7ca4ff; }
+.audit-method.DELETE { background: rgba(255,107,107,0.12); color: #ff6b6b; }
+
+.audit-endpoint {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.65);
+  font-family: ui-monospace, monospace;
+}
+
+.audit-meta {
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.2);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.1em;
+}
+
+/* ════════════════════════════════════════════════
+   CLIENT SPACE
+════════════════════════════════════════════════ */
+.client-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  border: 4px solid var(--black);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Profile sidebar */
+.client-profile-col {
+  border-right: 4px solid var(--black);
+  background: #0d0d0d;
+}
+
+.client-profile-card {
+  padding: 28px 22px;
+  border-bottom: 4px solid var(--black);
+  text-align: center;
+  position: relative;
+}
+
+.client-avatar-ring {
+  width: 72px;
+  height: 72px;
+  background: var(--black);
+  border: 4px solid var(--gold);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 900;
   color: var(--gold);
+  margin: 0 auto 16px;
+}
+
+.client-profile-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+
+.client-profile-email {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.3);
+  font-family: ui-monospace, monospace;
+  margin-bottom: 14px;
+}
+
+.client-nav-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.client-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 2px solid var(--black);
+  color: rgba(255,255,255,0.45);
+  font-size: 0.72rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.74rem;
   cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: all 0.15s;
+  background: transparent;
+  border-top: none;
+  border-right: none;
+  text-align: left;
+  font-family: 'Lexend', sans-serif;
+  width: 100%;
 }
 
-.space-btn:hover {
+.client-nav-item:hover,
+.client-nav-item.active {
+  background: #111108;
+  color: var(--white);
+  border-left-color: var(--gold);
+}
+
+.client-nav-item svg { color: var(--gold); flex-shrink: 0; }
+
+/* Client main col */
+.client-main-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Case row */
+.case-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 2px solid var(--black);
+  transition: background 0.15s;
+}
+
+.case-row:last-child { border-bottom: none; }
+.case-row:hover { background: rgba(255,255,255,0.02); }
+
+.case-id {
+  font-size: 0.5rem;
+  font-family: ui-monospace, monospace;
+  color: var(--gold);
+  opacity: 0.7;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.case-subject {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.case-lawyer {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.3);
+  font-family: ui-monospace, monospace;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Appointment row */
+.appt-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 2px solid var(--black);
+  transition: background 0.15s;
+}
+
+.appt-row:last-child { border-bottom: none; }
+.appt-row:hover { background: rgba(255,255,255,0.02); }
+
+.appt-date-block {
+  width: 52px;
+  height: 52px;
+  background: var(--gold);
+  border: 2px solid var(--black);
+  box-shadow: 2px 2px 0px 0px var(--black);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.appt-day { font-size: 1.4rem; font-weight: 900; color: var(--black); line-height: 1; }
+.appt-month { font-size: 0.42rem; font-weight: 900; color: var(--black); letter-spacing: 0.15em; text-transform: uppercase; }
+
+.appt-info { flex: 1; }
+.appt-subject { font-size: 0.82rem; font-weight: 700; color: var(--white); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+.appt-meta { font-size: 0.58rem; color: rgba(255,255,255,0.3); font-family: ui-monospace, monospace; }
+
+/* Quick actions */
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--black);
+  color: rgba(255,255,255,0.55);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  font-family: 'Lexend', sans-serif;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.quick-action-btn:last-child { border-bottom: none; }
+
+.quick-action-btn svg { color: var(--gold); flex-shrink: 0; }
+
+.quick-action-btn:hover {
   background: var(--gold);
   color: var(--black);
 }
+.quick-action-btn:hover svg { color: var(--black); }
 
-.space-roadmap {
-  margin-top: 1.3rem;
-  border: 1px dashed rgba(212, 175, 55, 0.4);
-  padding: 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .admin-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .admin-columns { grid-template-columns: 1fr; }
+  .admin-main-col { border-right: none; border-bottom: 4px solid var(--black); }
 }
 
-.space-roadmap div {
-  display: flex;
-  gap: 0.6rem;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.85rem;
-}
-
-.space-roadmap svg {
-  color: var(--gold);
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-@media (max-width: 900px) {
-  .space-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 768px) {
+  .admin-stats-row { grid-template-columns: 1fr 1fr; }
+  .client-layout { grid-template-columns: 1fr; }
+  .client-profile-col { border-right: none; border-bottom: 4px solid var(--black); }
+  .case-row { grid-template-columns: auto 1fr; }
+  .case-lawyer { display: none; }
 }
