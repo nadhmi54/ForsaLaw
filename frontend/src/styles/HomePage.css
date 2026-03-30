@@ -1,494 +1,469 @@
 /* ============================================================
-   ForsaLaw — Page d’accueil complète
+   ForsaLaw — Home Page: The Grand Hall
+   Architecture: Atrium → Chambers → Codex
+   No stock photos. Pure geometry and typography.
    ============================================================ */
 
 .home-page {
   width: 100%;
-  min-height: 100vh;
-  padding-bottom: 2rem;
+  overflow-x: hidden;
+  position: relative; /* Context for global background pillars */
 }
 
-/* --- Hero plein écran avec image dédiée --- */
-.home-hero {
+.home-lower-realm {
   position: relative;
-  min-height: min(72vh, 720px);
-  display: flex;
-  align-items: flex-end;
-  margin: 0 calc(50% - 50vw);
-  width: 100vw;
-  max-width: 100vw;
+  width: 100%;
+  z-index: 1;
 }
 
-.home-hero-media {
+/* Pure CSS Monolithic Architecture framing the LOWER courts */
+.home-lower-realm::before,
+.home-lower-realm::after {
+  content: '';
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.home-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 35%;
-}
-
-.home-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(12, 12, 14, 0.25) 0%,
-    rgba(12, 12, 14, 0.55) 45%,
-    rgba(12, 12, 14, 0.92) 100%
-  );
-}
-
-.home-hero-inner {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 3rem 1.75rem 3.25rem;
-  text-align: center;
-}
-
-.home-eyebrow {
-  margin: 0 0 0.75rem;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: rgba(212, 175, 55, 0.95);
-}
-
-.home-hero-title {
-  margin: 0 0 1rem;
-  font-size: clamp(1.65rem, 4.2vw, 2.85rem);
-  font-weight: 800;
-  line-height: 1.12;
-  color: var(--white);
-  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.45);
-}
-
-.home-hero-lead {
-  margin: 0 auto 1.75rem;
-  max-width: 34rem;
-  font-size: clamp(0.95rem, 1.35vw, 1.08rem);
-  font-weight: 300;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.home-hero-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.brutal-btn--ghost {
-  background: transparent;
-  color: var(--gold);
-  border: 2px solid var(--gold);
-  box-shadow: none;
-}
-
-.brutal-btn--ghost:hover {
-  background: rgba(212, 175, 55, 0.12);
-  color: var(--white);
-  border-color: var(--white);
-}
-
-/* --- Intro + balance --- */
-.home-intro-block {
-  padding: 3rem 1.5rem 1rem;
-  max-width: 960px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.home-intro-block .home-section-title {
-  margin-bottom: 0.5rem;
-}
-
-.home-intro-block .home-section-sub {
-  margin-bottom: 1.5rem;
-}
-
-/* --- Sections génériques --- */
-.home-section {
-  padding: 3.25rem 1.5rem 2rem;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.home-section-head {
-  text-align: center;
-  margin-bottom: 2.25rem;
-}
-
-.home-section-title {
-  margin: 0 0 0.6rem;
-  font-size: clamp(1.45rem, 3vw, 2rem);
-  font-weight: 800;
-  color: var(--white);
-  letter-spacing: 0.02em;
-}
-
-.home-section-sub {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 300;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.65);
-}
-
-.home-section-sub--narrow {
-  max-width: 38rem;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* --- Valeurs --- */
-.home-values-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
-}
-
-.home-value-card {
-  padding: 1.5rem 1.25rem;
-  background: linear-gradient(145deg, rgba(22, 22, 24, 0.95) 0%, rgba(14, 14, 16, 0.98) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.22);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
-}
-
-.home-value-icon {
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-  color: var(--gold);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  background: rgba(212, 175, 55, 0.06);
-}
-
-.home-value-title {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--white);
-  letter-spacing: 0.04em;
-}
-
-.home-value-text {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.68);
-}
-
-/* --- Parcours --- */
-.home-journey-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-}
-
-.home-journey-row {
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 2rem;
-  align-items: center;
-}
-
-.home-journey-row--flip {
-  direction: rtl;
-}
-
-.home-journey-row--flip .home-journey-copy,
-.home-journey-row--flip .home-journey-media {
-  direction: ltr;
-}
-
-.home-journey-media {
-  position: relative;
-  border-radius: 2px;
-  overflow: hidden;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-}
-
-.home-journey-media img {
-  width: 100%;
-  height: min(320px, 42vw);
-  object-fit: cover;
-  display: block;
-}
-
-.home-journey-step {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 2;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.28em;
-  color: var(--black);
-  background: var(--gold);
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--black);
-}
-
-.home-journey-copy h3 {
-  margin: 0 0 0.65rem;
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: var(--gold);
-}
-
-.home-journey-copy p {
-  margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-/* --- Espaces plateforme --- */
-.home-spaces-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.35rem;
-}
-
-.home-space-card {
-  display: block;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-  cursor: pointer;
-  background: #101012;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  color: inherit;
-  font: inherit;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
-}
-
-.home-space-card:hover {
-  border-color: var(--gold);
-  transform: translate(-3px, -3px);
-  box-shadow: 10px 10px 0 0 var(--black);
-}
-
-.home-space-media {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-}
-
-.home-space-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.45s ease;
-}
-
-.home-space-card:hover .home-space-media img {
-  transform: scale(1.04);
-}
-
-.home-space-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(8, 8, 10, 0.85) 100%);
+  top: 0;
+  bottom: 0;
+  width: 120px; /* Width of the monumental side columns */
+  z-index: -1; /* Push beneath the chamber content */
   pointer-events: none;
 }
 
-.home-space-body {
-  padding: 1.1rem 1.15rem 1.25rem;
+/* Left Lower Pillar */
+.home-lower-realm::before {
+  left: 0;
+  background: 
+    /* Sharp 1px Gold Accent Line at the edge */
+    linear-gradient(to right, transparent 115px, rgba(212, 175, 55, 0.25) 115px, rgba(212, 175, 55, 0.5) 117px, transparent 118px),
+    /* Architectural shadow depth */
+    linear-gradient(to right, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.8) 100%),
+    /* Brutalist fluting lines */
+    repeating-linear-gradient(to right, transparent, transparent 24px, rgba(0,0,0,0.5) 25px, rgba(0,0,0,0.8) 26px),
+    #111; /* Foundation color */
+  border-right: 3px solid var(--black);
 }
 
-.home-space-body h3 {
-  margin: 0 0 0.4rem;
-  font-size: 0.88rem;
+/* Right Lower Pillar */
+.home-lower-realm::after {
+  right: 0;
+  background: 
+    /* Sharp 1px Gold Accent Line at the edge */
+    linear-gradient(to left, transparent 115px, rgba(212, 175, 55, 0.25) 115px, rgba(212, 175, 55, 0.5) 117px, transparent 118px),
+    /* Architectural shadow depth */
+    linear-gradient(to left, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.8) 100%),
+    /* Brutalist fluting lines */
+    repeating-linear-gradient(to left, transparent, transparent 24px, rgba(0,0,0,0.5) 25px, rgba(0,0,0,0.8) 26px),
+    #111; /* Foundation color */
+  border-left: 3px solid var(--black);
+}
+
+/* ─── Eyebrow label (shared) ─────────────────────────────── */
+.home-eyebrow {
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--white);
-}
-
-.home-space-body p {
-  margin: 0 0 0.65rem;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.home-space-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.4em;
   text-transform: uppercase;
   color: var(--gold);
+  opacity: 0.8;
+  margin: 0 0 0.75rem;
 }
 
-/* --- CTA --- */
-.home-cta-band {
+/* ─── Section header (shared) ────────────────────────────── */
+.home-section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.home-section-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1.1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   I — THE GRAND ATRIUM
+   Full-viewport entrance. Scale is the gateway.
+═══════════════════════════════════════════════════════════ */
+
+.home-atrium {
   position: relative;
-  margin: 3rem calc(50% - 50vw) 0;
-  width: 100vw;
-  max-width: 100vw;
-  min-height: 340px;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  background-color: #0a0a0a; /* Deep charcoal */
+  /* Divine Spotlight effect behind the central elements */
+  background-image: 
+    radial-gradient(circle at 75% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 25% 50%, rgba(212, 175, 55, 0.03) 0%, transparent 40%);
+  border-bottom: 2px solid var(--black);
 }
 
-.home-cta-media {
+/* ── The Central Separating Pillar ── */
+.home-atrium::before {
+  content: '';
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/pillar.png');
+  /* Placed exactly between the text (left 45%) and the scale (right 50%) */
+  background-position: 45% center;
+  background-repeat: no-repeat;
+  /* Massive architectural size */
+  background-size: auto 160%;
+  opacity: 0.15;
+  z-index: 1;
+  pointer-events: none;
+  filter: sepia(0.6) saturate(0.5) contrast(1.2);
 }
 
-.home-cta-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.home-cta-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, rgba(10, 10, 12, 0.92) 0%, rgba(10, 10, 12, 0.72) 55%, rgba(10, 10, 12, 0.45) 100%);
-}
-
-.home-cta-inner {
+.home-atrium-inner {
   position: relative;
   z-index: 2;
-  max-width: 560px;
-  padding: 2.5rem 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 4rem;
+  /* Side-by-side: text left, scale right */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  min-height: 90vh; /* Lift slightly to ensure hitzones are in viewport */
+  margin-top: -2rem;
+}
+
+.home-atrium-headline {
+  flex: 0 0 50%; /* Give it more width to push left */
+  text-align: left;
+  margin-bottom: 0;
+  padding-right: 4rem; /* Separates the text from the middle pillars & scale */
+}
+
+.home-atrium-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em; /* Tighter for that premium editorial look */
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 0.95;
+  filter: drop-shadow(0 0 30px rgba(255,255,255,0.1));
+}
+
+.home-atrium-sub {
+  margin: 0;
+  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+}
+
+.home-atrium-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  margin: 1.5rem 0;
+  opacity: 0.8;
+}
+
+.home-atrium-scale {
+  flex: 0 0 50%;
+  /* Let it breathe — no clipping, no max-height */
+  width: 100%;
+  max-width: 500px;
+}
+
+.home-atrium-hint {
+  margin-top: 2rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(212,175,55,0.45);
+  animation: pulseHint 2.5s ease-in-out infinite;
   text-align: center;
 }
 
-.home-cta-icon {
-  color: var(--gold);
-  margin-bottom: 0.75rem;
-  opacity: 0.9;
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
-.home-cta-inner h2 {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+/* Responsive: stack vertically on mobile */
+@media (max-width: 900px) {
+  .home-atrium-inner {
+    flex-direction: column;
+    padding: 5rem 1.5rem 5rem;
+    gap: 1.5rem;
+    min-height: 100vh;
+    justify-content: center;
+  }
+  .home-atrium-headline {
+    text-align: center;
+    flex: none;
+  }
+  .home-atrium-scale {
+    flex: none;
+    max-width: 340px;
+  }
+}
+
+/* ── THE GREAT LEDGER (Ticker) ── */
+.great-ledger {
+  position: absolute;
+  bottom: 0px;
+  left: 0;
+  width: 100%;
+  height: 42px;
+  background: var(--charcoal);
+  border-top: 1px solid rgba(212, 175, 55, 0.35); /* Elegant gold top border */
+  border-bottom: 2px solid var(--black);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+
+.great-ledger-track {
+  display: flex;
+  width: max-content;
+  animation: ledgerScroll 60s linear infinite;
+  align-items: center;
+}
+
+.great-ledger-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  padding-right: 3rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.gl-hilite {
+  color: var(--gold);
+}
+
+@keyframes ledgerScroll {
+  100% { transform: translateX(-50%); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   II — THE CHAMBERS OF LAW
+   Monolithic door banners. No photos.
+═══════════════════════════════════════════════════════════ */
+
+.home-chambers {
+  padding: 5rem 2rem 5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.home-chambers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.home-chamber-door {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  padding: 1.5rem 2rem;
+  background: var(--charcoal);
+  border: 4px solid var(--black);
+  border-top: none; /* Stack seamlessly */
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  position: relative;
+}
+
+/* First door gets a top border */
+.home-chamber-door:first-child {
+  border-top: 4px solid var(--black);
+}
+
+.home-chamber-door::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--gold);
+  transition: width 0.2s ease;
+}
+
+.home-chamber-door:hover {
+  background: #111108;
+  border-color: var(--gold);
+}
+
+.home-chamber-door:hover::after {
+  width: 4px;
+}
+
+.home-chamber-code {
+  font-size: 0.55rem;
   font-weight: 800;
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  opacity: 0.6;
+  min-width: 2rem;
+}
+
+.home-chamber-icon-wrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(212,175,55,0.3);
+  color: var(--gold);
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.home-chamber-door:hover .home-chamber-icon-wrap {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.08);
+}
+
+.home-chamber-text {
+  flex: 1;
+}
+
+.home-chamber-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: var(--white);
 }
 
-.home-cta-inner p {
-  margin: 0 0 1.35rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.home-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* --- Footer page --- */
-.home-footer {
-  max-width: 720px;
-  margin: 3rem auto 0;
-  padding: 2rem 1.5rem 3rem;
-  text-align: center;
-  border-top: 1px solid rgba(212, 175, 55, 0.15);
-}
-
-.home-footer-brand {
-  margin: 0 0 0.35rem;
+.home-chamber-subtitle {
+  margin: 0;
   font-size: 0.75rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.03em;
+}
+
+.home-chamber-arrow {
+  color: var(--gold);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+}
+
+.home-chamber-door:hover .home-chamber-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   III — THE SACRED CODEX
+   Three articles. Pure typography.
+═══════════════════════════════════════════════════════════ */
+
+.home-codex {
+  padding: 5rem 2rem 5rem;
+  max-width: 860px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(212,175,55,0.12);
+}
+
+.home-codex-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.home-codex-article {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 2.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.home-codex-article:last-child {
+  border-bottom: none;
+}
+
+.home-codex-roman {
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 900;
+  color: rgba(212,175,55,0.12);
+  line-height: 1;
+  min-width: 4rem;
+  flex-shrink: 0;
+  text-align: center;
+  font-variant-numeric: oldstyle-nums;
+  transition: color 0.3s ease;
+}
+
+.home-codex-article:hover .home-codex-roman {
+  color: rgba(212,175,55,0.4);
+}
+
+.home-codex-content {
+  flex: 1;
+  padding-top: 0.5rem;
+}
+
+.home-codex-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.35em;
   text-transform: uppercase;
   color: var(--gold);
 }
 
-.home-footer-tag {
-  margin: 0 0 0.75rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.home-footer-photo {
+.home-codex-body {
   margin: 0;
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.65);
 }
 
-@media (max-width: 960px) {
-  .home-values-grid {
-    grid-template-columns: 1fr;
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .home-chamber-door {
+    padding: 1.25rem 1.25rem;
+    gap: 1rem;
   }
-
-  .home-spaces-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .home-chamber-subtitle {
+    display: none;
   }
-
-  .home-journey-row,
-  .home-journey-row--flip {
-    grid-template-columns: 1fr;
-    direction: ltr;
+  .home-codex-article {
+    gap: 1rem;
+    padding: 1.75rem 0;
   }
-
-  .home-journey-media img {
-    height: 240px;
-  }
-}
-
-@media (max-width: 560px) {
-  .home-spaces-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .home-hero-inner {
-    padding: 2.25rem 1.25rem 2.5rem;
-  }
-
-  .home-hero-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .home-hero-btn {
-    width: 100%;
-    justify-content: center;
+  .home-codex-roman {
+    min-width: 2.5rem;
+    font-size: 2.5rem;
   }
 }

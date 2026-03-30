@@ -1,0 +1,312 @@
+/* ─── THE WITNESS REGISTRY (Creative Footer) ──────────────── */
+.witness-registry {
+  position: relative;
+  background: var(--black);
+  /* No padding-top needed — the registry-header fills that space now */
+  padding-top: 0;
+  overflow: clip;
+}
+
+/* ── Registry Header (fills the void above the folder tabs) ── */
+.registry-header {
+  padding: 1.5rem 2rem 1.25rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.registry-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.registry-header-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212, 175, 55, 0.3), transparent);
+  display: block;
+}
+
+.registry-header-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  color: rgba(212, 175, 55, 0.45);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+/* Scrolling legal maxims ticker */
+.registry-header-ticker {
+  overflow: hidden;
+  width: 100%;
+}
+
+.registry-ticker-track {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  animation: registryTicker 35s linear infinite;
+  align-items: center;
+}
+
+.registry-ticker-track span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.registry-ticker-track .rtick-sep {
+  color: rgba(212, 175, 55, 0.3);
+  letter-spacing: 0;
+}
+
+@keyframes registryTicker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+
+.registry-container {
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.registry-folder {
+  flex: 1;
+  position: relative;
+  /* Folder body hidden below the registry floor; only the tab sticks up */
+  transform: translateY(100%);
+  transition: transform 0.42s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.registry-folder:hover {
+  transform: translateY(0%);
+}
+
+/* Tab — always visible, positioned above the hidden folder body */
+.registry-tab {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  min-width: 180px;
+  background: var(--charcoal);
+  border: 2px solid rgba(212, 175, 55, 0.2);
+  border-bottom: none;
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  cursor: pointer;
+  transform: translateY(2px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.registry-folder:hover .registry-tab {
+  background: #1a1a0a;
+  border-color: rgba(212, 175, 55, 0.6);
+  transform: translateY(0);
+}
+
+.tab-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.25em;
+  opacity: 0.55;
+}
+
+.tab-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white);
+  transition: color 0.2s ease;
+}
+
+.registry-folder:hover .tab-title {
+  color: var(--gold);
+}
+
+/* Drawer body — revealed as folder rises */
+.registry-content {
+  background: var(--charcoal);
+  border: 2px solid rgba(212, 175, 55, 0.15);
+  border-bottom: none;
+  border-right: none;
+  padding: 2rem 1.75rem;
+  min-height: 160px;
+}
+
+.registry-folder:last-child .registry-content {
+  border-right: 2px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Drawer content fades in with a slight delay */
+.registry-content-inner {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease 0.15s, transform 0.3s ease 0.15s;
+}
+
+.registry-folder:hover .registry-content-inner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Inside the drawer ─── */
+.registry-desc {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.6);
+  margin: 0 0 1.25rem;
+  line-height: 1.65;
+}
+
+.registry-link {
+  display: block;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-decoration: none;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.04em;
+  transition: text-shadow 0.2s ease;
+}
+
+.registry-link:hover {
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+}
+
+.registry-detail {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.06em;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.registry-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.registry-grid li button {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65);
+  font: inherit;
+  font-size: 0.72rem;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  padding: 0.5rem 0;
+  display: block;
+  width: 100%;
+}
+
+.registry-grid li:last-child button {
+  border-bottom: none;
+}
+
+.registry-grid li button:hover {
+  color: var(--gold);
+}
+
+.registry-socials {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.social-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: block;
+  transition: color 0.15s ease;
+}
+
+.social-pill:last-child {
+  border-bottom: none;
+}
+
+.social-pill:hover {
+  color: var(--gold);
+}
+
+/* Bottom Copyright Slab */
+.registry-bottom-bar {
+  background: var(--black);
+  padding: 1rem 2rem;
+  text-align: center;
+  border-top: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.registry-copyright {
+  margin: 0;
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  color: rgba(212, 175, 55, 0.25);
+  text-transform: uppercase;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .witness-registry {
+    padding-top: 0;
+  }
+  .registry-container {
+    flex-direction: column;
+  }
+  .registry-folder {
+    transform: translateY(0);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  }
+  .registry-folder:last-child {
+    border-bottom: none;
+  }
+  .registry-tab {
+    position: static;
+    transform: none;
+    border: none;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    padding: 1.25rem 1.5rem;
+  }
+  .registry-folder:hover .registry-tab {
+    transform: none;
+  }
+  .registry-content {
+    border: none;
+    padding: 1.25rem 1.5rem 2rem;
+    min-height: auto;
+  }
+  .registry-content-inner {
+    opacity: 1;
+    transform: none;
+  }
+  .registry-folder:last-child .registry-content {
+    border-right: none;
+  }
+}

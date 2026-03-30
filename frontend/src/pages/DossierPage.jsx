@@ -70,12 +70,13 @@ const DossierPage = () => {
     <div className="dossier-page">
       {/* Header */}
       <div className="dossier-header">
-        <div className="dossier-header-tag">📝 Archives de Vérité · أرشيف الحقيقة</div>
+        <div className="dossier-header-tag">ARCHIVES DE VÉRITÉ · CHR. III</div>
         <h1 className="dossier-title">VOS DOSSIERS JURIDIQUES</h1>
+        <div style={{ marginTop: '1rem', height: '1px', background: 'var(--gold)', width: '200px', opacity: 0.3 }} />
       </div>
 
       <div className="dossier-content">
-        {/* Left: The Manila Folders List */}
+        {/* Left: The Archive Index */}
         <aside className="dossier-list">
           <div className="dossier-list-header">
             <span>INDEX DES AFFAIRES</span>
@@ -92,34 +93,31 @@ const DossierPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
               >
-                <span className="folder-tab-text">SCELLES OFFICIELS</span>
-                
                 <div className={`status-seal status-${reclamation.statut}`}>
                   {getStatusIcon(reclamation.statut)}
                 </div>
 
                 <div className="case-folder-id">{reclamation.id}</div>
-                <div className="case-folder-title">{reclamation.titre}</div>
-                <div className="case-folder-meta">
-                  <span>Catégorie: {reclamation.categorie}</span>
-                  <span>Gravité: {reclamation.gravite}</span>
+                <div className="case-folder-title">{reclamation.titre.toUpperCase()}</div>
+                <div style={{ marginTop: '1rem', fontSize: '0.6rem', color: 'rgba(212,175,55,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  STATUT: {reclamation.statut}
                 </div>
               </motion.div>
             ))}
           </div>
         </aside>
 
-        {/* Right: The Open File */}
+        {/* Right: The Open Archive */}
         <main>
           <AnimatePresence mode="wait">
             {activeCase ? (
               <motion.div
                 key={activeCase.id}
                 className="dossier-record"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.4 }}
               >
                 <div className="dossier-paper">
                   <div className="dossier-paper-content">
