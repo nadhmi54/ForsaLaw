@@ -29,6 +29,7 @@ public class RendezVousService {
     private final UserService userService;
     private final AvocatAgendaService avocatAgendaService;
     private final RdvNotificationEmailService rdvNotificationEmailService;
+    private final JitsiMeetingService jitsiMeetingService;
 
     private static final Set<StatutRendezVous> STATUTS_OCCUPES = Set.of(StatutRendezVous.PROPOSE, StatutRendezVous.CONFIRME);
 
@@ -148,8 +149,13 @@ public class RendezVousService {
         if (rdv.getStatutRendezVous() != StatutRendezVous.PROPOSE) {
             throw new IllegalArgumentException("Aucune proposition a accepter.");
         }
+        if (rdv.getTypeRendezVous() == TypeRendezVous.EN_LIGNE
+                && (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank())) {
+            rdv.setMeetingUrl(jitsiMeetingService.generateMeetingUrl(rdv));
+        }
         rdv.setStatutRendezVous(StatutRendezVous.CONFIRME);
         rdv = rendezVousRepository.save(rdv);
+        rdvNotificationEmailService.notifyConfirmation(rdv.getIdRendezVous());
         return toDTO(rdv);
     }
 
@@ -286,6 +292,7 @@ public class RendezVousService {
                 rdv.getCreePar(),
                 rdv.getRaisonAnnulation(),
                 rdv.getCommentaireAvocat(),
+                rdv.getMeetingUrl(),
                 rdv.getDateCreation(),
                 rdv.getDateMiseAJour()
         );

@@ -53,6 +53,9 @@ public class RendezVous {
     @Column(length = 1000)
     private String commentaireAvocat;
 
+    @Column(length = 1000)
+    private String meetingUrl;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dateCreation;
 
