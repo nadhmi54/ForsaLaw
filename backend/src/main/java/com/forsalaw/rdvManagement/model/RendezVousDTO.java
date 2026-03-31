@@ -28,6 +28,7 @@ public class RendezVousDTO {
     private CreePar creePar;
     private String raisonAnnulation;
     private String commentaireAvocat;
+    private String meetingUrl;
     private LocalDateTime dateCreation;
     private LocalDateTime dateMiseAJour;
 }

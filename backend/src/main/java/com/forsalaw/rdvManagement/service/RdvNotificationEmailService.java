@@ -108,6 +108,54 @@ public class RdvNotificationEmailService {
         });
     }
 
+    public void notifyConfirmation(String idRendezVous) {
+        rendezVousRepository.findByIdWithClientAndAvocat(idRendezVous).ifPresent(rdv -> {
+            if (rdv.getStatutRendezVous() != StatutRendezVous.CONFIRME) {
+                return;
+            }
+            String debut = rdv.getDateHeureDebut() != null ? FMT.format(rdv.getDateHeureDebut()) : "—";
+            String fin = rdv.getDateHeureFin() != null ? FMT.format(rdv.getDateHeureFin()) : "—";
+            boolean enLigne = rdv.getTypeRendezVous() == com.forsalaw.rdvManagement.entity.TypeRendezVous.EN_LIGNE;
+            String meetingUrl = (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank()) ? null : rdv.getMeetingUrl().trim();
+            String blocFormat = enLigne
+                    ? "<p style=\"margin:0 0 16px;color:#0f172a;\"><strong>Format :</strong> En ligne (visioconférence)</p>"
+                    : "<p style=\"margin:0 0 16px;color:#0f172a;\"><strong>Format :</strong> Cabinet / présentiel</p>";
+            String blocLien = (enLigne && meetingUrl != null)
+                    ? """
+                      <p style="margin:0 0 18px;line-height:1.65;color:#334155;">Votre lien de réunion est prêt :</p>
+                      <p style="margin:0 0 20px;">
+                        <a href="%s" style="display:inline-block;background:#0f766e;color:#ffffff !important;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;">Rejoindre la réunion</a>
+                      </p>
+                      <p style="margin:0;color:#64748b;font-size:13px;word-break:break-all;">%s</p>
+                      """.formatted(escape(meetingUrl), escape(meetingUrl))
+                    : "";
+
+            if (prefs(rdv.getClient().getId(), UserNotificationPreferences::isEmailRdvCreneauPropose)) {
+                String avocatNom = rdv.getAvocat().getUser().getPrenom() + " " + rdv.getAvocat().getUser().getNom();
+                String inner = """
+                        <p style="margin:0 0 14px;">Bonjour,</p>
+                        <p style="margin:0 0 18px;line-height:1.65;">Votre rendez-vous avec <strong>%s</strong> a été <strong>confirmé</strong>.</p>
+                        %s
+                        %s
+                        %s
+                        """.formatted(escape(avocatNom), blocHoraires(debut, fin), blocFormat, blocLien);
+                sendHtml(rdv.getClient().getEmail(), "ForsaLaw — Rendez-vous confirmé", wrapLayout("Confirmation de rendez-vous", inner));
+            }
+
+            if (prefs(rdv.getAvocat().getUser().getId(), UserNotificationPreferences::isEmailRdvDemandeRecue)) {
+                String clientNom = rdv.getClient().getPrenom() + " " + rdv.getClient().getNom();
+                String inner = """
+                        <p style="margin:0 0 14px;">Bonjour,</p>
+                        <p style="margin:0 0 18px;line-height:1.65;">Le rendez-vous avec <strong>%s</strong> est désormais <strong>confirmé</strong>.</p>
+                        %s
+                        %s
+                        %s
+                        """.formatted(escape(clientNom), blocHoraires(debut, fin), blocFormat, blocLien);
+                sendHtml(rdv.getAvocat().getUser().getEmail(), "ForsaLaw — Rendez-vous confirmé", wrapLayout("Confirmation de rendez-vous", inner));
+            }
+        });
+    }
+
     public void notifyRappelJ1(RendezVous rdv) {
         if (rdv.getDateHeureDebut() == null) {
             return;
