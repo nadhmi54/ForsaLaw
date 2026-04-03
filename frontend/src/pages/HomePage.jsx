@@ -1,6 +1,19 @@
-import { motion } from 'framer-motion'
+import { useState, useId } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { FileText, Users, MessageCircle, Sparkles, Shield, UserCog, ArrowRight } from 'lucide-react'
+import {
+  FileText,
+  Users,
+  Sparkles,
+  Shield,
+  UserCog,
+  Landmark,
+  Calendar,
+  ChevronDown,
+  Lock,
+  UserCheck,
+  MapPin,
+} from 'lucide-react'
 import HeroScale from '../components/HeroScale'
 import '../styles/HomePage.css'
 import '../styles/FooterRegistry.css'
@@ -12,49 +25,26 @@ const fadeUp = {
   transition: { duration: 0.6, ease: [0.45, 0, 0.55, 1] },
 }
 
-const CHAMBERS = [
-  {
-    page: 'cases',
-    icon: FileText,
-    code: '01',
-    titleFr: 'Archives de Vérité',
-    subtitleFr: 'Vos dossiers juridiques, classifiés.',
-  },
-  {
-    page: 'lawyers',
-    icon: Users,
-    code: '02',
-    titleFr: 'Tableau du Barreau',
-    subtitleFr: 'Trouvez votre avocat parmi l\'élite.',
-  },
-  {
-    page: 'forum',
-    icon: MessageCircle,
-    code: '03',
-    titleFr: 'La Place Publique',
-    subtitleFr: 'La voix du peuple, en session ouverte.',
-  },
-  {
-    page: 'ai',
-    icon: Sparkles,
-    code: '04',
-    titleFr: 'Sanctuaire de Fellawra',
-    subtitleFr: 'Intelligence légale à votre service.',
-  },
-  {
-    page: 'client-space',
-    icon: UserCog,
-    code: '05',
-    titleFr: 'Espace Citoyen',
-    subtitleFr: 'Votre dossier personnel, sécurisé.',
-  },
-  {
-    page: 'lawyer-space',
-    icon: Shield,
-    code: '06',
-    titleFr: 'Cabinet de l\'Avocat',
-    subtitleFr: 'Gérez vos causes avec autorité.',
-  },
+const FAQ_ITEMS = [
+  { code: '01', icon: Users, qKey: 'home_faq_q1', aKey: 'home_faq_a1' },
+  { code: '02', icon: Calendar, qKey: 'home_faq_q2', aKey: 'home_faq_a2' },
+  { code: '03', icon: FileText, qKey: 'home_faq_q3', aKey: 'home_faq_a3' },
+  { code: '04', icon: Shield, qKey: 'home_faq_q4', aKey: 'home_faq_a4' },
+  { code: '05', icon: Sparkles, qKey: 'home_faq_q5', aKey: 'home_faq_a5' },
+  { code: '06', icon: UserCog, qKey: 'home_faq_q6', aKey: 'home_faq_a6' },
+]
+
+const TRUST_PILLARS = [
+  { icon: Lock, titleKey: 'home_trust_p1_title', bodyKey: 'home_trust_p1_body' },
+  { icon: UserCheck, titleKey: 'home_trust_p2_title', bodyKey: 'home_trust_p2_body' },
+  { icon: Shield, titleKey: 'home_trust_p3_title', bodyKey: 'home_trust_p3_body' },
+  { icon: MapPin, titleKey: 'home_trust_p4_title', bodyKey: 'home_trust_p4_body' },
+]
+
+const ABOUT_BLOCKS = [
+  { icon: Landmark, titleKey: 'home_about_card1_title', bodyKey: 'home_about_card1_body' },
+  { icon: Shield, titleKey: 'home_about_card2_title', bodyKey: 'home_about_card2_body' },
+  { icon: Calendar, titleKey: 'home_about_card3_title', bodyKey: 'home_about_card3_body' },
 ]
 
 const CODEX_ARTICLES = [
@@ -77,14 +67,16 @@ const CODEX_ARTICLES = [
 
 export default function HomePage({ onNavigate }) {
   const { t } = useTranslation()
+  const [openFaq, setOpenFaq] = useState(null)
+  const faqBaseId = useId()
 
   return (
     <motion.main
       className="home-page"
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
     >
       {/* ═══════════════════════════════════════════════════════
           SECTION I — THE GRAND ATRIUM
@@ -130,47 +122,194 @@ export default function HomePage({ onNavigate }) {
       <div className="home-lower-realm">
 
       {/* ═══════════════════════════════════════════════════════
-          SECTION II — THE CHAMBERS OF LAW
-          Monolithic door banners, no stock photos.
+          TRUST — Pourquoi nous (sans chiffres ni logos tant qu’absents)
       ═══════════════════════════════════════════════════════ */}
-      <section className="home-chambers">
+      <section className="home-trust" aria-labelledby="home-trust-heading">
         <motion.div className="home-section-header" {...fadeUp}>
-          <p className="home-eyebrow">Navigation</p>
-          <h2 className="home-section-title">Les Chambres du Palais</h2>
+          <p className="home-eyebrow">{t('home_trust_eyebrow')}</p>
+          <h2 id="home-trust-heading" className="home-section-title">
+            {t('home_trust_title')}
+          </h2>
+        </motion.div>
+        <ul className="home-trust-grid">
+          {TRUST_PILLARS.map((pillar, i) => {
+            const Icon = pillar.icon
+            return (
+              <motion.li
+                key={pillar.titleKey}
+                className="home-trust-item"
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.45, delay: i * 0.07, ease: [0.45, 0, 0.55, 1] }}
+              >
+                <div className="home-trust-icon" aria-hidden>
+                  <Icon size={22} strokeWidth={1.4} />
+                </div>
+                <h3 className="home-trust-item-title">{t(pillar.titleKey)}</h3>
+                <p className="home-trust-item-body">{t(pillar.bodyKey)}</p>
+              </motion.li>
+            )
+          })}
+        </ul>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          SECTION — WHO WE ARE (before Chambers)
+      ═══════════════════════════════════════════════════════ */}
+      <section className="home-about" aria-labelledby="home-about-heading">
+        <motion.div className="home-section-header" {...fadeUp}>
+          <p className="home-eyebrow">{t('home_about_eyebrow')}</p>
+          <h2 id="home-about-heading" className="home-section-title">
+            {t('home_about_title')}
+          </h2>
         </motion.div>
 
-        <div className="home-chambers-list">
-          {CHAMBERS.map((chamber, i) => {
-            const Icon = chamber.icon
+        <motion.p
+          className="home-about-lead"
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.65, ease: [0.45, 0, 0.55, 1], delay: 0.06 }}
+        >
+          {t('home_about_lead')}
+        </motion.p>
+
+        <motion.div
+          className="home-about-seal"
+          aria-hidden="true"
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: '-30px' }}
+          transition={{ duration: 0.5, delay: 0.12 }}
+        >
+          <span className="home-about-seal-line" />
+          <span className="home-about-seal-icon">⚖</span>
+          <span className="home-about-seal-line" />
+        </motion.div>
+
+        <div className="home-about-grid">
+          {ABOUT_BLOCKS.map((block, i) => {
+            const Icon = block.icon
             return (
-              <motion.button
-                key={chamber.page}
-                className="home-chamber-door"
-                onClick={() => onNavigate?.(chamber.page)}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -24 : 24 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ type: "spring", stiffness: 120, damping: 14, delay: i * 0.08 }}
-                whileHover="hovered"
+              <motion.article
+                key={block.titleKey}
+                className="home-about-card"
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-45px' }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 110,
+                  damping: 15,
+                  delay: i * 0.1,
+                }}
               >
-                <span className="home-chamber-code">{chamber.code}</span>
-                <div className="home-chamber-icon-wrap">
-                  <Icon size={22} strokeWidth={1.5} />
+                <div className="home-about-card-icon">
+                  <Icon size={26} strokeWidth={1.35} aria-hidden />
                 </div>
-                <div className="home-chamber-text">
-                  <h3 className="home-chamber-title">{chamber.titleFr}</h3>
-                  <p className="home-chamber-subtitle">{chamber.subtitleFr}</p>
-                </div>
-                <motion.span
-                  className="home-chamber-arrow"
-                  variants={{
-                    hovered: { x: 6, opacity: 1 },
-                    initial: { x: 0, opacity: 0.4 }
-                  }}
+                <h3 className="home-about-card-title">{t(block.titleKey)}</h3>
+                <p className="home-about-card-body">{t(block.bodyKey)}</p>
+              </motion.article>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          SECTION II — FAQ (toggle answers, no navigation)
+      ═══════════════════════════════════════════════════════ */}
+      <section className="home-faq" aria-labelledby="home-faq-heading">
+        <motion.div className="home-section-header" {...fadeUp}>
+          <p className="home-eyebrow">{t('home_faq_eyebrow')}</p>
+          <h2 id="home-faq-heading" className="home-section-title">
+            {t('home_faq_title')}
+          </h2>
+          <p className="home-faq-subtitle">{t('home_faq_subtitle')}</p>
+        </motion.div>
+
+        <div className="home-faq-list" role="list">
+          {FAQ_ITEMS.map((item, i) => {
+            const Icon = item.icon
+            const isOpen = openFaq === i
+            const panelId = `${faqBaseId}-panel-${i}`
+            const triggerId = `${faqBaseId}-trigger-${i}`
+            return (
+              <motion.div
+                key={item.qKey}
+                className={`home-faq-row${isOpen ? ' home-faq-row--open' : ''}`}
+                role="listitem"
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ type: 'spring', stiffness: 120, damping: 16, delay: i * 0.06 }}
+              >
+                <div
+                  className={`home-faq-question-cell${isOpen ? ' home-faq-question-cell--open' : ''}`}
                 >
-                  <ArrowRight size={20} />
-                </motion.span>
-              </motion.button>
+                  <button
+                    type="button"
+                    id={triggerId}
+                    className={`home-faq-trigger${isOpen ? ' home-faq-trigger--open' : ''}`}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                  >
+                    <span className="home-faq-code">{item.code}</span>
+                    <div className="home-faq-icon-wrap">
+                      <Icon size={22} strokeWidth={1.5} aria-hidden />
+                    </div>
+                    <span className="home-faq-question">{t(item.qKey)}</span>
+                    <ChevronDown
+                      className={`home-faq-chevron${isOpen ? ' home-faq-chevron--open' : ''}`}
+                      size={22}
+                      strokeWidth={1.75}
+                      aria-hidden
+                    />
+                  </button>
+                </div>
+
+                <div className="home-faq-answer-slot" aria-hidden={!isOpen}>
+                  <AnimatePresence initial={false} mode="wait">
+                    {isOpen && (
+                      <motion.div
+                        key={panelId}
+                        id={panelId}
+                        role="region"
+                        aria-labelledby={triggerId}
+                        className="home-faq-pixel-wrap"
+                        initial={{ opacity: 0, scale: 0.96, x: 8 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.98, x: 6 }}
+                        transition={{ duration: 0.24, ease: [0.45, 0, 0.55, 1] }}
+                      >
+                        <div className="home-faq-bubble-cluster">
+                          <div className="home-faq-pixel-bridge" aria-hidden>
+                            {/* Queue « BD » : 3 pixels + 5 marches vers la bulle (comme la capture) */}
+                            <div className="home-faq-pixel-tail-stack">
+                              <div className="home-faq-pixel-dots-row">
+                                <span className="home-faq-pixel-dot" />
+                                <span className="home-faq-pixel-dot" />
+                                <span className="home-faq-pixel-dot" />
+                              </div>
+                              <span className="home-faq-pixel-seg home-faq-pixel-seg--5" />
+                              <span className="home-faq-pixel-seg home-faq-pixel-seg--4" />
+                              <span className="home-faq-pixel-seg home-faq-pixel-seg--3" />
+                              <span className="home-faq-pixel-seg home-faq-pixel-seg--2" />
+                              <span className="home-faq-pixel-seg home-faq-pixel-seg--1" />
+                            </div>
+                          </div>
+                          <div className="home-faq-pixel-bubble">
+                            <p className="home-faq-pixel-text" dir="auto">
+                              {t(item.aKey)}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
             )
           })}
         </div>

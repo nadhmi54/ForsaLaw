@@ -256,194 +256,104 @@
   background: #f0f0f0;
 }
 
-/* --- Fellawra intro overlay --- */
-.intro-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: var(--charcoal);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-}
-
-.intro-dialogue {
-  background: var(--white);
-  color: var(--black);
-  border: var(--border-width) solid var(--black);
-  box-shadow: var(--shadow-lg);
-  padding: 2rem 3rem;
-  max-width: 600px;
-  text-align: center;
-  position: relative;
-}
-
-.intro-dialogue::before {
-  content: '⚖';
-  position: absolute;
-  top: -1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2rem;
-  background: var(--charcoal);
-  padding: 0 0.5rem;
-  color: var(--gold);
-}
-
-.intro-dialogue p {
-  font-size: 1.1rem;
-  line-height: 1.7;
-  font-style: italic;
-}
-
-.intro-name {
-  color: var(--gold);
-  font-weight: 800;
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-top: 1rem;
-  display: block;
-}
-
-.intro-continue-btn {
-  margin-top: 2rem;
-}
-
 /* Contenu principal (les pages ne sont montées que quand !isPageLoading) */
 .app-main-shell {
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
-/* --- ForsaLaw loading : overlay transparent (le fond app / colonnes reste visible) --- */
+/* --- ForsaLaw loading (Suspense) : cercle + animation, portail → body --- */
 .forsalaw-loading-root {
   position: fixed;
   inset: 0;
-  z-index: 200;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 250;
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
-.forsalaw-loading-inner {
-  position: relative;
-  width: min(360px, 88vw);
+.forsalaw-loading-root--video {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-}
-
-.forsalaw-loading-float,
-.forsalaw-loading-swing {
-  display: flex;
   justify-content: center;
-  align-items: center;
+  padding: 1rem;
+  background: transparent;
 }
 
-.forsalaw-loading-logo-wrap {
-  position: relative;
-  border-radius: 14px;
-  padding: 0.45rem;
-  /* Petit panneau crème uniquement autour du logo (lisibilité), pas tout l’écran */
-  background:
-    radial-gradient(circle at 50% 38%, rgba(196, 231, 230, 0.35) 0%, transparent 58%),
-    linear-gradient(145deg, rgba(246, 243, 235, 0.94) 0%, rgba(246, 243, 235, 0.82) 100%);
-  box-shadow:
-    0 14px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(201, 162, 39, 0.22),
-    0 0 32px rgba(196, 231, 230, 0.25);
-}
-
-.forsalaw-loading-logo-img {
-  width: min(128px, 36vw);
-  height: auto;
-  display: block;
-  border-radius: 10px;
-  filter:
-    drop-shadow(0 2px 1px rgba(0, 0, 0, 0.04))
-    drop-shadow(0 10px 22px rgba(0, 0, 0, 0.07))
-    drop-shadow(0 0 28px rgba(201, 162, 39, 0.18))
-    drop-shadow(0 0 42px rgba(196, 231, 230, 0.35));
-}
-
-.forsalaw-loading-brand {
+.forsalaw-loading-orbit {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 3.75rem;
-  text-align: center;
+  justify-content: center;
+  line-height: 0;
 }
 
-.forsalaw-loading-title {
+/* Petit cercle (cadre) : même esprit que l’ancien loader logo */
+.forsalaw-loading-circle-frame {
+  width: min(132px, 34vw);
+  height: min(132px, 34vw);
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid rgba(201, 162, 39, 0.5);
+  background: rgba(12, 12, 14, 0.65);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Vidéo décodée hors écran ; canvas remplit le cercle (keying blanc en JS). */
+.forsalaw-loading-video-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.forsalaw-loading-video-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
+
+.forsalaw-loading-video-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  background: transparent;
+}
+
+.forsalaw-loading-fallback-text {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  padding: 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gold);
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  line-height: 1.5;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.75);
 }
 
-.forsalaw-loading-tagline {
-  margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.72);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
-}
-
-.forsalaw-loading-indicators {
-  width: 100%;
-  max-width: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.forsalaw-loading-dots {
-  display: flex;
-  gap: 0.45rem;
-  align-items: center;
-}
-
-.forsalaw-loading-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #b8942e, #c4e7e6);
-  box-shadow: 0 0 10px rgba(196, 231, 230, 0.6);
-}
-
-.forsalaw-loading-bar-track {
-  position: relative;
-  width: 100%;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-}
-
-.forsalaw-loading-bar-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 38%;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(196, 231, 230, 0.2),
-    rgba(201, 162, 39, 0.85),
-    rgba(196, 231, 230, 0.45)
-  );
-  box-shadow: 0 0 12px rgba(201, 162, 39, 0.25);
+.forsalaw-loading-fallback-text--circle {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
 }
 
 /* --- Hero --- */
@@ -545,7 +455,7 @@
 .arch-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   display: flex;
   justify-content: space-around;

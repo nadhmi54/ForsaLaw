@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutGrid, FileText, Users, Sparkles, Shield, Menu, X, MessageCircle, Award, UserCog, ArrowRight, Mail, Lock, User, MessageSquare, Calendar as LucideCalendar } from 'lucide-react'
@@ -6,39 +6,28 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import AppErrorBoundary from './components/AppErrorBoundary'
 import RouteLoadingScreen from './components/RouteLoadingScreen'
 import ScrollToTop from './components/ScrollToTop'
-import HomePage from './pages/HomePage'
-import ForumPage from './pages/ForumPage'
-import LawyersPage from './pages/LawyersPage'
-import DossierPage from './pages/DossierPage'
-import LawyerDashboardPage from './pages/LawyerDashboardPage'
-import ClientSpacePage from './pages/ClientSpacePage'
-import SupportPage from './pages/SupportPage'
-import CalendarPage from './pages/CalendarPage'
+import ScrollToTopButton from './components/ScrollToTopButton'
+import SiteVideoBackground from './components/SiteVideoBackground'
 import './styles/App.css'
+import { lazyRoute } from './utils/lazyRoute'
 
-const AiSanctumPage = lazy(() => import('./pages/AiSanctumPage'))
-const AdminSpacePage = lazy(() => import('./pages/AdminSpacePage'))
-const InboxPage = lazy(() => import('./pages/InboxPage'))
-
-// Whether user has seen the intro
-const INTRO_TEXT = {
-  fr: '"Bienvenue dans le Palais de la Justice. Je suis Fellawra — votre conseil légal. Choisissez votre chemin et je vous guiderai."',
-  ar: '"مرحباً في قصر العدالة. أنا فيلورا — مستشارتك القانونية. اختر طريقك وسأرشدك."',
-  en: '"Welcome to the Palace of Justice. I am Fellawra — your legal counsel. Choose your path and I shall guide you."',
-}
+const HomePage = lazyRoute(() => import('./pages/HomePage'))
+const ForumPage = lazyRoute(() => import('./pages/ForumPage'))
+const LawyersPage = lazyRoute(() => import('./pages/LawyersPage'))
+const DossierPage = lazyRoute(() => import('./pages/DossierPage'))
+const LawyerDashboardPage = lazyRoute(() => import('./pages/LawyerDashboardPage'))
+const ClientSpacePage = lazyRoute(() => import('./pages/ClientSpacePage'))
+const SupportPage = lazyRoute(() => import('./pages/SupportPage'))
+const CalendarPage = lazyRoute(() => import('./pages/CalendarPage'))
+const AiSanctumPage = lazyRoute(() => import('./pages/AiSanctumPage'))
+const AdminSpacePage = lazyRoute(() => import('./pages/AdminSpacePage'))
+const InboxPage = lazyRoute(() => import('./pages/InboxPage'))
 
 function App() {
   const { t, i18n } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
   const [isNavOpen,   setIsNavOpen]   = useState(false)
-  const [showIntro,   setShowIntro]   = useState(() => {
-    try {
-      return window.localStorage.getItem('forsalaw:introSeen') !== '1'
-    } catch {
-      return true
-    }
-  })
   const [authMode, setAuthMode] = useState(null) // 'login' | 'register' | 'forgot' | null
   const authCardRef = useRef(null)
   const lastActiveElRef = useRef(null)
@@ -62,21 +51,11 @@ function App() {
         setIsNavOpen(false)
         return
       }
-
-      if (showIntro) {
-        e.preventDefault()
-        try {
-          window.localStorage.setItem('forsalaw:introSeen', '1')
-        } catch {
-          // ignore
-        }
-        setShowIntro(false)
-      }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [authMode, isNavOpen, showIntro])
+  }, [authMode, isNavOpen])
 
   useEffect(() => {
     if (!authMode) return
@@ -147,7 +126,6 @@ function App() {
     i18n.changeLanguage(cycle[i18n.language] ?? 'fr')
   }
 
-  const introText = INTRO_TEXT[i18n.language] ?? INTRO_TEXT.fr
   const isInboxRoute = location.pathname === '/inbox'
 
   const navigateToPageKey = (pageKey) => {
@@ -172,60 +150,14 @@ function App() {
   return (
     <div className={`app-root${isInboxRoute ? ' app-root--inbox' : ''}`}>
       <ScrollToTop />
+      <ScrollToTopButton />
+      <SiteVideoBackground />
       {/* Architectural background columns */}
       <div className="arch-bg">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="arch-column" />
         ))}
       </div>
-
-      {/* Fellawra Introduction Overlay */}
-      <AnimatePresence>
-        {showIntro && (
-          <motion.div
-            className="intro-overlay"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.8 } }}
-          >
-            {/* Fellawra glow circle for atmosphere */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              style={{
-                width: 120, height: 120, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%)',
-                marginBottom: '1rem'
-              }}
-            />
-            <motion.div
-              className="intro-dialogue"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.7 }}
-            >
-              <p>{introText}</p>
-              <span className="intro-name">— Fellawra, Gardienne de la Justice</span>
-            </motion.div>
-            <motion.button
-              className="brutal-btn intro-continue-btn"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              onClick={() => {
-                try {
-                  window.localStorage.setItem('forsalaw:introSeen', '1')
-                } catch {
-                  // ignore
-                }
-                setShowIntro(false)
-              }}
-            >
-              {i18n.language === 'ar' ? t('intro_continue_ar') : t('intro_continue')}
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Nav Toggle Button */}
       <motion.button
@@ -252,51 +184,32 @@ function App() {
 
       <div className="app-main-shell">
         <AppErrorBoundary>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <Routes location={location}>
-                <Route path="/" element={<HomePage onNavigate={navigateToPageKey} />} />
-                <Route path="/forum" element={<ForumPage />} />
-                <Route path="/lawyers" element={<LawyersPage />} />
-                <Route path="/cases" element={<DossierPage />} />
-                <Route
-                  path="/ai"
-                  element={
-                    <Suspense fallback={<RouteLoadingScreen />}>
-                      <AiSanctumPage />
-                    </Suspense>
-                  }
-                />
-                <Route path="/lawyer-space" element={<LawyerDashboardPage />} />
-                <Route path="/client-space" element={<ClientSpacePage />} />
-                <Route
-                  path="/admin-space"
-                  element={
-                    <Suspense fallback={<RouteLoadingScreen />}>
-                      <AdminSpacePage />
-                    </Suspense>
-                  }
-                />
-                <Route path="/support" element={<SupportPage />} />
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route
-                  path="/inbox"
-                  element={
-                    <Suspense fallback={<RouteLoadingScreen />}>
-                      <InboxPage />
-                    </Suspense>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
+          <Suspense fallback={<RouteLoadingScreen />}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Routes location={location}>
+                  <Route path="/" element={<HomePage onNavigate={navigateToPageKey} />} />
+                  <Route path="/forum" element={<ForumPage />} />
+                  <Route path="/lawyers" element={<LawyersPage />} />
+                  <Route path="/cases" element={<DossierPage />} />
+                  <Route path="/ai" element={<AiSanctumPage />} />
+                  <Route path="/lawyer-space" element={<LawyerDashboardPage />} />
+                  <Route path="/client-space" element={<ClientSpacePage />} />
+                  <Route path="/admin-space" element={<AdminSpacePage />} />
+                  <Route path="/support" element={<SupportPage />} />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/inbox" element={<InboxPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </AppErrorBoundary>
       </div>
 

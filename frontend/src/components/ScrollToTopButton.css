@@ -1,0 +1,63 @@
+.scroll-to-top-scales {
+  position: fixed;
+  z-index: 45;
+  bottom: 1.25rem;
+  inset-inline-end: 1.25rem;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  line-height: 0;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.scroll-to-top-scales:focus {
+  outline: none;
+}
+
+.scroll-to-top-scales:focus-visible img {
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.75)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
+}
+
+.scroll-to-top-scales img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
+}
+
+.scroll-to-top-scales:hover img {
+  filter: drop-shadow(0 3px 12px rgba(212, 175, 55, 0.35));
+}
+
+.scroll-to-top-scales:focus-visible:hover img {
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.75))
+    drop-shadow(0 3px 12px rgba(212, 175, 55, 0.35));
+}
+
+.scroll-to-top-scales:active img {
+  transform: translateY(1px);
+}
+
+@media (max-width: 480px) {
+  .scroll-to-top-scales {
+    bottom: 1rem;
+    inset-inline-end: 1rem;
+  }
+
+  .scroll-to-top-scales img {
+    width: 48px;
+    height: 48px;
+  }
+}
