@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Clock, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Clock, ChevronLeft, ChevronRight, Plus, Video } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import '../styles/Calendar.css'
 
 const DAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM']
@@ -19,16 +20,17 @@ const generateMockAvril2026 = () => {
     let type = null;
     let subject = null;
     let time = null;
+    let hasVirtual = false;
     
     // Some mock data
     if (i === 2) { type = 'booked'; subject = 'Signature Requête'; time = '14:30'; }
-    else if (i === 9) { type = 'booked'; subject = 'Conseil Juridique'; time = '10:00'; }
+    else if (i === 9) { type = 'booked'; subject = 'Conseil Juridique'; time = '10:00'; hasVirtual = true; }
     else if (i === 15) { type = 'available'; }
     else if (i === 16) { type = 'available'; }
     else if (i === 23) { type = 'available'; }
     else if (i === 28) { type = 'booked'; subject = 'Audience Tribunal'; time = '09:00'; }
     
-    days.push({ id: `avr-${i}`, day: i, type, subject, time, inactive: false });
+    days.push({ id: `avr-${i}`, day: i, type, subject, time, hasVirtual, inactive: false });
   }
   
   // Next month padding (Mai 1 - 3)
@@ -42,6 +44,7 @@ const generateMockAvril2026 = () => {
 const MOCK_CALENDAR_DAYS = generateMockAvril2026();
 
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const [currentMonth, setCurrentMonth] = useState("AVRIL 2026")
   
   return (
@@ -53,11 +56,11 @@ export default function CalendarPage() {
     >
       <header className="calendar-top">
         <div>
-          <div className="calendar-eyebrow">CHAMBRE IV · PLANIFICATION JURIDIQUE</div>
-          <h1 className="calendar-title">CALENDRIER DE JUSTICE</h1>
+          <div className="calendar-eyebrow">{t('calendar_tag')}</div>
+          <h1 className="calendar-title">{t('calendar_title')}</h1>
           <div className="calendar-title-divider" />
           <p className="platform-subtitle" style={{ marginBottom: 0 }}>
-            Réservez une séance solennelle avec vos conseillers légaux ou consultez vos audiences prévues.
+            {t('calendar_subtitle')}
           </p>
         </div>
 
@@ -86,12 +89,17 @@ export default function CalendarPage() {
                 <div className="calendar-appt">
                   <Clock size={10} style={{ flexShrink: 0 }} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{dayObj.subject}</span>
+                  {dayObj.hasVirtual && (
+                    <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.2rem', color: 'var(--gold)' }}>
+                      <Video size={10} /> <span style={{ fontSize: '0.5rem', whiteSpace: 'nowrap' }}>{t('calendar_join')}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
               {!dayObj.inactive && dayObj.type === 'available' && (
                 <div className="calendar-available">
-                  <Plus size={12} /> CRÉNEAU
+                  <Plus size={12} /> {t('calendar_slot')}
                 </div>
               )}
             </div>
@@ -102,11 +110,11 @@ export default function CalendarPage() {
       <div className="calendar-legend">
          <div className="legend-item">
             <span className="legend-swatch booked" />
-            AUDIENCE RÉSERVÉE
+            {t('calendar_reserved')}
          </div>
          <div className="legend-item">
             <span className="legend-swatch available" />
-            CRENEAU VACANT
+            {t('calendar_vacant')}
          </div>
       </div>
     </motion.main>

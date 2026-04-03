@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Calendar, MessageSquare, FilePlus2, LogOut, User, ChevronRight } from 'lucide-react'
+import { FileText, Calendar, MessageSquare, FilePlus2, LogOut, User, ChevronRight, Video } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import '../styles/PlatformSpaces.css'
 
 // ─── Mock data ─────────────────────────────────────────────
@@ -23,17 +24,18 @@ const MOCK_APPOINTMENTS = [
   { day: '09', month: 'AVR', subject: 'Conseil Juridique · Phase II', avocat: 'Me. K. Ouertani', time: '10:00 → 11:00', type: 'Visioconférence' },
 ]
 
-const CLIENT_NAV = [
-  { key: 'cases',       label: 'Mes Dossiers',    icon: <FileText size={16} /> },
-  { key: 'appointments', label: 'Mes Rendez-vous', icon: <Calendar size={16} /> },
-  { key: 'messages',    label: 'Messagerie',      icon: <MessageSquare size={16} /> },
-  { key: 'profile',     label: 'Mon Profil',      icon: <User size={16} /> },
-]
-
 export default function ClientSpacePage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('cases')
 
   const initials = (p, n) => ((p?.[0] ?? '') + (n?.[0] ?? '')).toUpperCase()
+
+  const CLIENT_NAV = [
+    { key: 'cases',       label: t('client_nav_cases'),    icon: <FileText size={16} /> },
+    { key: 'appointments', label: t('client_nav_appointments'), icon: <Calendar size={16} /> },
+    { key: 'messages',    label: t('client_nav_messages'),      icon: <MessageSquare size={16} /> },
+    { key: 'profile',     label: t('client_nav_profile'),      icon: <User size={16} /> },
+  ]
 
   return (
     <motion.main
@@ -43,11 +45,11 @@ export default function ClientSpacePage() {
       exit={{ opacity: 0 }}
     >
       {/* Header */}
-      <p className="platform-eyebrow">Espace Personnel · Portail Client</p>
-      <h1 className="platform-title">Mon Espace</h1>
+      <p className="platform-eyebrow">{t('client_space_tag')}</p>
+      <h1 className="platform-title">{t('client_space_title')}</h1>
       <div className="platform-title-divider" />
       <p className="platform-subtitle">
-        Suivez l'évolution de vos dossiers, consultez vos audiences et correspondez avec vos conseillers.
+        {t('client_space_subtitle')}
       </p>
 
       <div className="client-layout">
@@ -66,7 +68,7 @@ export default function ClientSpacePage() {
             <div className="client-profile-email">{MOCK_CLIENT.email}</div>
             <span className="role-badge client">{MOCK_CLIENT.role}</span>
             <div style={{ marginTop: 12, fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace', letterSpacing: '0.2em' }}>
-              MEMBRE DEPUIS {MOCK_CLIENT.memberSince}
+              {t('client_member_since')} {MOCK_CLIENT.memberSince}
             </div>
           </div>
 
@@ -87,19 +89,19 @@ export default function ClientSpacePage() {
 
           {/* Quick actions */}
           <div className="platform-section-header" style={{ marginTop: 'auto', borderTop: '4px solid var(--black)' }}>
-            <span className="platform-section-title">Actions Rapides</span>
+            <span className="platform-section-title">{t('client_quick_actions')}</span>
           </div>
           <button className="quick-action-btn">
             <FilePlus2 size={16} />
-            Déposer un dossier
+            {t('client_action_new_case')}
           </button>
           <button className="quick-action-btn">
             <MessageSquare size={16} />
-            Contacter mon avocat
+            {t('client_action_contact')}
           </button>
           <button className="quick-action-btn" style={{ color: 'rgba(255,107,107,0.5)' }}>
             <LogOut size={16} style={{ color: 'rgba(255,107,107,0.5)' }} />
-            Se déconnecter
+            {t('client_action_logout')}
           </button>
         </div>
 
@@ -112,9 +114,9 @@ export default function ClientSpacePage() {
               <div className="platform-section-header">
                 <span className="platform-section-title">
                   <FileText size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  Vos Dossiers Actifs
+                  {t('client_cases_active')}
                 </span>
-                <span className="platform-section-badge">{MOCK_CASES.length} DOSSIERS</span>
+                <span className="platform-section-badge">{MOCK_CASES.length} {t('client_cases_count')}</span>
               </div>
               {MOCK_CASES.map((c, i) => (
                 <motion.div
@@ -143,9 +145,9 @@ export default function ClientSpacePage() {
               <div className="platform-section-header">
                 <span className="platform-section-title">
                   <Calendar size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  Vos Rendez-vous à Venir
+                  {t('client_appts_upcoming')}
                 </span>
-                <span className="platform-section-badge">{MOCK_APPOINTMENTS.length} PLANIFIÉS</span>
+                <span className="platform-section-badge">{MOCK_APPOINTMENTS.length} {t('client_appts_count')}</span>
               </div>
               {MOCK_APPOINTMENTS.map((a, i) => (
                 <motion.div
@@ -163,7 +165,14 @@ export default function ClientSpacePage() {
                     <div className="appt-subject">{a.subject}</div>
                     <div className="appt-meta">{a.avocat} · {a.time} · {a.type}</div>
                   </div>
-                  <span className="status-badge-admin open">CONFIRMÉ</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <span className="status-badge-admin open">{t('client_appts_confirmed')}</span>
+                    {a.type === 'Visioconférence' && (
+                      <button className="brutal-btn" style={{ padding: '0.25rem 0.75rem', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#333' }}>
+                        <Video size={12} /> {t('client_appts_join')}
+                      </button>
+                    )}
+                  </div>
                 </motion.div>
               ))}
             </>
@@ -173,10 +182,10 @@ export default function ClientSpacePage() {
           {activeTab === 'messages' && (
             <>
               <div className="platform-section-header">
-                <span className="platform-section-title">Messagerie</span>
+                <span className="platform-section-title">{t('client_nav_messages')}</span>
               </div>
               <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'rgba(255,255,255,0.15)', fontSize: '0.65rem', letterSpacing: '0.3em', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-                Accédez à la Malle Postale Sécurisée via le menu principal
+                {t('client_msg_notice')}
               </div>
             </>
           )}
@@ -185,14 +194,14 @@ export default function ClientSpacePage() {
           {activeTab === 'profile' && (
             <>
               <div className="platform-section-header">
-                <span className="platform-section-title">Informations du Compte</span>
+                <span className="platform-section-title">{t('client_profile_info')}</span>
               </div>
               {[
-                { label: 'Prénom', value: MOCK_CLIENT.prenom },
-                { label: 'Nom', value: MOCK_CLIENT.nom },
-                { label: 'Adresse Email', value: MOCK_CLIENT.email },
-                { label: 'Rôle', value: MOCK_CLIENT.role },
-                { label: 'Membre depuis', value: MOCK_CLIENT.memberSince },
+                { label: t('client_profile_fn'), value: MOCK_CLIENT.prenom },
+                { label: t('client_profile_ln'), value: MOCK_CLIENT.nom },
+                { label: t('client_profile_email'), value: MOCK_CLIENT.email },
+                { label: t('client_profile_role'), value: MOCK_CLIENT.role },
+                { label: t('client_member_since'), value: MOCK_CLIENT.memberSince },
               ].map(field => (
                 <div key={field.label} className="case-row" style={{ gridTemplateColumns: '160px 1fr' }}>
                   <div style={{ fontSize: '0.55rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -205,7 +214,7 @@ export default function ClientSpacePage() {
               ))}
               <div style={{ padding: '16px 22px' }}>
                 <button className="brutal-btn" style={{ fontSize: '0.65rem', padding: '0.75rem 1.5rem' }}>
-                  Modifier mon profil
+                  {t('client_profile_edit')}
                 </button>
               </div>
             </>

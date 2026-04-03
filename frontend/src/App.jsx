@@ -1,34 +1,24 @@
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutGrid, FileText, Users, Sparkles, Shield, Menu, X, MessageCircle, Award, UserCog, ArrowRight, Mail, Lock, User, MessageSquare, Calendar as LucideCalendar } from 'lucide-react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import AppErrorBoundary from './components/AppErrorBoundary'
+import RouteLoadingScreen from './components/RouteLoadingScreen'
+import ScrollToTop from './components/ScrollToTop'
+import HomePage from './pages/HomePage'
 import ForumPage from './pages/ForumPage'
 import LawyersPage from './pages/LawyersPage'
 import DossierPage from './pages/DossierPage'
-import AiSanctumPage from './pages/AiSanctumPage'
 import LawyerDashboardPage from './pages/LawyerDashboardPage'
 import ClientSpacePage from './pages/ClientSpacePage'
-import AdminSpacePage from './pages/AdminSpacePage'
 import SupportPage from './pages/SupportPage'
 import CalendarPage from './pages/CalendarPage'
-import InboxPage from './pages/InboxPage'
-import ForsaLawLoadingScreen from './components/ForsaLawLoadingScreen'
-import HomePage from './pages/HomePage'
 import './styles/App.css'
 
-const NAV_ITEMS = [
-  { key: 'nav_home', page: 'home', icon: <LayoutGrid size={28} /> },
-  { key: 'nav_cases', page: 'cases', icon: <FileText size={28} /> },
-  { key: 'nav_support', page: 'support', icon: <MessageSquare size={28} /> },
-  { key: 'nav_calendar', page: 'calendar', icon: <LucideCalendar size={28} /> },
-  { key: 'nav_inbox', page: 'inbox', icon: <Mail size={28} /> },
-  { key: 'nav_lawyers', page: 'lawyers', icon: <Users size={28} /> },
-  { key: 'nav_client_space', page: 'client-space', icon: <UserCog size={28} /> },
-  { key: 'nav_lawyer_space', page: 'lawyer-space', icon: <Award size={28} /> },
-  { key: 'nav_forum', page: 'forum', icon: <MessageCircle size={28} /> },
-  { key: 'nav_ai', page: 'ai', icon: <Sparkles size={28} /> },
-  { key: 'nav_admin', page: 'admin-space', icon: <Shield size={28} /> },
-]
+const AiSanctumPage = lazy(() => import('./pages/AiSanctumPage'))
+const AdminSpacePage = lazy(() => import('./pages/AdminSpacePage'))
+const InboxPage = lazy(() => import('./pages/InboxPage'))
 
 // Whether user has seen the intro
 const INTRO_TEXT = {
@@ -39,58 +29,118 @@ const INTRO_TEXT = {
 
 function App() {
   const { t, i18n } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isNavOpen,   setIsNavOpen]   = useState(false)
-  const [showIntro,   setShowIntro]   = useState(true)
-  const [currentPage, setCurrentPage] = useState('home')
-  const [isPageLoading, setIsPageLoading] = useState(true)
-  /** D’abord logo seul, puis texte (timing juridique premium) */
-  const [loadingShowMessage, setLoadingShowMessage] = useState(false)
+  const [showIntro,   setShowIntro]   = useState(() => {
+    try {
+      return window.localStorage.getItem('forsalaw:introSeen') !== '1'
+    } catch {
+      return true
+    }
+  })
   const [authMode, setAuthMode] = useState(null) // 'login' | 'register' | 'forgot' | null
-  const loadTimerRef = useRef(null)
-  const loadMsgTimerRef = useRef(null)
-
-  const navigateTo = (page) => {
-    setIsNavOpen(false)
-    if (page === currentPage) return
-
-    if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
-    if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
-
-    setIsPageLoading(true)
-    setLoadingShowMessage(false)
-
-    loadMsgTimerRef.current = window.setTimeout(() => {
-      setLoadingShowMessage(true)
-    }, 1500)
-
-    loadTimerRef.current = window.setTimeout(() => {
-      setCurrentPage(page)
-      setIsPageLoading(false)
-      setLoadingShowMessage(false)
-    }, 3000)
-  }
+  const authCardRef = useRef(null)
+  const lastActiveElRef = useRef(null)
 
   useEffect(() => {
     document.body.dir = i18n.dir()
   }, [i18n.language])
 
   useEffect(() => {
-    if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
-    if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return
 
-    const tLogoOnly = setTimeout(() => setLoadingShowMessage(true), 1500)
-    const tEnd = setTimeout(() => {
-      setIsPageLoading(false)
-      setLoadingShowMessage(false)
-    }, 3200)
+      if (authMode) {
+        e.preventDefault()
+        setAuthMode(null)
+        return
+      }
 
-    return () => {
-      clearTimeout(tLogoOnly)
-      clearTimeout(tEnd)
-      if (loadTimerRef.current) clearTimeout(loadTimerRef.current)
-      if (loadMsgTimerRef.current) clearTimeout(loadMsgTimerRef.current)
+      if (isNavOpen) {
+        e.preventDefault()
+        setIsNavOpen(false)
+        return
+      }
+
+      if (showIntro) {
+        e.preventDefault()
+        try {
+          window.localStorage.setItem('forsalaw:introSeen', '1')
+        } catch {
+          // ignore
+        }
+        setShowIntro(false)
+      }
     }
-  }, [])
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [authMode, isNavOpen, showIntro])
+
+  useEffect(() => {
+    if (!authMode) return
+
+    lastActiveElRef.current = document.activeElement
+
+    const root = authCardRef.current
+    const focusable = root?.querySelector(
+      'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable) {
+      focusable.focus()
+    }
+
+    const onTrap = (e) => {
+      if (e.key !== 'Tab') return
+      const container = authCardRef.current
+      if (!container) return
+
+      const els = Array.from(
+        container.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')
+      ).filter((el) => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'))
+
+      if (els.length === 0) return
+
+      const first = els[0]
+      const last = els[els.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first || !container.contains(document.activeElement)) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onTrap)
+    return () => {
+      window.removeEventListener('keydown', onTrap)
+      const lastActive = lastActiveElRef.current
+      if (lastActive && typeof lastActive.focus === 'function') {
+        lastActive.focus()
+      }
+    }
+  }, [authMode])
+
+  const NAV_ITEMS = useMemo(() => ([
+    { key: 'nav_home', path: '/', icon: <LayoutGrid size={28} /> },
+    { key: 'nav_cases', path: '/cases', icon: <FileText size={28} /> },
+    { key: 'nav_support', path: '/support', icon: <MessageSquare size={28} /> },
+    { key: 'nav_calendar', path: '/calendar', icon: <LucideCalendar size={28} /> },
+    { key: 'nav_inbox', path: '/inbox', icon: <Mail size={28} /> },
+    { key: 'nav_lawyers', path: '/lawyers', icon: <Users size={28} /> },
+    { key: 'nav_client_space', path: '/client-space', icon: <UserCog size={28} /> },
+    { key: 'nav_lawyer_space', path: '/lawyer-space', icon: <Award size={28} /> },
+    { key: 'nav_forum', path: '/forum', icon: <MessageCircle size={28} /> },
+    { key: 'nav_ai', path: '/ai', icon: <Sparkles size={28} /> },
+    { key: 'nav_admin', path: '/admin-space', icon: <Shield size={28} /> },
+  ]), [])
 
   const toggleLanguage = () => {
     const cycle = { fr: 'ar', ar: 'en', en: 'fr' }
@@ -98,9 +148,30 @@ function App() {
   }
 
   const introText = INTRO_TEXT[i18n.language] ?? INTRO_TEXT.fr
+  const isInboxRoute = location.pathname === '/inbox'
+
+  const navigateToPageKey = (pageKey) => {
+    const map = {
+      home: '/',
+      cases: '/cases',
+      support: '/support',
+      calendar: '/calendar',
+      inbox: '/inbox',
+      lawyers: '/lawyers',
+      'client-space': '/client-space',
+      'lawyer-space': '/lawyer-space',
+      forum: '/forum',
+      ai: '/ai',
+      'admin-space': '/admin-space',
+    }
+    const path = map[pageKey] ?? '/'
+    setIsNavOpen(false)
+    navigate(path)
+  }
 
   return (
-    <div className={`app-root${currentPage === 'inbox' ? ' app-root--inbox' : ''}`}>
+    <div className={`app-root${isInboxRoute ? ' app-root--inbox' : ''}`}>
+      <ScrollToTop />
       {/* Architectural background columns */}
       <div className="arch-bg">
         {[...Array(8)].map((_, i) => (
@@ -108,9 +179,9 @@ function App() {
         ))}
       </div>
 
-      {/* Fellawra Introduction Overlay — après le loading initial */}
+      {/* Fellawra Introduction Overlay */}
       <AnimatePresence>
-        {showIntro && !isPageLoading && (
+        {showIntro && (
           <motion.div
             className="intro-overlay"
             initial={{ opacity: 1 }}
@@ -141,18 +212,18 @@ function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
-              onClick={() => setShowIntro(false)}
+              onClick={() => {
+                try {
+                  window.localStorage.setItem('forsalaw:introSeen', '1')
+                } catch {
+                  // ignore
+                }
+                setShowIntro(false)
+              }}
             >
-              {i18n.language === 'ar' ? 'أدخل القصر' : 'Entrer dans le Palais →'}
+              {i18n.language === 'ar' ? t('intro_continue_ar') : t('intro_continue')}
             </motion.button>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Global loading — LegalTech premium (voir ForsaLawLoadingScreen) */}
-      <AnimatePresence mode="wait">
-        {isPageLoading && (
-          <ForsaLawLoadingScreen key="loading" showBrandText={loadingShowMessage} />
         )}
       </AnimatePresence>
 
@@ -168,10 +239,10 @@ function App() {
       </motion.button>
 
       {/* Auth and language controls — hidden on inbox (app owns the full screen there) */}
-      {currentPage !== 'inbox' && (
+      {!isInboxRoute && (
         <div className="top-right-controls">
           <button className="auth-top-btn" onClick={() => setAuthMode('login')}>
-            Connexion
+            {t('top_login')}
           </button>
           <button className="lang-toggle-btn" onClick={toggleLanguage}>
             {i18n.language.toUpperCase()}
@@ -179,128 +250,54 @@ function App() {
         </div>
       )}
 
-      {/* Pendant le loading : aucune page montée (sinon l’ancienne page joue son exit et flash) */}
       <div className="app-main-shell">
-      {!isPageLoading && (
-      <AnimatePresence mode="wait">
-        {currentPage === 'home' ? (
-          <HomePage key="home" onNavigate={navigateTo} />
-        ) : currentPage === 'forum' ? (
-          <motion.div
-            key="forum"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <ForumPage />
-          </motion.div>
-        ) : currentPage === 'client-space' ? (
-          <motion.div
-            key="client-space"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <ClientSpacePage />
-          </motion.div>
-        ) : currentPage === 'lawyer-space' ? (
-          <motion.div
-            key="lawyer-space"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <LawyerDashboardPage />
-          </motion.div>
-        ) : currentPage === 'support' ? (
-          <motion.div
-            key="support"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <SupportPage />
-          </motion.div>
-        ) : currentPage === 'calendar' ? (
-          <motion.div
-            key="calendar"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <CalendarPage />
-          </motion.div>
-        ) : currentPage === 'inbox' ? (
-          <motion.div
-            key="inbox"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <InboxPage />
-          </motion.div>
-        ) : currentPage === 'ai' ? (
-          <motion.div
-            key="ai"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <AiSanctumPage />
-          </motion.div>
-        ) : currentPage === 'cases' ? (
-          <motion.div
-            key="cases"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <DossierPage />
-          </motion.div>
-        ) : currentPage === 'lawyers' ? (
-          <motion.div
-            key="lawyers"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <LawyersPage />
-          </motion.div>
-        ) : currentPage === 'admin-space' ? (
-          <motion.div
-            key="admin-space"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <AdminSpacePage />
-          </motion.div>
-        ) : (
-          <motion.main
-            key="placeholder"
-            className="hero-section"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
-          >
-            <p style={{ color: 'var(--gold)', fontSize: '0.75rem', letterSpacing: '0.25em', marginBottom: '1rem' }}>CHAMBRE EN CONSTRUCTION</p>
-            <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>{currentPage.toUpperCase()}</h2>
-            <button className="brutal-btn" onClick={() => navigateTo('home')}>← Retour au Grand Palais</button>
-          </motion.main>
-        )}
-      </AnimatePresence>
-      )}
+        <AppErrorBoundary>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Routes location={location}>
+                <Route path="/" element={<HomePage onNavigate={navigateToPageKey} />} />
+                <Route path="/forum" element={<ForumPage />} />
+                <Route path="/lawyers" element={<LawyersPage />} />
+                <Route path="/cases" element={<DossierPage />} />
+                <Route
+                  path="/ai"
+                  element={
+                    <Suspense fallback={<RouteLoadingScreen />}>
+                      <AiSanctumPage />
+                    </Suspense>
+                  }
+                />
+                <Route path="/lawyer-space" element={<LawyerDashboardPage />} />
+                <Route path="/client-space" element={<ClientSpacePage />} />
+                <Route
+                  path="/admin-space"
+                  element={
+                    <Suspense fallback={<RouteLoadingScreen />}>
+                      <AdminSpacePage />
+                    </Suspense>
+                  }
+                />
+                <Route path="/support" element={<SupportPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route
+                  path="/inbox"
+                  element={
+                    <Suspense fallback={<RouteLoadingScreen />}>
+                      <InboxPage />
+                    </Suspense>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </AppErrorBoundary>
       </div>
 
       {/* Full-screen Navigation Gallery */}
@@ -313,7 +310,7 @@ function App() {
             exit={{ opacity: 0 }}
             onClick={() => setIsNavOpen(false)}
           >
-            <p className="nav-gallery-title">— Choisissez votre Destination —</p>
+            <p className="nav-gallery-title">{t('nav_gallery_title')}</p>
             <motion.div
               className="nav-gallery-grid"
               initial={{ scale: 0.9, opacity: 0 }}
@@ -330,7 +327,10 @@ function App() {
                   transition={{ delay: 0.05 * idx }}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => navigateTo(item.page)}
+                  onClick={() => {
+                    setIsNavOpen(false)
+                    navigate(item.path)
+                  }}
                 >
                   {item.icon}
                   <span>{t(item.key)}</span>
@@ -350,6 +350,7 @@ function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setAuthMode(null)}
+            role="presentation"
           >
             <motion.div
               className="auth-modal-card"
@@ -357,6 +358,9 @@ function App() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 22, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              ref={authCardRef}
             >
               <div className="auth-modal-tabs">
                 <button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>Connexion</button>

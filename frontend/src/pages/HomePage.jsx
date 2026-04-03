@@ -150,7 +150,7 @@ export default function HomePage({ onNavigate }) {
                 initial={{ opacity: 0, x: i % 2 === 0 ? -24 : 24 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.06 }}
+                transition={{ type: "spring", stiffness: 120, damping: 14, delay: i * 0.08 }}
                 whileHover="hovered"
               >
                 <span className="home-chamber-code">{chamber.code}</span>
@@ -194,7 +194,7 @@ export default function HomePage({ onNavigate }) {
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.55, delay: i * 0.1 }}
+              transition={{ type: "spring", bounce: 0.4, duration: 0.8, delay: i * 0.1 }}
             >
               <span className="home-codex-roman">{article.roman}</span>
               <div className="home-codex-content">
