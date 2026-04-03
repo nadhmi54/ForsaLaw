@@ -56,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/rendezvous/**").hasRole("CLIENT")
                         .requestMatchers("/api/admin/messenger/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/audit-logs/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/documents/**").hasRole("ADMIN")
+                        .requestMatchers("/api/documents/**").authenticated()
                         .requestMatchers("/api/messenger/avocat/**").hasRole("AVOCAT")
                         .requestMatchers("/api/messenger/**").hasRole("CLIENT")
                         .requestMatchers("/api/audit-logs/**").authenticated()

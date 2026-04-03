@@ -373,7 +373,7 @@ public class MessengerService {
             content = "Piece jointe";
         }
         MessengerMessage m = persistMessageEntity(c, sender, role, content);
-        List<MessengerAttachment> saved = messengerAttachmentService.saveAttachmentsForMessage(m, files);
+        List<MessengerAttachment> saved = messengerAttachmentService.saveAttachmentsForMessage(m, files, sender.getEmail());
         MessengerMessageDTO dto = toMessageDTO(m, viewerEmailForResponse, sender.getId(), saved);
         messengerRealtimePublisher.publishNewMessage(c.getId(), dto);
         return dto;
