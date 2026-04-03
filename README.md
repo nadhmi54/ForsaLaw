@@ -1,101 +1,174 @@
 # ForsaLaw
 
-Plateforme LegalTech tunisienne – IA juridique, RAG, recommandation d'avocats, avatar 3D.
-
-## Structure
-
-- `backend/` – Spring Boot 3, JWT, JPA, PostgreSQL, pgvector, WebSocket
-- `frontend/` – Angular 17+, Material, Three.js
-- `docker/` – Dockerfiles, Nginx
-- `.github/workflows/` – CI/CD
+Plateforme LegalTech tunisienne pour la mise en relation client-avocat, la gestion de rendez-vous (presentiel et en ligne), les notifications, l'authentification securisee et les modules de collaboration.
 
 ---
 
-## Comprendre le workflow Git (explication simple)
+## Overview
 
-Cette section explique **comment on travaille avec Git** sur ForsaLaw, sans supposer que tu connais déjà Git.
+ForsaLaw centralise dans une seule application :
 
-### À quoi sert Git ?
-
-Git permet de :
-- **Sauvegarder** l’historique de ton code (chaque “commit” = une sauvegarde avec un message).
-- **Travailler à plusieurs** sans écraser le travail des autres.
-- **Isoler** ton travail dans une “branche” avant de l’intégrer au projet.
-
-Pense à une branche comme à **une copie du projet** sur laquelle tu travailles. Quand tu as fini et que tout est validé, on “fusionne” cette copie dans le projet commun.
-
-### Les deux branches principales du projet
-
-On utilise deux branches importantes :
-
-| Branche   | Rôle en mots simples |
-|-----------|----------------------|
-| **main**  | C’est le code “officiel” en production. On ne modifie **jamais** directement dessus. |
-| **develop** | C’est la branche où tout le monde intègre son travail. C’est à partir d’elle qu’on crée nos branches de fonctionnalité. |
-
-**Pourquoi ne pas travailler sur main ?**  
-Si tout le monde modifiait directement `main`, les changements se mélangeraient, les erreurs iraient en prod, et on ne pourrait pas revoir le code proprement. En passant par des branches et des “Pull Requests”, on garde le contrôle.
-
-### Le déroulement en pratique (étape par étape)
-
-Voici le cycle normal quand tu ajoutes une nouvelle fonctionnalité.
-
-1. **Tu te mets à jour et tu crées ta branche**
-   - Tu te places sur `develop` et tu récupères la dernière version :  
-     `git checkout develop` puis `git pull origin develop`
-   - Tu crées une nouvelle branche *à partir de develop* (ex. `feature/ma-nouvelle-fonctionnalite`) :  
-     `git checkout -b feature/ma-nouvelle-fonctionnalite`  
-   → À partir de là, tout ton travail se fait sur cette branche, pas sur `develop` ni sur `main`.
-
-2. **Tu travailles et tu sauvegardes (commits)**
-   - Tu modifies le code (backend, frontend, etc.).
-   - Quand tu as fait un ensemble de changements cohérent, tu “commites” :  
-     `git add .` puis `git commit -m "feat: description de ce que tu as fait"`  
-   → Chaque commit = une sauvegarde avec un message (on utilise des préfixes comme `feat:`, `fix:`, `chore:` pour rester cohérents).
-
-3. **Tu envoies ta branche sur GitHub et tu ouvres une Pull Request**
-   - Tu envoies ta branche sur le dépôt distant :  
-     `git push -u origin feature/ma-nouvelle-fonctionnalite`
-   - Sur **GitHub**, tu vas dans **Pull requests** → **New pull request**.
-   - Tu choisis : **base = develop**, **compare = ta branche** (ex. `feature/ma-nouvelle-fonctionnalite`).  
-   → Une “Pull Request” (PR) = une demande pour **fusionner ton code dans develop**. Les autres peuvent voir tes changements, commenter, et la CI (tests/build) tourne automatiquement.
-
-4. **Revue et fusion (merge)**
-   - Une fois la revue OK et la CI verte (build et tests passent), on **merge** la PR dans `develop`.  
-   → Ton code est alors intégré dans `develop`, pas encore dans `main`.
-
-5. **Tu remets ton dépôt local à jour**
-   - Tu repasses sur `develop`, tu récupères les derniers changements (dont ton merge) et tu peux supprimer ta branche locale si tu veux :  
-     `git checkout develop` → `git pull origin develop` → `git branch -d feature/ma-nouvelle-fonctionnalite`
-
-### Quand le code va sur main (production) ?
-
-`main` n’est pas mise à jour à chaque PR. Quand l’équipe décide qu’une version est prête pour la production, on ouvre une **Pull Request develop → main**. Une fois cette PR mergée, le code en prod est à jour. C’est ce qu’on appelle une **release**.
-
-### En résumé visuel
-
-```
-develop  ──►  tu crées feature/xxx  ──►  tu travailles + commits
-                    │
-                    ▼
-            tu push + tu ouvres une PR (feature/xxx → develop)
-                    │
-                    ▼
-            revue + CI OK  ──►  merge dans develop
-                    │
-                    ▼
-            (plus tard)  PR develop → main  ──►  release en prod
-```
-
-### Où sont les commandes exactes ?
-
-Toutes les commandes et les cas particuliers (corriger un bug avec `fix/xxx`, release, etc.) sont dans le guide détaillé :  
-**[docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md)**.
+- la gestion des comptes (`client`, `avocat`, `admin`) ;
+- la prise de rendez-vous avec agenda avance avocat ;
+- les notifications email (demande, proposition, annulation, rappels) ;
+- la visioconference gratuite pour RDV en ligne (Jitsi) ;
+- la securite JWT, OAuth2 Google et flux de reset mot de passe.
 
 ---
 
-## Démarrage
+## Main Features
 
-1. **Base de données (Docker)** : lancer `docker-compose up -d` depuis `backend/`.  
-   Détails complets (pourquoi, comment, pgAdmin) : **[docs/DOCKER.md](docs/DOCKER.md)**.
-2. **Backend** : depuis `backend/`, lancer `ForsaLawApplication` (IntelliJ) ou `mvn spring-boot:run` (le backend se connecte à PostgreSQL sur le port 5433).
+### Authentication and User Management
+
+- inscription / connexion JWT ;
+- OAuth2 Google ;
+- reset password securise par token temporaire ;
+- verrouillage du compte apres 3 tentatives de connexion echouees ;
+- demande de deblocage de compte envoyee a l'admin (`POST /api/auth/request-unlock`).
+
+### Avocat Verification and Admin Flows
+
+- separation claire des endpoints admin profil vs verification avocat ;
+- gestion du statut de verification (`verificationStatus`, `verifie`) ;
+- reactivation admin des comptes bloques.
+
+### RendezVous Management (Advanced)
+
+- cycle de vie RDV (`EN_ATTENTE`, `PROPOSE`, `CONFIRME`, `ANNULE`) ;
+- agenda avocat avance :
+  - configuration agenda,
+  - plages recurrentes,
+  - exceptions ;
+- calcul des creneaux disponibles cote client ;
+- validation anti-conflit avant proposition ;
+- RDV en ligne (Jitsi) avec generation automatique `meetingUrl` a la confirmation ;
+- rappels automatiques J-1 / H-1.
+
+### Notifications
+
+- templates email metier (demande, proposition, annulation, confirmation, rappels) ;
+- preferences de notifications par utilisateur.
+
+### Communication and Collaboration
+
+- modules messenger et reclamation ;
+- endpoints admin de suivi et supervision.
+
+---
+
+## Tech Stack
+
+![Java](https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-JWT-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![React](https://img.shields.io/badge/React-Frontend-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-Dev%20Server-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![OAuth2](https://img.shields.io/badge/OAuth2-Google-EA4335?style=for-the-badge&logo=google&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+
+---
+
+## Project Structure
+
+- `backend/` : API Spring Boot, logique metier, persistance
+- `frontend/` : application front
+- `docs/` : guides techniques et workflow
+- `.github/workflows/` : pipelines CI
+
+---
+
+## Getting Started
+
+### 1) Clone repository
+
+```bash
+git clone https://github.com/ForsaLaw/ForsaLaw.git
+cd ForsaLaw
+```
+
+### 2) Start database
+
+Depuis `backend/` :
+
+```bash
+docker-compose up -d
+```
+
+### 3) Configure environment
+
+Copier `backend/.env.example` vers un fichier `.env` local et renseigner les valeurs necessaires (DB, JWT, SMTP, OAuth2, etc.).
+
+Variables importantes :
+
+- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+- `JWT_SECRET`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`
+- `ADMIN_SUPPORT_EMAIL`
+- `JITSI_BASE_URL`
+
+### 4) Run backend
+
+Depuis `backend/` :
+
+```bash
+mvn spring-boot:run
+```
+
+### 5) Run frontend
+
+Depuis `frontend/` :
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## Important URLs
+
+- Application backend: `http://localhost:8081`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8081/v3/api-docs`
+- Frontend dev (Vite): `http://localhost:3000` (ou port Vite affiche dans terminal)
+
+---
+
+## Git Workflow
+
+Branche cible de travail: `develop`.
+
+Cycle recommande :
+
+1. partir de `develop` a jour ;
+2. creer une branche `feature/...` ou `fix/...` ;
+3. committer avec messages explicites ;
+4. push et ouvrir PR vers `develop` ;
+5. merger apres review + CI verte.
+
+Guide detaille :
+
+- [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md)
+- [docs/DEVOPS.md](docs/DEVOPS.md)
+
+---
+
+## Documentation
+
+- [docs/DOCKER.md](docs/DOCKER.md)
+- [docs/FLYWAY-VS-JPA.md](docs/FLYWAY-VS-JPA.md)
+- [docs/RAG-INTEGRATION-NON-ENDPOINTS.md](docs/RAG-INTEGRATION-NON-ENDPOINTS.md)
+- [docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md](docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md)
+
+---
+
+## Contributors
+
+- Nadhmi Rouissi
+- Youssef Zaied
