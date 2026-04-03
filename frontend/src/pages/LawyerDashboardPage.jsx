@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LayoutDashboard, FileText, MessageSquare, Award, Clock, Search, Filter, Hammer, User } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import '../styles/LawyerDashboard.css'
 
 const MOCK_DOCKET = [
@@ -11,6 +12,7 @@ const MOCK_DOCKET = [
 ]
 
 const LawyerDashboardPage = () => {
+  const { t } = useTranslation()
   const [activeView, setActiveView] = useState('docket')
 
   return (
@@ -30,25 +32,25 @@ const LawyerDashboardPage = () => {
             className={`lawyer-nav-btn ${activeView === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveView('overview')}
           >
-            <LayoutDashboard size={18} /> Aperçu
+            <LayoutDashboard size={18} /> {t('dashboard_overview')}
           </button>
           <button 
             className={`lawyer-nav-btn ${activeView === 'docket' ? 'active' : ''}`}
             onClick={() => setActiveView('docket')}
           >
-            <FileText size={18} /> Le Registre
+            <FileText size={18} /> {t('dashboard_docket')}
           </button>
           <button 
             className={`lawyer-nav-btn ${activeView === 'messages' ? 'active' : ''}`}
             onClick={() => setActiveView('messages')}
           >
-            <MessageSquare size={18} /> Messagerie
+            <MessageSquare size={18} /> {t('dashboard_messages')}
           </button>
           <button 
             className={`lawyer-nav-btn ${activeView === 'awards' ? 'active' : ''}`}
             onClick={() => setActiveView('awards')}
           >
-            <Award size={18} /> Honneurs (XP)
+            <Award size={18} /> {t('dashboard_awards')}
           </button>
         </nav>
       </aside>
@@ -64,7 +66,7 @@ const LawyerDashboardPage = () => {
             {/* Search Input Placeholder */}
             <div className="stat-card" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <Search size={16} color="var(--gold)" />
-              <span style={{ fontSize: '0.8rem', color: '#666' }}>Chercher un dossier...</span>
+              <input type="text" placeholder={t('dashboard_search')} style={{ background: 'transparent', border: 'none', color: '#ccc', width: '100%', outline: 'none', fontFamily: 'Lexend, sans-serif' }} />
             </div>
           </div>
         </header>
@@ -73,39 +75,39 @@ const LawyerDashboardPage = () => {
         <section className="justice-stats-grid">
           <div className="stat-card">
             <div className="stat-value">24</div>
-            <div className="stat-label">PLAIDOIRIES ACTIVES</div>
+            <div className="stat-label">{t('dashboard_active_pleas')}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">98%</div>
-            <div className="stat-label">TAUX DE VERDICT</div>
+            <div className="stat-label">{t('dashboard_win_rate')}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">12.4k</div>
-            <div className="stat-label">EXPÉRIENCE (XP)</div>
+            <div className="stat-label">{t('dashboard_xp')}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">#10</div>
-            <div className="stat-label">RANG NATIONAL</div>
+            <div className="stat-label">{t('dashboard_rank')}</div>
           </div>
         </section>
 
         {/* The Judicial Docket (Case List) */}
         <section className="docket-section">
           <header className="docket-header">
-            <div className="docket-title">LE REGISTRE DES AFFAIRES</div>
+            <div className="docket-title">{t('dashboard_docket_title')}</div>
             <button className="new-case-btn" style={{ background: 'var(--white)', color: 'var(--black)' }}>
-              <Filter size={14} /> FILTRER
+              <Filter size={14} /> {t('dashboard_filter')}
             </button>
           </header>
 
           <table className="docket-table">
             <thead>
               <tr className="docket-row">
-                <th>N° DOSSIER</th>
-                <th>TITRE DE L'AFFAIRE</th>
-                <th>CITOYEN</th>
-                <th>STATUT</th>
-                <th>PRIORITÉ</th>
+                <th>{t('docket_ref')}</th>
+                <th>{t('docket_title')}</th>
+                <th>{t('docket_client')}</th>
+                <th>{t('docket_status')}</th>
+                <th>{t('docket_priority')}</th>
               </tr>
             </thead>
             <tbody>

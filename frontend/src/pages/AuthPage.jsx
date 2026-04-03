@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Lock, Mail, ShieldCheck, ArrowRight, Fingerprint, KeyRound } from 'lucide-react'
+import { User, Lock, Mail, ShieldCheck, ArrowRight, Fingerprint, KeyRound, AlertTriangle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import '../styles/Auth.css'
 
 const AuthPage = () => {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('login')
 
   return (
@@ -17,8 +19,8 @@ const AuthPage = () => {
       >
         {/* Header Ritual */}
         <header className="auth-gate-header">
-          <div className="auth-gate-title">Authentification ForsaLaw</div>
-          <div className="auth-gate-subtitle">Maquettes pretes pour integration API</div>
+          <div className="auth-gate-title">{t('auth_title')}</div>
+          <div className="auth-gate-subtitle">{t('auth_subtitle')}</div>
           
           {/* Decorative Corner Elements */}
           <div style={{ position: 'absolute', top: '10px', left: '10px', opacity: 0.2 }}><ShieldCheck size={24} /></div>
@@ -31,25 +33,32 @@ const AuthPage = () => {
             className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
             onClick={() => setActiveTab('login')}
           >
-            Connexion
+            {t('auth_login')}
           </button>
           <button 
             className={`auth-tab ${activeTab === 'register' ? 'active' : ''}`}
             onClick={() => setActiveTab('register')}
           >
-            Inscription
+            {t('auth_register')}
           </button>
           <button
             className={`auth-tab ${activeTab === 'forgot' ? 'active' : ''}`}
             onClick={() => setActiveTab('forgot')}
           >
-            Mot de passe oublie
+            {t('auth_forgot')}
           </button>
           <button
             className={`auth-tab ${activeTab === 'reset' ? 'active' : ''}`}
             onClick={() => setActiveTab('reset')}
           >
-            Reset token
+            {t('auth_reset')}
+          </button>
+          <button
+            className={`auth-tab ${activeTab === 'locked' ? 'active' : ''}`}
+            onClick={() => setActiveTab('locked')}
+            style={{ color: activeTab === 'locked' ? '#ff6b6b' : 'inherit' }}
+          >
+            {t('auth_locked')}
           </button>
         </nav>
 
@@ -67,33 +76,33 @@ const AuthPage = () => {
             >
               {activeTab === 'register' && (
                 <div className="input-group">
-                  <label className="input-label"><User size={14} /> Nom Complet</label>
-                  <input type="text" className="ritual-input" placeholder="Nom et prenom" />
+                  <label className="input-label"><User size={14} /> {t('auth_fullname')}</label>
+                  <input type="text" className="ritual-input" placeholder={t('auth_fullname_ph')} />
                 </div>
               )}
 
               <div className="input-group">
-                <label className="input-label"><Mail size={14} /> Email</label>
-                <input type="email" className="ritual-input" placeholder="vous@domaine.com" />
+                <label className="input-label"><Mail size={14} /> {t('auth_email')}</label>
+                <input type="email" className="ritual-input" placeholder={t('auth_email_ph')} />
               </div>
 
               {(activeTab === 'login' || activeTab === 'register') && (
                 <div className="input-group">
-                  <label className="input-label"><Lock size={14} /> Mot de passe</label>
+                  <label className="input-label"><Lock size={14} /> {t('auth_pass')}</label>
                   <input type="password" className="ritual-input" placeholder="••••••••" />
                 </div>
               )}
 
               {activeTab === 'register' && (
                 <div className="input-group">
-                  <label className="input-label"><ShieldCheck size={14} /> Role initial</label>
+                  <label className="input-label"><ShieldCheck size={14} /> {t('auth_role')}</label>
                   <input type="text" className="ritual-input" value="CLIENT (automatique)" readOnly />
                 </div>
               )}
 
               {activeTab === 'forgot' && (
                 <div className="input-group">
-                  <label className="input-label"><Mail size={14} /> Endpoint</label>
+                  <label className="input-label"><Mail size={14} /> {t('auth_endpoint')}</label>
                   <input type="text" className="ritual-input" value="POST /api/auth/forgot-password" readOnly />
                 </div>
               )}
@@ -101,31 +110,46 @@ const AuthPage = () => {
               {activeTab === 'reset' && (
                 <>
                   <div className="input-group">
-                    <label className="input-label"><KeyRound size={14} /> Token</label>
-                    <input type="text" className="ritual-input" placeholder="Token recu par email" />
+                    <label className="input-label"><KeyRound size={14} /> {t('auth_token')}</label>
+                    <input type="text" className="ritual-input" placeholder={t('auth_token_ph')} />
                   </div>
                   <div className="input-group">
-                    <label className="input-label"><Lock size={14} /> Nouveau mot de passe</label>
-                    <input type="password" className="ritual-input" placeholder="Nouveau mot de passe" />
+                    <label className="input-label"><Lock size={14} /> {t('auth_new_pass')}</label>
+                    <input type="password" className="ritual-input" placeholder={t('auth_new_pass')} />
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'locked' && (
+                <>
+                  <div className="input-group">
+                    <label className="input-label"><Mail size={14} /> {t('auth_email')}</label>
+                    <input type="email" className="ritual-input" placeholder={t('auth_email_ph')} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label"><AlertTriangle size={14} /> {t('auth_unlock_reason')}</label>
+                    <textarea className="ritual-input" placeholder={t('auth_unlock_reason_ph')} rows={3} style={{ resize: 'none' }} />
                   </div>
                 </>
               )}
 
               <button type="submit" className="auth-submit-btn">
                 {activeTab === 'login'
-                  ? 'POST /api/auth/login'
+                  ? t('auth_btn_login')
                   : activeTab === 'register'
-                    ? 'POST /api/auth/register'
+                    ? t('auth_btn_register')
                     : activeTab === 'forgot'
-                      ? 'Envoyer email reset'
-                      : 'POST /api/auth/reset-password'}
+                      ? t('auth_btn_forgot')
+                      : activeTab === 'reset'
+                        ? t('auth_btn_reset')
+                        : t('auth_btn_unlock')}
                 <ArrowRight size={20} />
               </button>
             </motion.form>
           </AnimatePresence>
 
           <footer className="auth-footer">
-            <p>UI mock uniquement. Integration API backend a brancher ensuite.</p>
+            <p>{t('auth_mock_notice')}</p>
           </footer>
         </div>
       </motion.div>

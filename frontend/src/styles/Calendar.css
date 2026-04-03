@@ -177,9 +177,17 @@
   gap: 4px;
 }
 
+@keyframes strobe {
+  0% { background: rgba(212,175,55,0); color: var(--gold); }
+  50% { background: var(--gold); color: var(--black); }
+  100% { background: rgba(212,175,55,0); color: var(--gold); }
+}
+
 .calendar-available:hover {
-  background: rgba(212,175,55,0.1);
+  background: var(--gold);
+  color: var(--black);
   border-style: solid;
+  animation: strobe 1.5s infinite;
 }
 
 /* --- Legend --- */

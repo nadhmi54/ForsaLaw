@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Fingerprint, FileText, Anchor, History, AlertTriangle, MessageSquare, Send, Shield } from 'lucide-react'
+import { Fingerprint, FileText, Shield, User as UserIcon, UploadCloud } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import '../styles/Dossier.css'
 
 // ─── Mock Data Mapping ReclamationDTO ─────────────────────────────────────────
@@ -51,27 +52,18 @@ const MOCK_RECLAMATIONS = [
   }
 ]
 
-// Icons for the Wax Seals
-const getStatusIcon = (statut) => {
-  switch(statut) {
-    case 'OUVERTE': return <AlertTriangle size={16} />;
-    case 'EN_COURS': return <Anchor size={16} />;
-    case 'RESOLUE': return <Fingerprint size={16} />;
-    case 'FERMEE': return <History size={16} />;
-    default: return <FileText size={16} />;
-  }
-}
 
 // ─── Main Page Component ──────────────────────────────────────────────────────
 const DossierPage = () => {
+  const { t } = useTranslation()
   const [activeCase, setActiveCase] = useState(MOCK_RECLAMATIONS[0])
 
   return (
     <div className="dossier-page">
       {/* Header */}
       <div className="dossier-header">
-        <div className="dossier-header-tag">ARCHIVES DE VÉRITÉ · CHR. III</div>
-        <h1 className="dossier-title">VOS DOSSIERS JURIDIQUES</h1>
+        <div className="dossier-header-tag">{t('dossier_tag')}</div>
+        <h1 className="dossier-title">{t('dossier_title')}</h1>
         <div style={{ marginTop: '1rem', height: '1px', background: 'var(--gold)', width: '200px', opacity: 0.3 }} />
       </div>
 
@@ -79,8 +71,8 @@ const DossierPage = () => {
         {/* Left: The Archive Index */}
         <aside className="dossier-list">
           <div className="dossier-list-header">
-            <span>INDEX DES AFFAIRES</span>
-            <button className="new-case-btn">+ DÉPOSER UNE PLAINTE</button>
+            <span>{t('dossier_index')}</span>
+            <button className="new-case-btn">{t('dossier_new')}</button>
           </div>
 
           <div className="folders-container">
@@ -93,14 +85,12 @@ const DossierPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
               >
-                <div className={`status-seal status-${reclamation.statut}`}>
-                  {getStatusIcon(reclamation.statut)}
-                </div>
-
                 <div className="case-folder-id">{reclamation.id}</div>
                 <div className="case-folder-title">{reclamation.titre.toUpperCase()}</div>
-                <div style={{ marginTop: '1rem', fontSize: '0.6rem', color: 'rgba(212,175,55,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  STATUT: {reclamation.statut}
+                <div style={{ marginTop: '0.75rem' }}>
+                  <span className={`status-seal-inline status-${reclamation.statut}`}>
+                    {reclamation.statut.replace('_', ' ')}
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -120,22 +110,30 @@ const DossierPage = () => {
                 transition={{ duration: 0.4 }}
               >
                 <div className="dossier-paper">
+                  {/* Status Stamp — top right corner */}
+                  <div className={`status-seal status-${activeCase.statut}`}>
+                    {activeCase.statut.replace('_', ' ')}
+                  </div>
                   <div className="dossier-paper-content">
-                    
-                    <div className="dossier-meta-stamp">
-                      DOSSIER N° {activeCase.id} <br/>
-                      ENREGISTRÉ LE: {new Date(activeCase.dateCreation).toLocaleDateString('fr-FR')}
-                    </div>
-
-                    <h2 className="dossier-record-title">{activeCase.titre}</h2>
-                    
-                    <p className="dossier-record-desc">
-                      {activeCase.description}
-                    </p>
-
-                    <div className="dossier-timeline">
-                      <span className="timeline-title">LE REGISTRE (MESSAGES)</span>
+                    <div className="record-content">
+                      <div className="record-meta">
+                        <span className="meta-tag">{t('dossier_severity')} {activeCase.gravite}</span>
+                        <span className="meta-tag">{t('dossier_created')} {new Date(activeCase.dateCreation).toLocaleDateString()}</span>
+                      </div>
                       
+                      <h2 className="dossier-record-title">{activeCase.titre}</h2>
+                      
+                      <div className="record-desc">
+                        {activeCase.description.split('\n').map((para, i) => <p key={i}>{para}</p>)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Messages & Actions Area */}
+                  <div className="dossier-actions-panel">
+                    <h3 className="section-title">{t('dossier_messages')}</h3>
+                    
+                    <div className="dossier-timeline">
                       {activeCase.messages.map(msg => (
                         <div key={msg.id} className="timeline-item">
                           <div className="timeline-avatar">
@@ -155,6 +153,33 @@ const DossierPage = () => {
                         </div>
                       ))}
                     </div>
+                    
+                    <div style={{ marginTop: '2rem' }}>
+                      <div 
+                        className="dossier-drop-zone"
+                        style={{
+                          border: '2px dashed rgba(0,0,0,0.3)',
+                          padding: '2rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          background: 'rgba(0,0,0,0.02)',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(212,175,55,0.1)'; e.currentTarget.style.borderColor = 'var(--gold)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.3)' }}
+                      >
+                        <UploadCloud size={32} style={{ marginBottom: '1rem', color: 'var(--black)', opacity: 0.7 }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--black)' }}>
+                          {t('dossier_drop_evidence', 'DÉPOSER UNE PIÈCE À CONVICTION')}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.5rem', color: 'var(--black)' }}>
+                          Formats acceptés : PDF, JPG, PNG (Max 10MB)
+                        </span>
+                      </div>
+                    </div>
 
                   </div>
                 </div>
@@ -173,14 +198,5 @@ const DossierPage = () => {
   )
 }
 
-// Custom icon placeholder
-function UserIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-  );
-}
 
 export default DossierPage

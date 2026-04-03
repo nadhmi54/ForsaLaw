@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
-import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-motion'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { MapPin, User, Shield, Briefcase, Star } from 'lucide-react'
+import PageHeader from '../components/PageHeader'
 import '../styles/Lawyers.css'
 
 // ─── Placeholder Lawyer Data (Trading Cards) ──────────────────────────────────
@@ -83,101 +84,57 @@ const LAWYERS = [
 const SPECIALTIES = ["Droit Pénal", "Droit des Affaires", "Droit Immobilier", "Droit de la Famille", "Droit du Travail"]
 const REGIONS = ["Tunis", "Sfax", "Sousse", "Ariana", "Nabeul"]
 
-// ─── 3D Tilt Trading Card Component ───────────────────────────────────────────
+// ─── Heavy Stone Tile Card Component ───────────────────────────────────────────
 const TradingCard = ({ lawyer }) => {
-  const ref = useRef(null)
-  
-  // Mouse position values for the 3D tilt
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-
-  // Spring physics for smooth movement
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 })
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 })
-
-  // Transform raw mouse coords into rotation degrees (-10deg to 10deg)
-  const rotateX = useMotionTemplate`${mouseYSpring}deg`
-  const rotateY = useMotionTemplate`${mouseXSpring}deg`
-
-  const handleMouseMove = (e) => {
-    if (!ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    
-    // Normalized coordinates from -1 to 1 based on mouse position within the card
-    const normalizedX = (e.clientX - rect.left) / rect.width - 0.5
-    const normalizedY = (e.clientY - rect.top) / rect.height - 0.5
-
-    // Multiplier determines the intensity of the tilt
-    x.set(normalizedX * 20)
-    y.set(normalizedY * -20) // inverted for correct axis tilt
-  }
-
-  const handleMouseLeave = () => {
-    x.set(0)
-    y.set(0)
-  }
-
+  const { t } = useTranslation()
   return (
-    <div className="lawyer-card-wrapper" style={{ perspective: 1200 }}>
-      <motion.div
-        ref={ref}
-        className="lawyer-card"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          rotateX,
-          rotateY,
-          transformStyle: "preserve-3d"
-        }}
-      >
+    <div className="lawyer-card-wrapper">
+      <div className="lawyer-card">
         {/* Holographic Header */}
         <div className="card-header">
           <div className="card-header-bg" />
           <div className="card-rank">{lawyer.rank}</div>
-          <div className="card-avatar" style={{ transform: 'translateZ(30px)' }}>
-            <User size={40} />
+          <div className="card-avatar">
+            <User size={40} className="icon-heavy-shadow" />
           </div>
         </div>
 
         {/* Card Body */}
         <div className="card-body">
-          <h3 className="card-name" style={{ transform: 'translateZ(20px)' }}>{lawyer.name}</h3>
+          <h3 className="card-name">{lawyer.name}</h3>
           <span className="card-specialty">{lawyer.specialty}</span>
           
           {/* RPG Stats */}
-          <div className="card-stats" style={{ transform: 'translateZ(10px)' }}>
+          <div className="card-stats">
             <div className="stat-box">
               <span className="stat-value">{lawyer.winRate}</span>
-              <span className="stat-label">Victoires</span>
+              <span className="stat-label">{t('lawyer_wins')}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-value">{lawyer.xp} ans</span>
-              <span className="stat-label">Expérience</span>
+              <span className="stat-value">{lawyer.xp} {t('lawyer_years')}</span>
+              <span className="stat-label">{t('lawyer_xp')}</span>
             </div>
             <div className="stat-box">
               <span className="stat-value">{lawyer.cases}</span>
-              <span className="stat-label">Dossiers</span>
+              <span className="stat-label">{t('lawyer_cases')}</span>
             </div>
             <div className="stat-box">
               <span className="stat-value" style={{ color: 'var(--gold)' }}>
-                {lawyer.rating} <Star size={10} style={{ display: 'inline', fill: 'var(--gold)' }} />
+                {lawyer.rating} <Star size={10} className="icon-heavy-shadow" style={{ display: 'inline', fill: 'var(--gold)' }} />
               </span>
-              <span className="stat-label">Évaluation</span>
+              <span className="stat-label">{t('lawyer_rating')}</span>
             </div>
           </div>
 
           <p className="card-location">
-            <MapPin size={14} /> {lawyer.location}
+            <MapPin size={14} className="icon-heavy-shadow" /> {lawyer.location}
           </p>
 
-          <button 
-            className="card-action"
-            style={{ transform: 'translateZ(25px)' }}
-          >
-            Sélectionner ce Maître ⚖
+          <button className="brutal-btn card-action">
+            {t('lawyer_select')}
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -199,20 +156,20 @@ const LawyersPage = () => {
 
   return (
     <div className="lawyers-page">
-      {/* Header */}
-      <div className="lawyers-header">
-        <div className="lawyers-header-tag">⚖ Salle des Avocats · غرفة المحامين</div>
-        <h1 className="lawyers-title">Barreau Tunisien</h1>
-        <p className="lawyers-subtitle">
-          Consultez les profils de nos maîtres, vérifiez leurs statistiques judiciaires et choisissez le meilleur représentant pour votre cause.
-        </p>
-      </div>
+      {/* Heavy Brutalist Header */}
+      <PageHeader
+        className="lawyers-header"
+        tag={t('lawyers_tag')}
+        tagClassName="lawyers-header-tag"
+        title={t('lawyers_title')}
+        titleClassName="lawyers-title"
+      />
 
       <div className="lawyers-content">
-        {/* Left Sidebar Filters */}
+        {/* Left Sidebar Filter (Brutalist style) */}
         <aside className="lawyers-sidebar">
           <div className="filter-group">
-            <h3 className="filter-title">Spécialité</h3>
+            <h3 className="filter-title">{t('lawyers_filter')}</h3>
             {SPECIALTIES.map(spec => (
               <label key={spec} className="filter-checkbox">
                 <input 
