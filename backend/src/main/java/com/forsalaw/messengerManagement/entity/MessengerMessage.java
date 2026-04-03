@@ -38,6 +38,22 @@ public class MessengerMessage {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /** Livré au client (messages envoyés par l'avocat). */
+    @Column(name = "delivered_at_to_client")
+    private LocalDateTime deliveredAtToClient;
+
+    /** Lu par le client (messages envoyés par l'avocat). */
+    @Column(name = "read_at_by_client")
+    private LocalDateTime readAtByClient;
+
+    /** Livré à l'avocat (messages envoyés par le client). */
+    @Column(name = "delivered_at_to_avocat")
+    private LocalDateTime deliveredAtToAvocat;
+
+    /** Lu par l'avocat (messages envoyés par le client). */
+    @Column(name = "read_at_by_avocat")
+    private LocalDateTime readAtByAvocat;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
