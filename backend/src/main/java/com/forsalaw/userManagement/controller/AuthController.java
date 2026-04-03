@@ -3,6 +3,7 @@ package com.forsalaw.userManagement.controller;
 import com.forsalaw.userManagement.model.AuthResponse;
 import com.forsalaw.userManagement.model.ForgotPasswordRequest;
 import com.forsalaw.userManagement.model.LoginRequest;
+import com.forsalaw.userManagement.model.RequestUnlockAccountRequest;
 import com.forsalaw.userManagement.model.RegisterRequest;
 import com.forsalaw.userManagement.model.ResetPasswordRequest;
 import com.forsalaw.userManagement.service.AuthService;
@@ -44,6 +45,12 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.resetPassword(request));
+    }
+
+    @Operation(summary = "Demander le deblocage du compte", description = "Transmet une demande de deblocage a l'administrateur en cas de compte bloque.")
+    @PostMapping("/request-unlock")
+    public ResponseEntity<String> requestUnlock(@Valid @RequestBody RequestUnlockAccountRequest request) {
+        return ResponseEntity.ok(authService.requestUnlockAccount(request));
     }
 
     @Operation(summary = "Login with Google", description = "Redirige vers Google OAuth2 pour authentification.")

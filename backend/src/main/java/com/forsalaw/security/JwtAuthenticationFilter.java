@@ -63,10 +63,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = jwtService.extractEmail(token);
         var userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty() || !userOpt.get().isActif()) {
+            String message = "Compte desactive.";
+            if (userOpt.isPresent() && userOpt.get().isBlockedByFailedAttempts()) {
+                message = "Compte bloque apres 3 tentatives. Veuillez contacter l'administrateur.";
+            }
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
             response.getWriter().write(objectMapper.writeValueAsString(
-                    Map.of("message", "Compte désactivé.")
+                    Map.of("message", message)
             ));
             return;
         }

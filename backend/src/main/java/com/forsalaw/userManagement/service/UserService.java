@@ -160,6 +160,8 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
         user.setActif(true);
+        user.setFailedLoginAttempts(0);
+        user.setBlockedByFailedAttempts(false);
         userRepository.save(user);
     }
 
@@ -168,6 +170,8 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec cet email."));
         user.setActif(true);
+        user.setFailedLoginAttempts(0);
+        user.setBlockedByFailedAttempts(false);
         userRepository.save(user);
     }
 
