@@ -44,6 +44,12 @@ public class User {
     @Column(nullable = false)
     private boolean actif = true; // true = compte actif, false = bloqué
 
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "blocked_by_failed_attempts", nullable = false)
+    private boolean blockedByFailedAttempts = false;
+
     @Column(name = "datecreation", nullable = false, updatable = false)
     private LocalDateTime dateCreation;
 
