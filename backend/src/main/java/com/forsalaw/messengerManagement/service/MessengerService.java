@@ -3,23 +3,33 @@ package com.forsalaw.messengerManagement.service;
 import com.forsalaw.avocatManagement.entity.Avocat;
 import com.forsalaw.avocatManagement.repository.AvocatRepository;
 import com.forsalaw.messengerManagement.entity.ConversationStatus;
+import com.forsalaw.messengerManagement.entity.MessengerAttachment;
 import com.forsalaw.messengerManagement.entity.MessengerConversation;
 import com.forsalaw.messengerManagement.entity.MessengerMessage;
 import com.forsalaw.messengerManagement.entity.MessengerSenderRole;
 import com.forsalaw.messengerManagement.model.*;
+import com.forsalaw.messengerManagement.realtime.MessengerRealtimePublisher;
+import com.forsalaw.messengerManagement.repository.MessengerAttachmentRepository;
 import com.forsalaw.messengerManagement.repository.MessengerConversationRepository;
 import com.forsalaw.messengerManagement.repository.MessengerMessageRepository;
+import com.forsalaw.messengerManagement.util.MessengerContentHasher;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
 import com.forsalaw.userManagement.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,18 +37,17 @@ public class MessengerService {
 
     private static final int PREVIEW_MAX = 200;
 
-    /** Si jamais « lu », on compte tous les messages de l'interlocuteur (createdAt > cette date). */
-    private static final LocalDateTime UNREAD_COUNT_SINCE = LocalDateTime.of(1970, 1, 1, 0, 0);
-
-    private static LocalDateTime effectiveReadAtForUnreadCount(LocalDateTime lastReadAt) {
-        return lastReadAt != null ? lastReadAt : UNREAD_COUNT_SINCE;
-    }
+    @Value("${forsalaw.messenger.admin.hash-pepper:}")
+    private String adminMessengerHashPepper;
 
     private final MessengerConversationRepository conversationRepository;
     private final MessengerMessageRepository messageRepository;
+    private final MessengerAttachmentRepository attachmentRepository;
+    private final MessengerAttachmentService messengerAttachmentService;
     private final UserRepository userRepository;
     private final AvocatRepository avocatRepository;
     private final UserService userService;
+    private final MessengerRealtimePublisher messengerRealtimePublisher;
 
     @Transactional
     public ConversationSummaryDTO openOrGetConversation(String clientEmail, OpenConversationRequest request) {
@@ -110,8 +119,9 @@ public class MessengerService {
                 .map(this::toSummaryForAvocat);
     }
 
-    @Transactional(readOnly = true)
-    public Page<MessengerMessageDTO> getMessagesForClient(String clientEmail, String conversationId, Pageable pageable) {
+    @Transactional
+    public Page<MessengerMessageDTO> getMessagesForClient(String clientEmail, String conversationId, Pageable pageable,
+                                                          LocalDateTime since) {
         User client = requireUser(clientEmail);
         if (client.getRoleUser() != RoleUser.client) {
             throw new IllegalArgumentException("Accès réservé aux clients.");
@@ -121,20 +131,35 @@ public class MessengerService {
         if (!c.getClient().getId().equals(client.getId())) {
             throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
         }
-        return messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
-                .map(this::toMessageDTO);
+        LocalDateTime now = LocalDateTime.now();
+        messageRepository.markDeliveredToClient(conversationId, MessengerSenderRole.AVOCAT, now);
+        messageRepository.flush();
+        Page<MessengerMessage> page = since == null
+                ? messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
+                : messageRepository.findByConversation_IdAndCreatedAtAfterOrderByCreatedAtAsc(conversationId, since, pageable);
+        Map<String, List<MessengerAttachment>> byMsg = attachmentMapForMessages(page.getContent());
+        String viewerId = client.getId();
+        return page.map(m -> toMessageDTOWithAttachments(m, client.getEmail(), viewerId, byMsg));
     }
 
-    @Transactional(readOnly = true)
-    public Page<MessengerMessageDTO> getMessagesForAvocat(String avocatUserEmail, String conversationId, Pageable pageable) {
+    @Transactional
+    public Page<MessengerMessageDTO> getMessagesForAvocat(String avocatUserEmail, String conversationId, Pageable pageable,
+                                                        LocalDateTime since) {
         Avocat avocat = requireAvocatByUserEmail(avocatUserEmail);
         MessengerConversation c = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée."));
         if (!c.getAvocat().getId().equals(avocat.getId())) {
             throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
         }
-        return messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
-                .map(this::toMessageDTO);
+        LocalDateTime now = LocalDateTime.now();
+        messageRepository.markDeliveredToAvocat(conversationId, MessengerSenderRole.CLIENT, now);
+        messageRepository.flush();
+        Page<MessengerMessage> page = since == null
+                ? messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
+                : messageRepository.findByConversation_IdAndCreatedAtAfterOrderByCreatedAtAsc(conversationId, since, pageable);
+        Map<String, List<MessengerAttachment>> byMsg = attachmentMapForMessages(page.getContent());
+        String viewerId = avocat.getUser().getId();
+        return page.map(m -> toMessageDTOWithAttachments(m, avocat.getUser().getEmail(), viewerId, byMsg));
     }
 
     @Transactional
@@ -152,6 +177,25 @@ public class MessengerService {
     }
 
     @Transactional
+    public MessengerMessageDTO sendMessageWithAttachmentsAsClient(String clientEmail, String conversationId,
+                                                                    String content, MultipartFile[] files) {
+        User client = requireUser(clientEmail);
+        if (client.getRoleUser() != RoleUser.client) {
+            throw new IllegalArgumentException("Accès réservé aux clients.");
+        }
+        MessengerConversation c = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée."));
+        if (!c.getClient().getId().equals(client.getId())) {
+            throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
+        }
+        try {
+            return persistMessageWithAttachments(c, client, MessengerSenderRole.CLIENT, content, files, client.getEmail());
+        } catch (IOException e) {
+            throw new IllegalStateException("Echec enregistrement des pieces jointes.", e);
+        }
+    }
+
+    @Transactional
     public MessengerMessageDTO sendMessageAsAvocat(String avocatUserEmail, String conversationId, SendMessageRequest request) {
         Avocat avocat = requireAvocatByUserEmail(avocatUserEmail);
         MessengerConversation c = conversationRepository.findById(conversationId)
@@ -161,6 +205,23 @@ public class MessengerService {
         }
         User sender = avocat.getUser();
         return persistMessage(c, sender, MessengerSenderRole.AVOCAT, request.getContent());
+    }
+
+    @Transactional
+    public MessengerMessageDTO sendMessageWithAttachmentsAsAvocat(String avocatUserEmail, String conversationId,
+                                                                  String content, MultipartFile[] files) {
+        Avocat avocat = requireAvocatByUserEmail(avocatUserEmail);
+        MessengerConversation c = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée."));
+        if (!c.getAvocat().getId().equals(avocat.getId())) {
+            throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
+        }
+        User sender = avocat.getUser();
+        try {
+            return persistMessageWithAttachments(c, sender, MessengerSenderRole.AVOCAT, content, files, sender.getEmail());
+        } catch (IOException e) {
+            throw new IllegalStateException("Echec enregistrement des pieces jointes.", e);
+        }
     }
 
     /**
@@ -202,8 +263,12 @@ public class MessengerService {
         if (!c.getClient().getId().equals(client.getId())) {
             throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
         }
-        c.setClientLastReadAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        c.setClientLastReadAt(now);
         conversationRepository.save(c);
+        messageRepository.markDeliveredToClient(conversationId, MessengerSenderRole.AVOCAT, now);
+        messageRepository.markReadByClient(conversationId, MessengerSenderRole.AVOCAT, now);
+        messengerRealtimePublisher.publishReadReceipt(conversationId, MessengerSenderRole.CLIENT, now);
     }
 
     @Transactional
@@ -214,8 +279,12 @@ public class MessengerService {
         if (!c.getAvocat().getId().equals(avocat.getId())) {
             throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
         }
-        c.setAvocatLastReadAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        c.setAvocatLastReadAt(now);
         conversationRepository.save(c);
+        messageRepository.markDeliveredToAvocat(conversationId, MessengerSenderRole.CLIENT, now);
+        messageRepository.markReadByAvocat(conversationId, MessengerSenderRole.CLIENT, now);
+        messengerRealtimePublisher.publishReadReceipt(conversationId, MessengerSenderRole.AVOCAT, now);
     }
 
     @Transactional(readOnly = true)
@@ -245,12 +314,16 @@ public class MessengerService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MessengerMessageDTO> getMessagesForAdmin(String conversationId, Pageable pageable) {
+    public Page<MessengerMessageDTO> getMessagesForAdmin(String adminEmail, String conversationId, Pageable pageable,
+                                                         LocalDateTime since) {
         if (!conversationRepository.existsById(conversationId)) {
             throw new IllegalArgumentException("Conversation non trouvée.");
         }
-        return messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
-                .map(this::toMessageDTO);
+        Page<MessengerMessage> page = since == null
+                ? messageRepository.findByConversation_IdOrderByCreatedAtAsc(conversationId, pageable)
+                : messageRepository.findByConversation_IdAndCreatedAtAfterOrderByCreatedAtAsc(conversationId, since, pageable);
+        Map<String, List<MessengerAttachment>> byMsg = attachmentMapForMessages(page.getContent());
+        return page.map(m -> toMessageDTOForAdmin(m, byMsg));
     }
 
     @Transactional
@@ -282,14 +355,34 @@ public class MessengerService {
     }
 
     private MessengerMessageDTO persistMessage(MessengerConversation c, User sender, MessengerSenderRole role, String rawContent) {
-        if (c.getStatus() == ConversationStatus.CLOSED) {
-            throw new IllegalArgumentException("Cette conversation est fermée. Aucun nouveau message n'est autorisé.");
-        }
         String content = rawContent != null ? rawContent.trim() : "";
         if (content.isEmpty()) {
             throw new IllegalArgumentException("Le message ne peut pas être vide.");
         }
+        MessengerMessage m = persistMessageEntity(c, sender, role, content);
+        MessengerMessageDTO dto = toMessageDTO(m, sender.getEmail(), sender.getId(), List.of());
+        messengerRealtimePublisher.publishNewMessage(c.getId(), dto);
+        return dto;
+    }
 
+    private MessengerMessageDTO persistMessageWithAttachments(MessengerConversation c, User sender, MessengerSenderRole role,
+                                                              String rawContent, MultipartFile[] files, String viewerEmailForResponse)
+            throws IOException {
+        String content = rawContent != null ? rawContent.trim() : "";
+        if (content.isEmpty()) {
+            content = "Piece jointe";
+        }
+        MessengerMessage m = persistMessageEntity(c, sender, role, content);
+        List<MessengerAttachment> saved = messengerAttachmentService.saveAttachmentsForMessage(m, files);
+        MessengerMessageDTO dto = toMessageDTO(m, viewerEmailForResponse, sender.getId(), saved);
+        messengerRealtimePublisher.publishNewMessage(c.getId(), dto);
+        return dto;
+    }
+
+    private MessengerMessage persistMessageEntity(MessengerConversation c, User sender, MessengerSenderRole role, String content) {
+        if (c.getStatus() == ConversationStatus.CLOSED) {
+            throw new IllegalArgumentException("Cette conversation est fermée. Aucun nouveau message n'est autorisé.");
+        }
         MessengerMessage m = new MessengerMessage();
         m.setId(userService.generateNextId("MSM"));
         m.setConversation(c);
@@ -302,7 +395,90 @@ public class MessengerService {
         c.setLastMessagePreview(preview(content));
         conversationRepository.save(c);
 
-        return toMessageDTO(m);
+        return m;
+    }
+
+    private Map<String, List<MessengerAttachment>> attachmentMapForMessages(List<MessengerMessage> messages) {
+        if (messages.isEmpty()) {
+            return Map.of();
+        }
+        List<String> ids = messages.stream().map(MessengerMessage::getId).toList();
+        List<MessengerAttachment> all = attachmentRepository.findByMessage_IdIn(ids);
+        return all.stream().collect(Collectors.groupingBy(a -> a.getMessage().getId()));
+    }
+
+    private MessengerMessageDTO toMessageDTOWithAttachments(MessengerMessage m, String viewerEmail, String viewerUserId,
+                                                            Map<String, List<MessengerAttachment>> byMessageId) {
+        return toMessageDTO(m, viewerEmail, viewerUserId, byMessageId.getOrDefault(m.getId(), List.of()));
+    }
+
+    /**
+     * Réponse admin : contenu texte haché (SHA-256), pièces jointes sans URL ni noms de fichiers réels.
+     */
+    private MessengerMessageDTO toMessageDTOForAdmin(MessengerMessage m,
+                                                     Map<String, List<MessengerAttachment>> byMessageId) {
+        List<MessengerAttachmentDTO> redacted = byMessageId.getOrDefault(m.getId(), List.of()).stream()
+                .map(this::toRedactedAttachmentDto)
+                .toList();
+        return new MessengerMessageDTO(
+                m.getId(),
+                m.getSender().getId(),
+                m.getSenderRole(),
+                MessengerContentHasher.sha256Hex(m.getContent(), adminMessengerHashPepper),
+                m.getCreatedAt(),
+                redacted,
+                null
+        );
+    }
+
+    private MessengerAttachmentDTO toRedactedAttachmentDto(MessengerAttachment a) {
+        return new MessengerAttachmentDTO(
+                a.getId(),
+                "[masqué]",
+                "application/octet-stream",
+                a.getSizeBytes(),
+                a.getScanStatus(),
+                null
+        );
+    }
+
+    private MessengerMessageDTO toMessageDTO(MessengerMessage m, String viewerEmail, String viewerUserId,
+                                             List<MessengerAttachment> attachments) {
+        List<MessengerAttachmentDTO> dtos = attachments.stream()
+                .map(a -> messengerAttachmentService.toDto(a, viewerEmail))
+                .toList();
+        MessengerRecipientReceiptStatus receipt = null;
+        if (viewerUserId != null && m.getSender().getId().equals(viewerUserId)) {
+            receipt = computeRecipientReceipt(m);
+        }
+        return new MessengerMessageDTO(
+                m.getId(),
+                m.getSender().getId(),
+                m.getSenderRole(),
+                m.getContent(),
+                m.getCreatedAt(),
+                dtos,
+                receipt
+        );
+    }
+
+    private static MessengerRecipientReceiptStatus computeRecipientReceipt(MessengerMessage m) {
+        if (m.getSenderRole() == MessengerSenderRole.CLIENT) {
+            if (m.getReadAtByAvocat() != null) {
+                return MessengerRecipientReceiptStatus.READ;
+            }
+            if (m.getDeliveredAtToAvocat() != null) {
+                return MessengerRecipientReceiptStatus.DELIVERED;
+            }
+            return MessengerRecipientReceiptStatus.SENT;
+        }
+        if (m.getReadAtByClient() != null) {
+            return MessengerRecipientReceiptStatus.READ;
+        }
+        if (m.getDeliveredAtToClient() != null) {
+            return MessengerRecipientReceiptStatus.DELIVERED;
+        }
+        return MessengerRecipientReceiptStatus.SENT;
     }
 
     private String preview(String content) {
@@ -319,8 +495,7 @@ public class MessengerService {
     private ConversationSummaryDTO toSummaryForClient(MessengerConversation c) {
         Avocat a = c.getAvocat();
         User avocatUser = a.getUser();
-        long unread = messageRepository.countUnreadInConversation(
-                c.getId(), MessengerSenderRole.AVOCAT, effectiveReadAtForUnreadCount(c.getClientLastReadAt()));
+        long unread = messageRepository.countUnreadInConversationForClientView(c.getId(), MessengerSenderRole.AVOCAT);
         return new ConversationSummaryDTO(
                 c.getId(),
                 c.getClient().getId(),
@@ -341,8 +516,7 @@ public class MessengerService {
         User client = c.getClient();
         Avocat a = c.getAvocat();
         User avocatUser = a.getUser();
-        long unread = messageRepository.countUnreadInConversation(
-                c.getId(), MessengerSenderRole.CLIENT, effectiveReadAtForUnreadCount(c.getAvocatLastReadAt()));
+        long unread = messageRepository.countUnreadInConversationForAvocatView(c.getId(), MessengerSenderRole.CLIENT);
         return new ConversationSummaryDTO(
                 c.getId(),
                 client.getId(),
@@ -372,20 +546,11 @@ public class MessengerService {
                 avocatUser.getNom(),
                 avocatUser.getPrenom(),
                 c.getStatus(),
-                c.getLastMessagePreview(),
+                MessengerContentHasher.hashOptionalPreview(c.getLastMessagePreview(), adminMessengerHashPepper),
                 c.getLastMessageAt(),
                 c.getUpdatedAt(),
                 0L
         );
     }
 
-    private MessengerMessageDTO toMessageDTO(MessengerMessage m) {
-        return new MessengerMessageDTO(
-                m.getId(),
-                m.getSender().getId(),
-                m.getSenderRole(),
-                m.getContent(),
-                m.getCreatedAt()
-        );
-    }
 }

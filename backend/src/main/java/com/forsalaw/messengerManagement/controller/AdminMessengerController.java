@@ -11,8 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admin/messenger")
@@ -23,7 +27,8 @@ public class AdminMessengerController {
 
     private final MessengerService messengerService;
 
-    @Operation(summary = "Liste des conversations (admin)", description = "Filtres optionnels : clientUserId (ID utilisateur client), avocatId (ID profil avocat).")
+    @Operation(summary = "Liste des conversations (admin)",
+            description = "Filtres optionnels : clientId (ID utilisateur client), avocatId (ID profil avocat). Le champ lastMessagePreview est une empreinte sha256 (pas le texte en clair).")
     @GetMapping("/conversations")
     public ResponseEntity<Page<ConversationSummaryDTO>> listConversations(
             @RequestParam(required = false) String clientId,
@@ -33,13 +38,16 @@ public class AdminMessengerController {
         return ResponseEntity.ok(messengerService.listConversationsForAdmin(clientId, avocatId, pageable));
     }
 
-    @Operation(summary = "Messages d'une conversation (admin)", description = "Lecture des messages pour modération / support (contenu stocké en clair côté serveur ; chiffrer côté client en prod si besoin).")
+    @Operation(summary = "Messages d'une conversation (admin)",
+            description = "Métadonnées et empreinte SHA-256 du texte (champ content : préfixe sha256:...). Pas de texte en clair ni d'URL de téléchargement des pièces jointes.")
     @GetMapping("/conversations/{id}/messages")
     public ResponseEntity<Page<MessengerMessageDTO>> getMessages(
+            Authentication authentication,
             @PathVariable("id") String conversationId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since,
             @PageableDefault(size = 100, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(messengerService.getMessagesForAdmin(conversationId, pageable));
+        return ResponseEntity.ok(messengerService.getMessagesForAdmin(authentication.getName(), conversationId, pageable, since));
     }
 
     @Operation(summary = "Fermer une conversation", description = "Passe la conversation en statut CLOSED ; plus de nouveaux messages possibles.")
