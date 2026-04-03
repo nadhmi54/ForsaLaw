@@ -1,5 +1,8 @@
 package com.forsalaw.messengerManagement.service;
 
+import com.forsalaw.documentManagement.entity.ContexteDocument;
+import com.forsalaw.documentManagement.model.DocumentMetadataDTO;
+import com.forsalaw.documentManagement.service.DocumentService;
 import com.forsalaw.messengerManagement.entity.AttachmentScanStatus;
 import com.forsalaw.messengerManagement.entity.MessengerAttachment;
 import com.forsalaw.messengerManagement.entity.MessengerMessage;
@@ -42,6 +45,7 @@ public class MessengerAttachmentService {
     private final ClamAvScanService clamAvScanService;
     private final MessengerAttachmentFileValidator fileValidator;
     private final MessengerAttachmentDownloadTokenService downloadTokenService;
+    private final DocumentService documentService;
 
     @Value("${forsalaw.messenger.attachments.storage-dir:${user.home}/forsalaw-messenger-attachments}")
     private String storageDir;
@@ -58,15 +62,13 @@ public class MessengerAttachmentService {
     @Value("${forsalaw.server.public-url:http://localhost:8081}")
     private String publicApiBaseUrl;
 
-    public List<MessengerAttachment> saveAttachmentsForMessage(MessengerMessage message, MultipartFile[] files) throws IOException {
+    public List<MessengerAttachment> saveAttachmentsForMessage(MessengerMessage message, MultipartFile[] files, String senderEmail) throws IOException {
         if (files == null || files.length == 0) {
             throw new IllegalArgumentException("Au moins un fichier est requis.");
         }
         if (files.length > maxFilesPerMessage) {
             throw new IllegalArgumentException("Nombre maximum de fichiers par message: " + maxFilesPerMessage + ".");
         }
-        Path base = Paths.get(storageDir).toAbsolutePath().normalize();
-        Files.createDirectories(base);
 
         List<MessengerAttachment> saved = new ArrayList<>();
         for (MultipartFile file : files) {
@@ -97,15 +99,14 @@ public class MessengerAttachmentService {
                 }
             }
 
-            String safeName = sanitizeFilename(origName);
-            String relative = LocalDate.now().getYear() + "/" + String.format("%02d", LocalDate.now().getMonthValue())
-                    + "/" + UUID.randomUUID() + "_" + safeName;
-            Path dest = base.resolve(relative).normalize();
-            if (!dest.startsWith(base)) {
-                throw new IllegalStateException("Chemin de stockage invalide.");
-            }
-            Files.createDirectories(dest.getParent());
-            Files.write(dest, full);
+            // Depôt dans le Coffre-fort Numérique (génère SHA-256 et gère le stockage)
+            DocumentMetadataDTO docDto = documentService.uploadDocument(
+                    senderEmail, 
+                    file, 
+                    ContexteDocument.MESSENGER, 
+                    message.getId(), 
+                    null
+            );
 
             MessengerAttachment att = new MessengerAttachment();
             att.setId(userService.generateNextId("MAT"));
@@ -113,7 +114,7 @@ public class MessengerAttachmentService {
             att.setOriginalFilename(origName);
             att.setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
             att.setSizeBytes(full.length);
-            att.setStorageKey(relative);
+            att.setStorageKey(docDto.getId()); // On stocke l'ID du document du coffre-fort !
             att.setScanStatus(scanStatus);
             saved.add(attachmentRepository.save(att));
         }
@@ -121,12 +122,8 @@ public class MessengerAttachmentService {
     }
 
     public Resource loadFile(MessengerAttachment attachment) throws IOException {
-        Path base = Paths.get(storageDir).toAbsolutePath().normalize();
-        Path file = base.resolve(attachment.getStorageKey()).normalize();
-        if (!file.startsWith(base) || !Files.isRegularFile(file)) {
-            throw new IllegalArgumentException("Fichier introuvable.");
-        }
-        return new FileSystemResource(file);
+        // Redirection vers le coffre-fort numérique (la clé de stockage est l'ID du document)
+        return documentService.telechargerDocumentSysteme(attachment.getStorageKey());
     }
 
     /**

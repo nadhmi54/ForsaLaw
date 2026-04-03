@@ -8,12 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.forsalaw.documentManagement.entity.ContexteDocument;
+import com.forsalaw.documentManagement.model.DocumentMetadataDTO;
+import com.forsalaw.documentManagement.service.DocumentService;
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
@@ -26,38 +26,36 @@ public class FileStorageService {
 
     private final ReclamationAttachmentRepository attachmentRepository;
     private final ReclamationRepository reclamationRepository;
+    private final DocumentService documentService;
 
     @Transactional
-    public ReclamationAttachment stockerFichier(MultipartFile fichier, String reclamationId) throws IOException {
+    public ReclamationAttachment stockerFichier(MultipartFile fichier, String reclamationId, String email) throws IOException {
         Reclamation r = reclamationRepository.findById(reclamationId)
                 .orElseThrow(() -> new IllegalArgumentException("Réclamation non trouvée"));
 
-        Path emplacement = Paths.get(dossiersUpload).toAbsolutePath().normalize();
-        if (!Files.exists(emplacement)) {
-            Files.createDirectories(emplacement);
-        }
+        // Depôt dans le Coffre-fort Numérique (génère SHA-256 et gère le stockage central)
+        DocumentMetadataDTO docDto = documentService.uploadDocument(
+                email, 
+                fichier, 
+                ContexteDocument.RECLAMATION, 
+                reclamationId, 
+                null
+        );
 
         String nomOriginal = fichier.getOriginalFilename();
-        String extension = "";
-        if (nomOriginal != null && nomOriginal.contains(".")) {
-            extension = nomOriginal.substring(nomOriginal.lastIndexOf("."));
-        }
-        
-        String nomStockage = UUID.randomUUID().toString() + extension;
-        Path cible = emplacement.resolve(nomStockage);
-        Files.copy(fichier.getInputStream(), cible, StandardCopyOption.REPLACE_EXISTING);
 
         ReclamationAttachment pieces = new ReclamationAttachment();
         pieces.setReclamation(r);
         pieces.setNomFichier(nomOriginal);
-        pieces.setCheminFichier(cible.toString());
+        pieces.setCheminFichier(docDto.getId()); // On stocke l'ID inter-système du DocumentVault
         pieces.setTypeContenu(fichier.getContentType());
         pieces.setTailleFichier(fichier.getSize());
         
         return attachmentRepository.save(pieces);
     }
     
-    public Path getFichier(String chemin) {
-        return Paths.get(chemin);
+    public Resource getFichier(String chemin) {
+        // "chemin" correspond à l'ID du document dans le coffre-fort
+        return documentService.telechargerDocumentSysteme(chemin);
     }
 }

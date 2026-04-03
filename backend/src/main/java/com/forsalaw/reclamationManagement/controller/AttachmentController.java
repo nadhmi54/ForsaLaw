@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,8 +28,8 @@ public class AttachmentController {
 
     @Operation(summary = "Uploader une pièce jointe")
     @PostMapping("/{id}/pieces-jointes")
-    public ResponseEntity<String> upload(@PathVariable String id, @RequestParam("fichier") MultipartFile fichier) throws IOException {
-        fileStorageService.stockerFichier(fichier, id);
+    public ResponseEntity<String> upload(Authentication authentication, @PathVariable String id, @RequestParam("fichier") MultipartFile fichier) throws IOException {
+        fileStorageService.stockerFichier(fichier, id, authentication.getName());
         return ResponseEntity.ok("Fichier mis en ligne avec succès.");
     }
 
@@ -38,16 +39,11 @@ public class AttachmentController {
         ReclamationAttachment pieces = attachmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pièce jointe non trouvée"));
         
-        Path path = fileStorageService.getFichier(pieces.getCheminFichier());
-        Resource resource = new UrlResource(path.toUri());
+        Resource resource = fileStorageService.getFichier(pieces.getCheminFichier());
 
-        if (resource.exists() || resource.isReadable()) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(pieces.getTypeContenu() != null ? pieces.getTypeContenu() : "application/octet-stream"))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pieces.getNomFichier() + "\"")
-                    .body(resource);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(pieces.getTypeContenu() != null ? pieces.getTypeContenu() : "application/octet-stream"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pieces.getNomFichier() + "\"")
+                .body(resource);
     }
 }
