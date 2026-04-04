@@ -1,62 +1,150 @@
+<div align="center">
+
 # ForsaLaw
 
-Plateforme LegalTech tunisienne pour la mise en relation client-avocat, la gestion de rendez-vous (presentiel et en ligne), les notifications, l'authentification securisee et les modules de collaboration.
+**Plateforme LegalTech tunisienne** — mise en relation client-avocat, rendez-vous (présentiel / en ligne), notifications, authentification sécurisée et modules de collaboration.
+
+[![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+</div>
 
 ---
 
-## Overview
+## Vue d'ensemble
 
-ForsaLaw centralise dans une seule application :
+> [!NOTE]
+> ForsaLaw regroupe dans une même application la **gestion des comptes** (client, avocat, admin), la **prise de rendez-vous** avec agenda avancé côté avocat, les **notifications e-mail**, la **visioconférence** pour les RDV en ligne (liens Jitsi), la **sécurité** (JWT, OAuth2 Google, réinitialisation de mot de passe), ainsi que la **messagerie**, les **réclamations**, le **coffre-fort documents** et d’autres modules métier exposés en **API REST** et documentés via **Swagger**.
 
-- la gestion des comptes (`client`, `avocat`, `admin`) ;
-- la prise de rendez-vous avec agenda avance avocat ;
-- les notifications email (demande, proposition, annulation, rappels) ;
-- la visioconference gratuite pour RDV en ligne (Jitsi) ;
-- la securite JWT, OAuth2 Google et flux de reset mot de passe.
+
+
 
 ---
 
-## Main Features
+## Architecture physique
 
-### Authentication and User Management
+> [!IMPORTANT]
+> Schéma aligné sur ce dépôt : **développement local** (ports et chemins issus de `application.properties`, `vite.config.js` et `backend/docker-compose.yml`).
 
-- inscription / connexion JWT ;
-- OAuth2 Google ;
-- reset password securise par token temporaire ;
-- verrouillage du compte apres 3 tentatives de connexion echouees ;
-- demande de deblocage de compte envoyee a l'admin (`POST /api/auth/request-unlock`).
+```mermaid
+flowchart TB
+  subgraph poste["Poste développeur / machine hôte"]
+    subgraph docker["Docker Compose (backend/)"]
+      PG[("PostgreSQL 16\nimage pgvector\nport hôte 5433")]
+      PGA[("pgAdmin 4\nport hôte 5051")]
+    end
+    JVM["Processus JVM — Spring Boot\nport 8081"]
+    NODE["Processus Node — Vite dev\nport 3000"]
+    FS["Disque local — fichiers"]
+  end
 
-### Avocat Verification and Admin Flows
+  subgraph externes["Services externes (configuration)"]
+    SMTP[(SMTP / e-mail)]
+    GOOGLE[(Google OAuth2)]
+    JITSI[(Jitsi Meet — URLs)]
+    WA[(Bridge WhatsApp HTTP\noptionnel)]
+    CLAM[(ClamAV\noptionnel)]
+  end
 
-- separation claire des endpoints admin profil vs verification avocat ;
-- gestion du statut de verification (`verificationStatus`, `verifie`) ;
-- reactivation admin des comptes bloques.
+  BROWSER((Navigateur))
+  BROWSER --> NODE
+  NODE -->|proxy /api| JVM
+  BROWSER -->|WebSocket STOMP| JVM
+  JVM --> PG
+  PGA --> PG
+  JVM --> FS
+  JVM --> SMTP
+  JVM --> GOOGLE
+  JVM --> JITSI
+  JVM -.-> WA
+  JVM -.-> CLAM
 
-### RendezVous Management (Advanced)
+  FS --> D1["Coffre documents\n(forsalaw.documents.dir)"]
+  FS --> D2["Pièces jointes messagerie\n(répertoire configuré)"]
+  FS --> D3["Fichiers réclamations\n(stockage service métier)"]
+```
 
-- cycle de vie RDV (`EN_ATTENTE`, `PROPOSE`, `CONFIRME`, `ANNULE`) ;
-- agenda avocat avance :
-  - configuration agenda,
-  - plages recurrentes,
-  - exceptions ;
-- calcul des creneaux disponibles cote client ;
-- validation anti-conflit avant proposition ;
-- RDV en ligne (Jitsi) avec generation automatique `meetingUrl` a la confirmation ;
-- rappels automatiques J-1 / H-1.
+**Composants physiques concrets**
 
-### Notifications
-
-- templates email metier (demande, proposition, annulation, confirmation, rappels) ;
-- preferences de notifications par utilisateur.
-
-### Communication and Collaboration
-
-- modules messenger et reclamation ;
-- endpoints admin de suivi et supervision.
+| Élément | Rôle |
+|--------|------|
+| **PostgreSQL** (conteneur `pgvector/pgvector:pg16`) | Base relationnelle + extension **pgvector** pour le futur / optionnel RAG (`legal_document_chunk`, migration SQL `V1` dans le dépôt). |
+| **pgAdmin** | Administration de la base (développement). |
+| **Spring Boot** | API unique, Tomcat embarqué, port **8081** par défaut. |
+| **Vite + React** | SPA en dev sur **3000**, proxy `/api` → `8081`. |
+| **Volumes Docker** | Persistance des données PostgreSQL (`forsalaw_pgdata`). |
+| **Système de fichiers** | Stockage des documents coffre-fort, PJ messagerie, PJ réclamations (chemins paramétrables). |
 
 ---
 
-## Tech Stack
+## Architecture logique
+
+> [!IMPORTANT]
+> Découpage **réel** du backend : packages `com.forsalaw.*` et flux HTTP / données ci-dessous.
+
+```mermaid
+flowchart LR
+  subgraph client["Client"]
+    SPA["SPA React\n(i18n, React Router)"]
+  end
+
+  subgraph api["API Spring Boot"]
+    SEC["Spring Security\nJWT + OAuth2"]
+    CTRL["Controllers REST\n(@RestController)"]
+    SVC["Services métier"]
+    REPO["Spring Data JPA"]
+  end
+
+  subgraph data["Données"]
+    DB[(PostgreSQL)]
+  end
+
+  subgraph temps_reel["Temps réel"]
+    STOMP["Broker STOMP intégré\n(SimpleBroker)"]
+  end
+
+  SPA -->|HTTPS /api| SEC
+  SEC --> CTRL
+  CTRL --> SVC
+  SVC --> REPO
+  REPO --> DB
+  SPA <-->|WebSocket / STOMP| STOMP
+  SVC --> STOMP
+```
+
+**Modules métier (packages Java)**
+
+| Package | Responsabilité |
+|---------|----------------|
+| `userManagement` | Utilisateurs, auth JWT, OAuth2, profils, photo de profil liée au coffre. |
+| `avocatManagement` | Profil avocat, vérification, exposition publique / espace connecté. |
+| `affaireManagement` | Dossiers / affaires et statuts. |
+| `rdvManagement` | Rendez-vous, agenda avocat, créneaux, rappels. |
+| `messengerManagement` | Conversations, messages, pièces jointes, **WebSocket** (`realtime/`). |
+| `reclamationManagement` | Réclamations, pièces jointes, transitions de statut. |
+| `documentManagement` | Coffre-fort, métadonnées, logs d’accès, signature PDF. |
+| `notificationManagement` | E-mails et pont WhatsApp (selon configuration). |
+| `forumManagement` | Forum (sujets / messages). |
+| `avisAvocatManagement` | Avis sur les avocats. |
+| `auditManagement` | Journalisation d’audit. |
+| `security` | Filtres JWT, configuration d’accès. |
+| `config` | Configuration transverse (ex. SpringDoc / OpenAPI). |
+| `documentManagement.config` | Beans techniques liés au module documents (ex. correctif contrainte PostgreSQL au démarrage). |
+| `util` | Utilitaires partagés (ex. hachage). |
+
+**Persistance et schéma**
+
+- **JPA / Hibernate** avec `spring.jpa.hibernate.ddl-auto=update` pour faire évoluer le schéma à partir des entités.
+- **Flyway** présent dans les dépendances mais **désactivé par défaut** ; le dépôt contient une migration **RAG** (`db/migration/V1__...`) à appliquer manuellement ou en activant Flyway ponctuellement (voir `docs/FLYWAY-VS-JPA.md`).
+
+---
+
+## Stack technique
+
+> [!NOTE]
+> Badges indicatifs ; versions précises dans `pom.xml` et `package.json`.
 
 ![Java](https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
@@ -73,102 +161,186 @@ ForsaLaw centralise dans une seule application :
 
 ---
 
-## Project Structure
+## Structure du dépôt
 
-- `backend/` : API Spring Boot, logique metier, persistance
-- `frontend/` : application front
-- `docs/` : guides techniques et workflow
-- `.github/workflows/` : pipelines CI
+> [!TIP]
+> - `backend/` — API Spring Boot, logique métier, persistance, `docker-compose.yml` (PostgreSQL + pgAdmin).
+> - `frontend/` — Application React (Vite), proxy `/api` vers le backend en développement.
+> - `docs/` — Guides techniques et workflows.
+> - `.github/workflows/` — Pipelines CI.
 
 ---
 
-## Getting Started
+## Démarrage rapide
 
-### 1) Clone repository
+![Démarrage](https://img.shields.io/badge/🚀_DÉMARRAGE_RAPIDE-238636?style=for-the-badge)
+
+### 1. Cloner le dépôt
 
 ```bash
 git clone https://github.com/ForsaLaw/ForsaLaw.git
 cd ForsaLaw
 ```
 
-### 2) Start database
+### 2. Démarrer la base de données (PostgreSQL via Docker)
 
-Depuis `backend/` :
+Depuis le dossier **`backend/`** :
 
 ```bash
+cd backend
 docker-compose up -d
 ```
 
-### 3) Configure environment
+**Ce que fait cette commande :**
 
-Copier `backend/.env.example` vers un fichier `.env` local et renseigner les valeurs necessaires (DB, JWT, SMTP, OAuth2, etc.).
+- télécharge l’image **PostgreSQL 16** avec extension **pgvector** si nécessaire (`pgvector/pgvector:pg16`) ;
+- crée et démarre le conteneur **`forsalaw-postgres`** ;
+- mappe le port **5433** sur l’hôte vers **5432** dans le conteneur ;
+- démarre aussi **pgAdmin** (`forsalaw-pgadmin`, port hôte **5051**) ;
+- exécute les services en arrière-plan (`-d`).
 
-Variables importantes :
+**Vérifier que tout tourne :**
 
-- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
-- `JWT_SECRET`
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`
-- `ADMIN_SUPPORT_EMAIL`
-- `JITSI_BASE_URL`
+```bash
+docker ps
+```
 
-### 4) Run backend
+Tu dois voir au minimum **`forsalaw-postgres`** (et **`forsalaw-pgadmin`** si tu n’as pas limité les services).
 
-Depuis `backend/` :
+### 3. Variables d’environnement
+
+Copier **`backend/.env.example`** vers **`.env`** (toujours dans `backend/`) et renseigner les valeurs nécessaires, par exemple :
+
+- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (alignés sur `docker-compose.yml` en local : `jdbc:postgresql://localhost:5433/forsalaw`, `forsalaw` / `forsalaw`) ;
+- `JWT_SECRET` ;
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (OAuth2) ;
+- `MAIL_*`, `MAIL_FROM` si tu veux de vrais e-mails ;
+- `ADMIN_SUPPORT_EMAIL`, `JITSI_BASE_URL`, etc.
+
+### 4. Compiler le backend (Maven)
+
+Toujours depuis **`backend/`** :
+
+```bash
+mvn clean install -DskipTests
+```
+
+*(Tu peux retirer `-DskipTests` si tu veux lancer les tests à la compilation.)*
+
+### 5. Lancer l’API Spring Boot
 
 ```bash
 mvn spring-boot:run
 ```
 
-### 5) Run frontend
+L’API écoute par défaut sur le port **8081** (`SERVER_PORT` dans `.env` pour changer).
 
-Depuis `frontend/` :
+### 6. Lancer le frontend (Vite + React)
+
+Dans un **second terminal**, depuis la racine du dépôt puis **`frontend/`** :
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
----
+Le serveur de dev Vite utilise le port **3000** et **proxy** les appels `/api` vers `http://localhost:8081`.
 
-## Important URLs
+### 7. Vérifier que tout fonctionne
 
-- Application backend: `http://localhost:8081`
-- Swagger UI: `http://localhost:8081/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8081/v3/api-docs`
-- Frontend dev (Vite): `http://localhost:3000` (ou port Vite affiche dans terminal)
+Ouvre un navigateur :
 
----
-
-## Git Workflow
-
-Branche cible de travail: `develop`.
-
-Cycle recommande :
-
-1. partir de `develop` a jour ;
-2. creer une branche `feature/...` ou `fix/...` ;
-3. committer avec messages explicites ;
-4. push et ouvrir PR vers `develop` ;
-5. merger apres review + CI verte.
-
-Guide detaille :
-
-- [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md)
-- [docs/DEVOPS.md](docs/DEVOPS.md)
+- **Swagger UI :** [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)  
+  *(équivalent souvent disponible : `/swagger-ui/index.html`)*  
+- **Frontend :** [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Documentation
+![Commandes](https://img.shields.io/badge/⚡_COMMANDES_ESSENTIELLES-f97316?style=for-the-badge)
 
-- [docs/DOCKER.md](docs/DOCKER.md)
-- [docs/FLYWAY-VS-JPA.md](docs/FLYWAY-VS-JPA.md)
-- [docs/RAG-INTEGRATION-NON-ENDPOINTS.md](docs/RAG-INTEGRATION-NON-ENDPOINTS.md)
-- [docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md](docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md)
+```bash
+# Compiler le backend
+cd backend && mvn clean install -DskipTests
+
+# Lancer l’API
+cd backend && mvn spring-boot:run
+
+# Démarrer PostgreSQL (+ pgAdmin) en arrière-plan
+cd backend && docker-compose up -d
+
+# Arrêter les conteneurs
+cd backend && docker-compose down
+
+# Suivre les logs PostgreSQL
+cd backend && docker-compose logs -f postgres
+
+# Conteneurs en cours d’exécution
+docker ps
+```
 
 ---
 
-## Contributors
+![URLs](https://img.shields.io/badge/🔗_URLS_IMPORTANTES-0969da?style=for-the-badge)
 
-- Nadhmi Rouissi
-- Youssef Zaied
+| Ressource | URL |
+|-----------|-----|
+| **API (backend)** | [http://localhost:8081](http://localhost:8081) |
+| **Swagger UI** | [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html) |
+| **OpenAPI (JSON)** | [http://localhost:8081/v3/api-docs](http://localhost:8081/v3/api-docs) |
+| **Frontend (Vite)** | [http://localhost:3000](http://localhost:3000) |
+| **pgAdmin** | [http://localhost:5051](http://localhost:5051) *(identifiants par défaut dans `backend/docker-compose.yml`)* |
+
+---
+
+![Revue de code](https://img.shields.io/badge/📋_REVUE_DE_CODE-cf222e?style=for-the-badge)
+
+**Nadhmi** et **Youssef** n’acceptent les fusions (merge requests / pull requests) que si le job de build CI est **vert** et que le code **ne dégrade** pas la qualité ni les performances du projet ForsaLaw.
+
+---
+
+## Workflow Git
+
+> [!NOTE]
+> Branche de travail cible : **`develop`**.
+>
+> 1. Mettre à jour `develop`  
+> 2. Créer une branche `feature/...` ou `fix/...`  
+> 3. Commits explicites  
+> 4. Push et PR vers `develop`  
+> 5. Fusion après revue et CI verte  
+>
+> Détails : [docs/GIT-WORKFLOW.md](docs/GIT-WORKFLOW.md), [docs/DEVOPS.md](docs/DEVOPS.md)
+
+---
+
+## Documentation interne
+
+> [!NOTE]
+> - [docs/DOCKER.md](docs/DOCKER.md)  
+> - [docs/FLYWAY-VS-JPA.md](docs/FLYWAY-VS-JPA.md)  
+> - [docs/RAG-INTEGRATION-NON-ENDPOINTS.md](docs/RAG-INTEGRATION-NON-ENDPOINTS.md)  
+> - [docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md](docs/Liste_Des_Endpoints_USER_AVOCAT_AUTHENTIFIACTION.md)
+
+---
+
+## Ressources
+
+> [!TIP]
+> - [Feuille Google Sheets ForsaLaw](https://docs.google.com/spreadsheets/d/1SuGkhR0qkSWrvWlVQsqcuU9j0ZIJUoWSm3061GFPxLo/edit?gid=1469894259#gid=1469894259) — accès au document (connexion Google si nécessaire).
+
+---
+
+## Contributeurs
+
+> [!NOTE]
+> - Nadhmi Rouissi  
+> - Youssef Zaied  
+
+---
+
+<div align="center">
+
+**ForsaLaw** — LegalTech Tunisia
+
+</div>
