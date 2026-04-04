@@ -7,5 +7,7 @@ public enum ContexteDocument {
     RECLAMATION,
     MESSENGER,
     DOSSIER,
-    GENERAL
+    GENERAL,
+    /** Photo de profil utilisateur (contexteId = id utilisateur). */
+    PROFIL_UTILISATEUR
 }

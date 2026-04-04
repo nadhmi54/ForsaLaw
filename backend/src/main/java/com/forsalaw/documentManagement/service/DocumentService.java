@@ -6,7 +6,7 @@ import com.forsalaw.documentManagement.repository.DocumentAccessLogRepository;
 import com.forsalaw.documentManagement.repository.DocumentMetadataRepository;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
-import com.forsalaw.userManagement.service.UserService;
+import com.forsalaw.userManagement.service.IdSequenceService;
 import com.forsalaw.util.HashingService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class DocumentService {
     private final DocumentMetadataRepository documentRepository;
     private final DocumentAccessLogRepository accessLogRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final IdSequenceService idSequenceService;
     private final HashingService hashingService;
 
     // ─── Upload ──────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ public class DocumentService {
 
         // 5. Enregistrer les métadonnées en base de données
         DocumentMetadata doc = new DocumentMetadata();
-        doc.setId(userService.generateNextId("DOC"));
+        doc.setId(idSequenceService.generateNextId("DOC"));
         doc.setDeposeur(deposeur);
         doc.setNomOriginal(nomOriginal);
         doc.setNomStockage(nomStockage);
@@ -207,11 +207,11 @@ public class DocumentService {
     private void enregistrerLog(DocumentMetadata doc, User acteur, ActionDocument action,
                                 HttpServletRequest request, Boolean integriteValide, String details) {
         DocumentAccessLog log = new DocumentAccessLog();
-        log.setId(userService.generateNextId("DAL"));
+        log.setId(idSequenceService.generateNextId("DAL"));
         log.setDocument(doc);
         log.setActeur(acteur);
         log.setAction(action);
-        log.setAdresseIp(request != null ? request.getRemoteAddr() : null);
+        log.setAdresseIp(request != null ? request.getRemoteAddr() : "system");
         log.setIntegriteValide(integriteValide);
         log.setDetails(details);
         accessLogRepository.save(log);

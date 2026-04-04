@@ -7,6 +7,7 @@ import com.forsalaw.avocatManagement.model.*;
 import com.forsalaw.avocatManagement.repository.AvocatRepository;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
+import com.forsalaw.userManagement.service.ProfilePhotoService;
 import com.forsalaw.userManagement.service.UserService;
 import com.forsalaw.userManagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class AvocatService {
     private final AvocatRepository avocatRepository;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final ProfilePhotoService profilePhotoService;
 
     @Transactional
     public AvocatDTO createProfile(String userEmail, CreateAvocatRequest request) {
@@ -227,6 +229,7 @@ public class AvocatService {
         dto.setActif(a.isActif());
         dto.setDateCreation(a.getDateCreation());
         dto.setDateMiseAJour(a.getDateMiseAJour());
+        dto.setProfilePhotoPublicUrl(profilePhotoService.avocatPublicProfilePhotoAbsoluteUrl(a.getId(), a.getUser()));
         return dto;
     }
 

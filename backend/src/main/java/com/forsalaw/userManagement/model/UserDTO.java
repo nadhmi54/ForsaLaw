@@ -18,4 +18,9 @@ public class UserDTO {
     private boolean actif;
     private LocalDateTime dateCreation;
     private LocalDateTime dateMiseAJour;
+
+    /**
+     * URL absolue pour GET la photo (Authorization Bearer requis), ou null si pas de photo.
+     */
+    private String profilePhotoUrl;
 }

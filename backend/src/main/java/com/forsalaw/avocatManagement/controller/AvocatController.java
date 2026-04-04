@@ -8,17 +8,31 @@ import com.forsalaw.avocatManagement.model.SpecialiteItem;
 import com.forsalaw.avocatManagement.model.CreateAvocatRequest;
 import com.forsalaw.avocatManagement.model.UpdateAvocatRequest;
 import com.forsalaw.avocatManagement.service.AvocatService;
+import com.forsalaw.userManagement.model.ChangePasswordRequest;
+import com.forsalaw.userManagement.service.ProfilePhotoService;
+import com.forsalaw.userManagement.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -31,6 +45,8 @@ import java.util.stream.Collectors;
 public class AvocatController {
 
     private final AvocatService avocatService;
+    private final UserService userService;
+    private final ProfilePhotoService profilePhotoService;
 
     @Operation(summary = "Liste des domaines avec sous-domaines", description = "Retourne les domaines du droit avec la liste de leurs spécialités (sous-domaines). Pour cocher d'abord le droit puis le sous-domaine dans Swagger. Public.")
     @GetMapping("/domaines")
@@ -109,6 +125,70 @@ public class AvocatController {
         String email = authentication.getName();
         avocatService.deactivateMyProfile(email);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Changer mon mot de passe (profil avocat)",
+            description = "Réservé aux comptes avec le rôle AVOCAT. Même logique que POST /api/users/me/password : mot de passe actuel + nouveau ; comptes Google-only exclus.")
+    @PostMapping("/me/password")
+    @PreAuthorize("hasRole('AVOCAT')")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Void> changeMyPassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        userService.changePassword(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Envoyer ma photo de profil (espace avocat)", description = "Meme regles que POST /api/users/me/profile-photo ; JWT role AVOCAT.")
+    @PostMapping(value = "/me/profile-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('AVOCAT')")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<AvocatDTO> uploadMyProfilePhotoAvocat(
+            Authentication authentication,
+            @Parameter(description = "Fichier image")
+            @RequestParam("fichier") MultipartFile fichier,
+            HttpServletRequest request
+    ) throws IOException {
+        profilePhotoService.uploadProfilePhoto(authentication.getName(), fichier, request);
+        return ResponseEntity.ok(avocatService.getMyProfile(authentication.getName()));
+    }
+
+    @Operation(summary = "Telecharger ma photo de profil (espace avocat)", description = "Identique a GET /api/users/me/profile-photo pour le compte connecte.")
+    @GetMapping(value = "/me/profile-photo", produces = { MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp", MediaType.IMAGE_GIF_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE })
+    @PreAuthorize("hasRole('AVOCAT')")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Resource> downloadMyProfilePhotoAvocat(
+            Authentication authentication,
+            HttpServletRequest request
+    ) {
+        String email = authentication.getName();
+        Resource resource = profilePhotoService.telechargerMaPhoto(email, request);
+        MediaType ct = profilePhotoService.mediaTypeForUserProfilePhoto(email);
+        String filename = profilePhotoService.originalFilenameForUserProfilePhoto(email);
+        ContentDisposition cd = ContentDisposition.inline()
+                .filename(filename, StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(ct)
+                .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
+                .body(resource);
+    }
+
+    @Operation(summary = "Photo de profil publique (fiche avocat)", description = "Sans authentification : image pour la liste / fiche publique si l'avocat est actif et a une photo.")
+    @GetMapping(value = "/{id}/profile-photo", produces = { MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp", MediaType.IMAGE_GIF_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE })
+    public ResponseEntity<Resource> getPublicAvocatProfilePhoto(@PathVariable String id) {
+        Resource resource = profilePhotoService.telechargerPhotoPubliqueAvocat(id);
+        MediaType ct = profilePhotoService.mediaTypeForPublicAvocatProfilePhoto(id);
+        String filename = profilePhotoService.originalFilenameForPublicAvocat(id);
+        ContentDisposition cd = ContentDisposition.inline()
+                .filename(filename, StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(ct)
+                .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
+                .body(resource);
     }
 
     @Operation(summary = "Détail d'un avocat (public)", description = "Retourne la fiche d'un avocat par son identifiant (avocats actifs uniquement). Accessible sans authentification.")

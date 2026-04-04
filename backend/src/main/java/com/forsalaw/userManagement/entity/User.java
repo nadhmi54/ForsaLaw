@@ -31,6 +31,10 @@ public class User {
     @Column(name = "telephone", length = 20)
     private String telephone; // Format international : +21612345678
 
+    /** Id document coffre-fort (DOC…) pour la photo de profil ; null si aucune. */
+    @Column(name = "profile_photo_document_id", length = 20)
+    private String profilePhotoDocumentId;
+
     @Column(name = "motdepasse", nullable = false)
     private String motDePasse; // stocké hashé (BCrypt)
 

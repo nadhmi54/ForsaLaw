@@ -1,15 +1,13 @@
 package com.forsalaw.userManagement.service;
 
-import com.forsalaw.userManagement.entity.IdSequence;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.model.AdminUpdateUserRequest;
+import com.forsalaw.userManagement.model.ChangePasswordRequest;
 import com.forsalaw.userManagement.model.UpdateUserRequest;
 import com.forsalaw.userManagement.model.UserDTO;
-import com.forsalaw.userManagement.repository.IdSequenceRepository;
 import com.forsalaw.userManagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,29 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final IdSequenceRepository idSequenceRepository;
+    private final IdSequenceService idSequenceService;
     private final PasswordEncoder passwordEncoder;
+    private final ProfilePhotoService profilePhotoService;
 
-    /** Génère le prochain ID au format AAAA-XXX-NNNNN (ex: 2025-USR-00001). */
+    /** Prochain ID séquentiel (même logique que le coffre documents / logs). */
     @Transactional
     public String generateNextId(String prefix) {
-        int year = LocalDate.now().getYear();
-        var seq = idSequenceRepository.findByEntityTypeAndYearForUpdate(prefix, year);
-        long nextVal;
-        if (seq.isEmpty()) {
-            IdSequence newSeq = new IdSequence();
-            newSeq.setEntityType(prefix);
-            newSeq.setYear(year);
-            newSeq.setNextVal(2); // prochain numéro à attribuer
-            idSequenceRepository.save(newSeq);
-            nextVal = 1; // premier id de l'année
-        } else {
-            IdSequence s = seq.get();
-            nextVal = s.getNextVal();
-            s.setNextVal(nextVal + 1);
-            idSequenceRepository.save(s);
-        }
-        return year + "-" + prefix + "-" + String.format("%05d", nextVal);
+        return idSequenceService.generateNextId(prefix);
     }
 
     public UserDTO getByEmail(String email) {
@@ -73,14 +56,42 @@ public class UserService {
             if (request.getMotDePasseActuel() == null || request.getMotDePasseActuel().isBlank()) {
                 throw new IllegalArgumentException("Le mot de passe actuel est requis pour changer le mot de passe.");
             }
-            if (!passwordEncoder.matches(request.getMotDePasseActuel(), user.getMotDePasse())) {
-                throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
-            }
-            user.setMotDePasse(passwordEncoder.encode(request.getNouveauMotDePasse()));
+            applyPasswordChange(user, request.getMotDePasseActuel(), request.getNouveauMotDePasse());
         }
 
         user = userRepository.save(user);
         return toDTO(user);
+    }
+
+    /**
+     * Changement de mot de passe pour l'utilisateur connecté (client, avocat, admin).
+     * Les comptes créés uniquement via Google OAuth n'ont pas de mot de passe local exploitable ici.
+     */
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
+        applyPasswordChange(user, request.getMotDePasseActuel(), request.getNouveauMotDePasse());
+        userRepository.save(user);
+    }
+
+    private void applyPasswordChange(User user, String motDePasseActuel, String nouveauMotDePasse) {
+        if (isGoogleOAuthPlaceholderPassword(user.getMotDePasse())) {
+            throw new IllegalArgumentException(
+                    "Ce compte a été créé via Google : il n'y a pas de mot de passe local à modifier. "
+                            + "Utilisez la procédure « mot de passe oublié » pour définir un mot de passe ForsaLaw, ou gérez l'accès depuis votre compte Google.");
+        }
+        if (!passwordEncoder.matches(motDePasseActuel, user.getMotDePasse())) {
+            throw new IllegalArgumentException("Le mot de passe actuel est incorrect.");
+        }
+        if (nouveauMotDePasse.equals(motDePasseActuel)) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent du mot de passe actuel.");
+        }
+        user.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
+    }
+
+    private static boolean isGoogleOAuthPlaceholderPassword(String hashedOrMarker) {
+        return hashedOrMarker != null && hashedOrMarker.contains("GOOGLE_OAUTH2_ACCOUNT");
     }
 
     public Page<UserDTO> findAll(Pageable pageable) {
@@ -185,6 +196,7 @@ public class UserService {
         dto.setActif(user.isActif());
         dto.setDateCreation(user.getDateCreation());
         dto.setDateMiseAJour(user.getDateMiseAJour());
+        dto.setProfilePhotoUrl(profilePhotoService.userProfilePhotoAbsoluteUrl(user));
         return dto;
     }
 }
