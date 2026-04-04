@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "telephone", length = 20)
+    private String telephone; // Format international : +21612345678
+
     @Column(name = "motdepasse", nullable = false)
     private String motDePasse; // stocké hashé (BCrypt)
 

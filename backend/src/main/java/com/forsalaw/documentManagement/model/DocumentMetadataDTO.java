@@ -20,6 +20,12 @@ public class DocumentMetadataDTO {
     private String hashSha256;
     private ContexteDocument contexteType;
     private String contexteId;
+    
+    private boolean estSigne;
+    private LocalDateTime dateSignature;
+    private String signataireEmail;
+    private String hashApresSignature;
+
     private boolean supprime;
     private LocalDateTime dateCreation;
 }

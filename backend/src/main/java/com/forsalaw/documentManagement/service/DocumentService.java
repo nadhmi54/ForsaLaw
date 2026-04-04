@@ -181,6 +181,11 @@ public class DocumentService {
         return accessLogRepository.findByDocument_IdOrderByDateActionDesc(documentId, pageable).map(this::toLogDTO);
     }
 
+    @Transactional(readOnly = true)
+    public DocumentMetadataDTO getDocumentDTO(String documentId) {
+        return toDTO(requireDocument(documentId));
+    }
+
     // ─── Admin ────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -250,6 +255,10 @@ public class DocumentService {
                 doc.getHashSha256(),
                 doc.getContexteType(),
                 doc.getContexteId(),
+                doc.isEstSigne(),
+                doc.getDateSignature(),
+                doc.getSignataireEmail(),
+                doc.getHashApresSignature(),
                 doc.isSupprime(),
                 doc.getDateCreation()
         );

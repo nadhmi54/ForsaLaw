@@ -73,6 +73,21 @@ public class DocumentMetadata {
     @Column(name = "supprime", nullable = false)
     private boolean supprime = false;
 
+    // --- Signature Electronique ---
+
+    @Column(name = "est_signe", nullable = false, columnDefinition = "boolean default false")
+    private boolean estSigne = false;
+
+    @Column(name = "date_signature")
+    private LocalDateTime dateSignature;
+
+    @Column(name = "signataire_email")
+    private String signataireEmail;
+
+    /** Le nouveau hash SHA-256 après application de la signature sur le PDF. */
+    @Column(name = "hash_apres_signature", length = 64)
+    private String hashApresSignature;
+
     @Column(name = "date_creation", nullable = false, updatable = false)
     private LocalDateTime dateCreation;
 

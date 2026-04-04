@@ -8,5 +8,6 @@ public enum ActionDocument {
     TELECHARGEMENT,
     CONSULTATION,
     VERIFICATION_INTEGRITE,
+    SIGNATURE,
     SUPPRESSION
 }
