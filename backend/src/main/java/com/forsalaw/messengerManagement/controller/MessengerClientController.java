@@ -79,16 +79,6 @@ public class MessengerClientController {
         return ResponseEntity.ok(messengerService.getMessagesForClient(authentication.getName(), conversationId, pageable, since));
     }
 
-    @Operation(summary = "Envoyer un message", description = "Envoie un message dans la conversation (client).")
-    @PostMapping("/conversations/{id}/messages")
-    public ResponseEntity<MessengerMessageDTO> sendMessage(
-            Authentication authentication,
-            @PathVariable("id") String conversationId,
-            @Valid @RequestBody SendMessageRequest request
-    ) {
-        return ResponseEntity.ok(messengerService.sendMessageAsClient(authentication.getName(), conversationId, request));
-    }
-
     @Operation(
             summary = "Envoyer un message avec pieces jointes",
             description = "Multipart : champ optionnel `content` (texte) + un ou plusieurs `files`. Types : pdf, png, jpg, jpeg, gif, webp ; taille max configuree cote serveur.",

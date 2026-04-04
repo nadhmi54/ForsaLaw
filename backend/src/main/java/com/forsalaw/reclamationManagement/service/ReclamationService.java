@@ -22,6 +22,7 @@ public class ReclamationService {
 
     private final ReclamationRepository reclamationRepository;
     private final ReclamationMessageRepository messageRepository;
+    private final ReclamationAttachmentRepository attachmentRepository;
     private final UserRepository userRepository;
     private final UserService userService;
     private final com.forsalaw.userManagement.repository.IdSequenceRepository idSequenceRepository;
@@ -60,6 +61,31 @@ public class ReclamationService {
 
         r = reclamationRepository.save(r);
         return mapToDTO(r);
+    }
+
+    @Transactional(readOnly = true)
+    public Reclamation verifierAccesEtObtenirReclamation(String emailUtilisateur, String reclamationId) {
+        User user = userRepository.findByEmail(emailUtilisateur)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+        Reclamation r = reclamationRepository.findById(reclamationId)
+                .orElseThrow(() -> new IllegalArgumentException("Réclamation non trouvée"));
+        if (!r.getCreateur().getId().equals(user.getId()) && !user.getRoleUser().name().equalsIgnoreCase("admin")) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé");
+        }
+        return r;
+    }
+
+    @Transactional(readOnly = true)
+    public ReclamationAttachment verifierAccesEtObtenirPieceJointe(String emailUtilisateur, Long attachmentId) {
+        ReclamationAttachment attachment = attachmentRepository.findByIdWithReclamationAndCreateur(attachmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Pièce jointe non trouvée"));
+        User user = userRepository.findByEmail(emailUtilisateur)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+        Reclamation r = attachment.getReclamation();
+        if (!r.getCreateur().getId().equals(user.getId()) && !user.getRoleUser().name().equalsIgnoreCase("admin")) {
+            throw new org.springframework.security.access.AccessDeniedException("Accès refusé");
+        }
+        return attachment;
     }
 
     @Transactional(readOnly = true)
@@ -128,6 +154,7 @@ public class ReclamationService {
     public ReclamationDTO mettreAJourStatut(String id, StatutReclamation statut) {
         Reclamation r = reclamationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Réclamation non trouvée"));
+        StatutReclamationTransitionRules.verifier(r.getStatut(), statut);
         r.setStatut(statut);
         r.setDateModification(LocalDateTime.now());
         r.setANouvelleNotification(true);

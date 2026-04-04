@@ -4,6 +4,8 @@ import com.forsalaw.reclamationManagement.entity.StatutReclamation;
 import com.forsalaw.reclamationManagement.model.*;
 import com.forsalaw.reclamationManagement.service.ReclamationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +27,46 @@ public class ReclamationController {
 
     private final ReclamationService reclamationService;
 
-    @Operation(summary = "Créer une réclamation", description = "Soumission d'une plainte.")
+    @Operation(
+            summary = "Créer une réclamation",
+            description = "Le créateur est **toujours** l'utilisateur du token JWT (email du compte connecté). "
+                    + "Vous n'avez **pas** à envoyer votre identifiant : il est déduit automatiquement. "
+                    + "Le champ `utilisateurCibleId` est **optionnel** : ne le renseignez que pour désigner un autre utilisateur du système (ex. avocat), pas pour vous identifier.")
     @PostMapping
-    public ResponseEntity<ReclamationDTO> creer(Authentication authentication, 
-                                               @Valid @RequestBody CreateReclamationRequest request) {
+    public ResponseEntity<ReclamationDTO> creer(
+            Authentication authentication,
+            @Valid
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Corps sans identifiant du créateur (pris sur le JWT après **Authorize**).",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Cas courant",
+                                            summary = "Sans utilisateur cible",
+                                            value = """
+                                                    {
+                                                      "titre": "Problème de facturation",
+                                                      "description": "Je souhaite contester un prélèvement.",
+                                                      "categorie": "FACTURATION",
+                                                      "gravite": "MOYENNE"
+                                                    }
+                                                    """),
+                                    @ExampleObject(
+                                            name = "Avec personne désignée",
+                                            summary = "Optionnel : autre utilisateur (ex. avocat)",
+                                            value = """
+                                                    {
+                                                      "titre": "Demande juridique",
+                                                      "description": "Besoin d'un suivi par un avocat du cabinet.",
+                                                      "categorie": "JURIDIQUE",
+                                                      "gravite": "BASSE",
+                                                      "utilisateurCibleId": "id-utilisateur-existant-en-base"
+                                                    }
+                                                    """)
+                            }))
+            CreateReclamationRequest request) {
         return ResponseEntity.ok(reclamationService.creerReclamation(authentication.getName(), request));
     }
 
