@@ -37,6 +37,24 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final com.forsalaw.documentManagement.service.SignatureService signatureService;
+
+    // ─── Signature Electronique ──────────────────────────────────────────────
+
+    @Operation(summary = "Signer électroniquement un document")
+    @PostMapping("/{id}/signer")
+    public ResponseEntity<DocumentMetadataDTO> signerDocument(
+            Authentication authentication,
+            @PathVariable String id
+    ) {
+        return ResponseEntity.ok(signatureService.signerDocument(id, authentication.getName()));
+    }
+
+    @Operation(summary = "Vérifier la validité de la signature électronique")
+    @GetMapping("/{id}/verify-signature")
+    public ResponseEntity<java.util.Map<String, Object>> verifierSignature(@PathVariable String id) {
+        return ResponseEntity.ok(signatureService.verifierSignature(id));
+    }
 
     // ─── Upload ──────────────────────────────────────────────────────────────
 
