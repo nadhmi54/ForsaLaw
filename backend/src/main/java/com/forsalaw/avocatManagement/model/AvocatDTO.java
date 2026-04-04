@@ -35,4 +35,7 @@ public class AvocatDTO {
     private boolean actif;
     private LocalDateTime dateCreation;
     private LocalDateTime dateMiseAJour;
+
+    /** URL publique (sans auth) pour afficher la photo si l'avocat en a une ; sinon null. */
+    private String profilePhotoPublicUrl;
 }
