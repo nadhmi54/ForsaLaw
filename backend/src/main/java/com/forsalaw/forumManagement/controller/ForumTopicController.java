@@ -69,13 +69,26 @@ public class ForumTopicController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Lister les messages d'un topic (public)")
+    @Operation(summary = "Lister les messages d'un topic (public). Si JWT présent, remplit myReaction pour l'utilisateur connecte.")
     @GetMapping("/{topicId}/messages")
     public ResponseEntity<Page<ForumMessageDTO>> listMessages(
+            Authentication authentication,
             @PathVariable String topicId,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(forumService.listMessages(topicId, pageable));
+        String viewerEmail = resolveViewerEmail(authentication);
+        return ResponseEntity.ok(forumService.listMessages(topicId, pageable, viewerEmail));
+    }
+
+    private static String resolveViewerEmail(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        String name = authentication.getName();
+        if (name == null || "anonymousUser".equalsIgnoreCase(name)) {
+            return null;
+        }
+        return name;
     }
 
     @Operation(summary = "Ajouter un message dans un topic (client ou avocat)")

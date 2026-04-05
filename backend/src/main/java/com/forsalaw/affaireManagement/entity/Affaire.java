@@ -1,6 +1,7 @@
 package com.forsalaw.affaireManagement.entity;
 
 import com.forsalaw.avocatManagement.entity.Avocat;
+import com.forsalaw.rdvManagement.entity.RendezVous;
 import com.forsalaw.reclamationManagement.entity.Reclamation;
 import com.forsalaw.userManagement.entity.User;
 import jakarta.persistence.*;
@@ -44,6 +45,11 @@ public class Affaire {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reclamation_id")
     private Reclamation reclamation; // optionnel : si l'affaire vient d'une plainte
+
+    /** RDV dont est issue l'affaire (création auto quand le client confirme le créneau proposé par l'avocat). */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rendez_vous_id", unique = true)
+    private RendezVous rendezVous;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
