@@ -59,7 +59,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/documents/**").hasRole("ADMIN")
                         .requestMatchers("/api/documents/**").authenticated()
                         .requestMatchers("/api/admin/affaires/**").hasRole("ADMIN")
-                        .requestMatchers("/api/affaires/**").authenticated()
                         .requestMatchers("/api/admin/whatsapp/**").hasRole("ADMIN")
                         .requestMatchers("/api/messenger/avocat/**").hasRole("AVOCAT")
                         .requestMatchers("/api/messenger/**").hasRole("CLIENT")

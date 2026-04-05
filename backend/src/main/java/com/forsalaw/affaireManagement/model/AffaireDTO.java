@@ -22,6 +22,8 @@ public class AffaireDTO {
     private String avocatId;
     private String avocatNom;
     private String reclamationId;
+    /** Présent si l'affaire a été ouverte automatiquement après confirmation du RDV. */
+    private String rendezVousId;
     private LocalDateTime dateProchaineAudience;
     private LocalDateTime dateOuverture;
     private LocalDateTime dateMiseAJour;

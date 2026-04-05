@@ -4,6 +4,7 @@ import com.forsalaw.avocatManagement.entity.Avocat;
 import com.forsalaw.avocatManagement.repository.AvocatRepository;
 import com.forsalaw.rdvManagement.entity.*;
 import com.forsalaw.rdvManagement.model.*;
+import com.forsalaw.affaireManagement.service.AffaireService;
 import com.forsalaw.rdvManagement.repository.RendezVousRepository;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
@@ -30,6 +31,7 @@ public class RendezVousService {
     private final AvocatAgendaService avocatAgendaService;
     private final RdvNotificationEmailService rdvNotificationEmailService;
     private final JitsiMeetingService jitsiMeetingService;
+    private final AffaireService affaireService;
 
     private static final Set<StatutRendezVous> STATUTS_OCCUPES = Set.of(StatutRendezVous.PROPOSE, StatutRendezVous.CONFIRME);
 
@@ -155,6 +157,8 @@ public class RendezVousService {
         }
         rdv.setStatutRendezVous(StatutRendezVous.CONFIRME);
         rdv = rendezVousRepository.save(rdv);
+        rendezVousRepository.flush();
+        affaireService.creerAffaireSiRendezVousConfirme(rdv);
         rdvNotificationEmailService.notifyConfirmation(rdv.getIdRendezVous());
         return toDTO(rdv);
     }

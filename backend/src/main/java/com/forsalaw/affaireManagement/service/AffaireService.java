@@ -2,15 +2,11 @@ package com.forsalaw.affaireManagement.service;
 
 import com.forsalaw.affaireManagement.entity.Affaire;
 import com.forsalaw.affaireManagement.entity.StatutAffaire;
+import com.forsalaw.affaireManagement.entity.TypeAffaire;
 import com.forsalaw.affaireManagement.model.AffaireDTO;
-import com.forsalaw.affaireManagement.model.CreateAffaireRequest;
-import com.forsalaw.affaireManagement.model.UpdateStatutRequest;
 import com.forsalaw.affaireManagement.repository.AffaireRepository;
-import com.forsalaw.avocatManagement.entity.Avocat;
-import com.forsalaw.avocatManagement.repository.AvocatRepository;
-import com.forsalaw.notificationManagement.service.NotificationService;
-import com.forsalaw.reclamationManagement.entity.Reclamation;
-import com.forsalaw.reclamationManagement.repository.ReclamationRepository;
+import com.forsalaw.rdvManagement.entity.RendezVous;
+import com.forsalaw.rdvManagement.entity.StatutRendezVous;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
@@ -29,70 +25,59 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class AffaireService {
 
+    private static final int TITRE_MAX = 250;
+
     private final AffaireRepository affaireRepository;
     private final UserRepository userRepository;
-    private final AvocatRepository avocatRepository;
-    private final ReclamationRepository reclamationRepository;
     private final UserService userService;
-    private final NotificationService notificationService;
 
-    // ─── Création ─────────────────────────────────────────────────────────────
-
+    /**
+     * Appelé lorsque le RDV passe à {@link StatutRendezVous#CONFIRME} (client a accepté la proposition de l'avocat).
+     * Une seule affaire par RDV.
+     */
     @Transactional
-    public AffaireDTO creerAffaire(CreateAffaireRequest request) {
-        User client = userRepository.findById(request.getClientId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable."));
+    public void creerAffaireSiRendezVousConfirme(RendezVous rdv) {
+        if (rdv.getStatutRendezVous() != StatutRendezVous.CONFIRME) {
+            return;
+        }
+        if (affaireRepository.existsByRendezVous_IdRendezVous(rdv.getIdRendezVous())) {
+            return;
+        }
 
         Affaire affaire = new Affaire();
         affaire.setId(userService.generateNextId("AFF"));
-        affaire.setTitre(request.getTitre());
-        affaire.setDescription(request.getDescription());
-        affaire.setType(request.getType());
+        affaire.setTitre(buildTitreDepuisRdv(rdv));
+        affaire.setDescription(rdv.getMotifConsultation());
+        affaire.setType(TypeAffaire.CIVIL);
         affaire.setStatut(StatutAffaire.INSTRUCTION);
-        affaire.setClient(client);
-        affaire.setDateProchaineAudience(request.getDateProchaineAudience());
+        affaire.setClient(rdv.getClient());
+        affaire.setAvocat(rdv.getAvocat());
+        affaire.setRendezVous(rdv);
+        affaire.setDateProchaineAudience(rdv.getDateHeureDebut());
 
-        if (request.getAvocatId() != null) {
-            Avocat avocat = avocatRepository.findById(request.getAvocatId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Avocat introuvable."));
-            affaire.setAvocat(avocat);
-        }
-
-        if (request.getReclamationId() != null) {
-            Reclamation reclamation = reclamationRepository.findById(request.getReclamationId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réclamation introuvable."));
-            affaire.setReclamation(reclamation);
-        }
-
-        affaire = affaireRepository.save(affaire);
-        log.info("Affaire créée : {} pour client {}", affaire.getId(), client.getEmail());
-        return toDTO(affaire, true);
+        affaireRepository.save(affaire);
+        log.info("Affaire {} ouverte automatiquement depuis RDV confirme {}", affaire.getId(), rdv.getIdRendezVous());
     }
 
-    // ─── Consultation ─────────────────────────────────────────────────────────
+    private static String buildTitreDepuisRdv(RendezVous rdv) {
+        String motif = rdv.getMotifConsultation();
+        if (motif != null && !motif.isBlank()) {
+            String t = motif.trim();
+            if (t.length() > TITRE_MAX) {
+                return t.substring(0, TITRE_MAX - 1) + "…";
+            }
+            return t;
+        }
+        return "Consultation — RDV " + rdv.getIdRendezVous();
+    }
+
+    // ─── Consultation (admin uniquement) ───────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public AffaireDTO getAffaire(String affaireId, String emailActeur) {
+    public AffaireDTO getAffairePourAdmin(String affaireId, String emailActeur) {
+        assertAdmin(requireUser(emailActeur));
         Affaire affaire = requireAffaire(affaireId);
-        User acteur = requireUser(emailActeur);
-        assertAcces(acteur, affaire);
-        boolean isPrivileged = acteur.getRoleUser() == RoleUser.admin
-                || (affaire.getAvocat() != null && affaire.getAvocat().getUser().getEmail().equals(emailActeur));
-        return toDTO(affaire, isPrivileged);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AffaireDTO> mesAffaires(String email, Pageable pageable) {
-        User user = requireUser(email);
-        Page<Affaire> page;
-        if (user.getRoleUser() == RoleUser.avocat) {
-            Avocat avocat = avocatRepository.findByUserId(user.getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profil avocat introuvable."));
-            page = affaireRepository.findByAvocat_Id(avocat.getId(), pageable);
-        } else {
-            page = affaireRepository.findByClient_Id(user.getId(), pageable);
-        }
-        return page.map(a -> toDTO(a, user.getRoleUser() == RoleUser.avocat));
+        return toDTO(affaire, true);
     }
 
     @Transactional(readOnly = true)
@@ -101,57 +86,6 @@ public class AffaireService {
                 ? affaireRepository.findByStatut(statut, pageable)
                 : affaireRepository.findAll(pageable);
         return page.map(a -> toDTO(a, true));
-    }
-
-    // ─── Mise à jour statut ───────────────────────────────────────────────────
-
-    @Transactional
-    public AffaireDTO changerStatut(String affaireId, UpdateStatutRequest request, String emailActeur) {
-        Affaire affaire = requireAffaire(affaireId);
-        User acteur = requireUser(emailActeur);
-
-        // Seul avocat assigné ou admin peut changer le statut
-        boolean isAdmin = acteur.getRoleUser() == RoleUser.admin;
-        boolean isAvocatAssigne = affaire.getAvocat() != null
-                && affaire.getAvocat().getUser().getEmail().equals(emailActeur);
-        if (!isAdmin && !isAvocatAssigne) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Seul l'avocat assigné ou un admin peut modifier le statut.");
-        }
-
-        StatutAffaire ancienStatut = affaire.getStatut();
-        affaire.setStatut(request.getStatut());
-
-        if (request.getDateProchaineAudience() != null) {
-            affaire.setDateProchaineAudience(request.getDateProchaineAudience());
-        }
-        if (request.getNotesInternes() != null) {
-            affaire.setNotesInternes(request.getNotesInternes());
-        }
-        if (request.getStatut() == StatutAffaire.CLOS) {
-            affaire.setDateCloture(java.time.LocalDateTime.now());
-        }
-
-        affaire = affaireRepository.save(affaire);
-        log.info("Affaire {} : statut {} -> {}", affaireId, ancienStatut, request.getStatut());
-
-        // Notification WhatsApp/Email au client
-        notificationService.notifierChangementStatutAffaire(affaire);
-
-        return toDTO(affaire, true);
-    }
-
-    // ─── Assigner un avocat ───────────────────────────────────────────────────
-
-    @Transactional
-    public AffaireDTO assignerAvocat(String affaireId, String avocatId) {
-        Affaire affaire = requireAffaire(affaireId);
-        Avocat avocat = avocatRepository.findById(avocatId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Avocat introuvable."));
-        affaire.setAvocat(avocat);
-        affaire = affaireRepository.save(affaire);
-        log.info("Avocat {} assigné à l'affaire {}", avocatId, affaireId);
-        return toDTO(affaire, true);
     }
 
     // ─── Utilitaires privés ───────────────────────────────────────────────────
@@ -166,13 +100,9 @@ public class AffaireService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Utilisateur inconnu."));
     }
 
-    private void assertAcces(User acteur, Affaire affaire) {
-        if (acteur.getRoleUser() == RoleUser.admin) return;
-        boolean isClient = affaire.getClient().getId().equals(acteur.getId());
-        boolean isAvocat = affaire.getAvocat() != null
-                && affaire.getAvocat().getUser().getId().equals(acteur.getId());
-        if (!isClient && !isAvocat) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé.");
+    private static void assertAdmin(User acteur) {
+        if (acteur.getRoleUser() != RoleUser.admin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acces reserve aux administrateurs.");
         }
     }
 
@@ -191,6 +121,9 @@ public class AffaireService {
         }
         if (a.getReclamation() != null) {
             dto.setReclamationId(a.getReclamation().getId());
+        }
+        if (a.getRendezVous() != null) {
+            dto.setRendezVousId(a.getRendezVous().getIdRendezVous());
         }
         dto.setDateProchaineAudience(a.getDateProchaineAudience());
         dto.setDateOuverture(a.getDateOuverture());

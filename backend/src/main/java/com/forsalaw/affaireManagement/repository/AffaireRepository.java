@@ -17,4 +17,6 @@ public interface AffaireRepository extends JpaRepository<Affaire, String> {
     Page<Affaire> findByStatut(StatutAffaire statut, Pageable pageable);
 
     long countByAvocat_Id(String avocatId);
+
+    boolean existsByRendezVous_IdRendezVous(String idRendezVous);
 }

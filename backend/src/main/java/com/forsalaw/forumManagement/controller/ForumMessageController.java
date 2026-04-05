@@ -1,6 +1,7 @@
 package com.forsalaw.forumManagement.controller;
 
 import com.forsalaw.forumManagement.model.ForumMessageDTO;
+import com.forsalaw.forumManagement.model.SetForumReactionRequest;
 import com.forsalaw.forumManagement.model.UpdateForumMessageRequest;
 import com.forsalaw.forumManagement.service.ForumService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,5 +41,26 @@ public class ForumMessageController {
     ) {
         forumService.deleteMessage(authentication.getName(), messageId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Reagir a un message (like, love, etc.) — une reaction par utilisateur ; remplace la precedente.")
+    @PutMapping("/{messageId}/reactions")
+    @PreAuthorize("hasAnyRole('CLIENT','AVOCAT','ADMIN')")
+    public ResponseEntity<ForumMessageDTO> setReaction(
+            Authentication authentication,
+            @PathVariable String messageId,
+            @Valid @RequestBody SetForumReactionRequest request
+    ) {
+        return ResponseEntity.ok(forumService.setReaction(authentication.getName(), messageId, request.getType()));
+    }
+
+    @Operation(summary = "Retirer sa reaction sur un message")
+    @DeleteMapping("/{messageId}/reactions")
+    @PreAuthorize("hasAnyRole('CLIENT','AVOCAT','ADMIN')")
+    public ResponseEntity<ForumMessageDTO> removeReaction(
+            Authentication authentication,
+            @PathVariable String messageId
+    ) {
+        return ResponseEntity.ok(forumService.removeReaction(authentication.getName(), messageId));
     }
 }
