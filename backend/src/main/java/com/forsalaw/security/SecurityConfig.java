@@ -64,7 +64,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/messenger/**").hasRole("CLIENT")
                         .requestMatchers("/api/audit-logs/**").authenticated()
                         .requestMatchers("/api/avocats/me", "/api/avocats/me/**").hasAnyRole("CLIENT", "AVOCAT")
-                        .requestMatchers(HttpMethod.POST, "/api/avocats/*/avis").hasRole("CLIENT")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -80,7 +79,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** GET /api/avocats et GET /api/avocats/** = public (liste avocats, détail, liste avis). */
+    /** GET /api/avocats et GET /api/avocats/** = public (liste avocats, détail). */
     private static RequestMatcher getAvocatsPublicMatcher() {
         return request -> HttpMethod.GET.name().equals(request.getMethod())
                 && (new AntPathRequestMatcher("/api/avocats").matches(request)
