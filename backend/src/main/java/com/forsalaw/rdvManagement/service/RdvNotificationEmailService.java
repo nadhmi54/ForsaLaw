@@ -116,25 +116,14 @@ public class RdvNotificationEmailService {
             String debut = rdv.getDateHeureDebut() != null ? FMT.format(rdv.getDateHeureDebut()) : "—";
             String fin = rdv.getDateHeureFin() != null ? FMT.format(rdv.getDateHeureFin()) : "—";
             boolean enLigne = rdv.getTypeRendezVous() == com.forsalaw.rdvManagement.entity.TypeRendezVous.EN_LIGNE;
-            String meetingUrl = (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank()) ? null : rdv.getMeetingUrl().trim();
             String blocFormat = enLigne
-                    ? "<p style=\"margin:0 0 16px;color:#0f172a;\"><strong>Format :</strong> En ligne (visioconférence)</p>"
+                    ? "<p style=\"margin:0 0 16px;color:#0f172a;\"><strong>Format :</strong> En ligne (depuis la plateforme ForsaLaw)</p>"
                     : "<p style=\"margin:0 0 16px;color:#0f172a;\"><strong>Format :</strong> Cabinet / présentiel</p>";
-            String blocLien = (enLigne && meetingUrl != null)
-                    ? """
-                      <p style="margin:0 0 18px;line-height:1.65;color:#334155;">Votre lien de réunion est prêt :</p>
-                      <p style="margin:0 0 20px;">
-                        <a href="%s" style="display:inline-block;background:#0f766e;color:#ffffff !important;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;">Rejoindre la réunion</a>
-                      </p>
-                      <p style="margin:0;color:#64748b;font-size:13px;word-break:break-all;">%s</p>
-                      """.formatted(escape(meetingUrl), escape(meetingUrl))
+            String blocAccesPlateforme = enLigne
+                    ? "<p style=\"margin:0 0 18px;line-height:1.65;color:#334155;\">Vous pourrez rejoindre la salle de rendez-vous directement depuis votre espace ForsaLaw au moment prévu.</p>"
                     : "";
 
-            if (enLigne && meetingUrl == null) {
-                log.warn("RDV {} confirme en ligne mais meetingUrl absent — lien Jitsi non inclus dans l'e-mail.", idRendezVous);
-            }
-
-            // Toujours envoyer la confirmation si SMTP OK (horaires + lien Jitsi si en ligne). Les autres mails RDV restent filtrés par les préférences.
+            // Toujours envoyer la confirmation si SMTP OK. Les autres mails RDV restent filtres par les preferences.
             String avocatNom = rdv.getAvocat().getUser().getPrenom() + " " + rdv.getAvocat().getUser().getNom();
             String innerClient = """
                     <p style="margin:0 0 14px;">Bonjour,</p>
@@ -142,7 +131,7 @@ public class RdvNotificationEmailService {
                     %s
                     %s
                     %s
-                    """.formatted(escape(avocatNom), blocHoraires(debut, fin), blocFormat, blocLien);
+                    """.formatted(escape(avocatNom), blocHoraires(debut, fin), blocFormat, blocAccesPlateforme);
             sendHtml(rdv.getClient().getEmail(), "ForsaLaw — Rendez-vous confirmé", wrapLayout("Confirmation de rendez-vous", innerClient));
 
             String clientNom = rdv.getClient().getPrenom() + " " + rdv.getClient().getNom();
@@ -152,7 +141,7 @@ public class RdvNotificationEmailService {
                     %s
                     %s
                     %s
-                    """.formatted(escape(clientNom), blocHoraires(debut, fin), blocFormat, blocLien);
+                    """.formatted(escape(clientNom), blocHoraires(debut, fin), blocFormat, blocAccesPlateforme);
             sendHtml(rdv.getAvocat().getUser().getEmail(), "ForsaLaw — Rendez-vous confirmé", wrapLayout("Confirmation de rendez-vous", innerAvocat));
         });
     }

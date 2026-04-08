@@ -30,7 +30,7 @@ public class RendezVousService {
     private final UserService userService;
     private final AvocatAgendaService avocatAgendaService;
     private final RdvNotificationEmailService rdvNotificationEmailService;
-    private final JitsiMeetingService jitsiMeetingService;
+    private final RdvOnlineMeetingService rdvOnlineMeetingService;
     private final AffaireService affaireService;
 
     private static final Set<StatutRendezVous> STATUTS_OCCUPES = Set.of(StatutRendezVous.PROPOSE, StatutRendezVous.CONFIRME);
@@ -132,6 +132,10 @@ public class RendezVousService {
         rdv.setDateHeureDebut(debut);
         rdv.setDateHeureFin(fin);
         rdv.setTypeRendezVous(request.getTypeRendezVous() != null ? request.getTypeRendezVous() : rdv.getTypeRendezVous());
+        if (rdv.getTypeRendezVous() != TypeRendezVous.EN_LIGNE) {
+            // Garantit qu'un RDV presentiel ne conserve jamais d'info de salle en ligne.
+            rdv.setMeetingUrl(null);
+        }
         rdv.setCommentaireAvocat(trimOrNull(request.getCommentaireAvocat()));
         rdv.setStatutRendezVous(StatutRendezVous.PROPOSE);
 
@@ -151,9 +155,12 @@ public class RendezVousService {
         if (rdv.getStatutRendezVous() != StatutRendezVous.PROPOSE) {
             throw new IllegalArgumentException("Aucune proposition a accepter.");
         }
-        if (rdv.getTypeRendezVous() == TypeRendezVous.EN_LIGNE
-                && (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank())) {
-            rdv.setMeetingUrl(jitsiMeetingService.generateMeetingUrl(rdv));
+        if (rdv.getTypeRendezVous() == TypeRendezVous.EN_LIGNE) {
+            if (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank()) {
+                rdv.setMeetingUrl(rdvOnlineMeetingService.generateRoomCode(rdv));
+            }
+        } else {
+            rdv.setMeetingUrl(null);
         }
         rdv.setStatutRendezVous(StatutRendezVous.CONFIRME);
         rdv = rendezVousRepository.save(rdv);
@@ -244,6 +251,27 @@ public class RendezVousService {
         return toDTO(requireRendezVous(idRendezVous));
     }
 
+    @Transactional(readOnly = true)
+    public RendezVousMeetingAccessDTO getMeetingAccessClient(String emailClient, String idRendezVous) {
+        User client = requireUser(emailClient);
+        assertRole(client, RoleUser.client, "Acces reserve aux clients.");
+        RendezVous rdv = requireRendezVous(idRendezVous);
+        if (!rdv.getClient().getId().equals(client.getId())) {
+            throw new AccessDeniedException("Acces refuse.");
+        }
+        return toMeetingAccessDTO(rdv);
+    }
+
+    @Transactional(readOnly = true)
+    public RendezVousMeetingAccessDTO getMeetingAccessAvocat(String emailAvocat, String idRendezVous) {
+        Avocat avocat = requireAvocatByEmail(emailAvocat);
+        RendezVous rdv = requireRendezVous(idRendezVous);
+        if (!rdv.getAvocat().getId().equals(avocat.getId())) {
+            throw new AccessDeniedException("Acces refuse.");
+        }
+        return toMeetingAccessDTO(rdv);
+    }
+
     private RendezVous requireRendezVous(String idRendezVous) {
         return rendezVousRepository.findById(idRendezVous)
                 .orElseThrow(() -> new IllegalArgumentException("Rendez-vous non trouve."));
@@ -299,6 +327,23 @@ public class RendezVousService {
                 rdv.getMeetingUrl(),
                 rdv.getDateCreation(),
                 rdv.getDateMiseAJour()
+        );
+    }
+
+    private RendezVousMeetingAccessDTO toMeetingAccessDTO(RendezVous rdv) {
+        if (rdv.getStatutRendezVous() != StatutRendezVous.CONFIRME) {
+            throw new IllegalArgumentException("Acces a la salle disponible uniquement pour les rendez-vous confirmes.");
+        }
+        if (rdv.getTypeRendezVous() != TypeRendezVous.EN_LIGNE) {
+            throw new IllegalArgumentException("Ce rendez-vous est en presentiel.");
+        }
+        if (rdv.getMeetingUrl() == null || rdv.getMeetingUrl().isBlank()) {
+            throw new IllegalStateException("Salle en ligne indisponible pour ce rendez-vous.");
+        }
+        return new RendezVousMeetingAccessDTO(
+                rdv.getIdRendezVous(),
+                rdv.getMeetingUrl(),
+                "/rendezvous/" + rdv.getIdRendezVous() + "/online-room"
         );
     }
 }

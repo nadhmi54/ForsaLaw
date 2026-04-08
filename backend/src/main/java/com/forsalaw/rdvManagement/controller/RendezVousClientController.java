@@ -68,6 +68,15 @@ public class RendezVousClientController {
         return ResponseEntity.ok(rendezVousService.getMonRendezVousClient(authentication.getName(), idRendezVous));
     }
 
+    @Operation(summary = "Acces a la salle du rendez-vous en ligne (client)")
+    @GetMapping("/{idRendezVous}/meeting-access")
+    public ResponseEntity<RendezVousMeetingAccessDTO> getMeetingAccess(
+            Authentication authentication,
+            @PathVariable String idRendezVous
+    ) {
+        return ResponseEntity.ok(rendezVousService.getMeetingAccessClient(authentication.getName(), idRendezVous));
+    }
+
     @Operation(summary = "Accepter la proposition de creneau")
     @PatchMapping("/{idRendezVous}/accepter-proposition")
     public ResponseEntity<RendezVousDTO> accepterProposition(

@@ -57,3 +57,28 @@ jobs:
           [ -f backend/pom.xml ] && echo "  backend/pom.xml OK" || true
           [ -d backend/src ] && echo "  backend/src OK" || true
           [ -d frontend ] && echo "  frontend/ OK" || true
+
+  sonarqube:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.projectKey=ForsaLaw_ForsaLaw
+            -Dsonar.organization=forsalaw
+            -Dsonar.projectName=ForsaLaw
+            -Dsonar.sources=backend/src/main,frontend/src
+            -Dsonar.tests=backend/src/test
+            -Dsonar.java.binaries=backend/target/classes
+            -Dsonar.sourceEncoding=UTF-8
