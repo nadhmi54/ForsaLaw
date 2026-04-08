@@ -3,6 +3,7 @@ package com.forsalaw.rdvManagement.controller;
 import com.forsalaw.rdvManagement.model.AnnulerRendezVousRequest;
 import com.forsalaw.rdvManagement.model.ProposerCreneauRequest;
 import com.forsalaw.rdvManagement.model.RendezVousDTO;
+import com.forsalaw.rdvManagement.model.RendezVousMeetingAccessDTO;
 import com.forsalaw.rdvManagement.service.RendezVousService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -41,6 +42,15 @@ public class RendezVousAvocatController {
             @PathVariable String idRendezVous
     ) {
         return ResponseEntity.ok(rendezVousService.getDemandeRecueAvocat(authentication.getName(), idRendezVous));
+    }
+
+    @Operation(summary = "Acces a la salle du rendez-vous en ligne (avocat)")
+    @GetMapping("/{idRendezVous}/meeting-access")
+    public ResponseEntity<RendezVousMeetingAccessDTO> getMeetingAccess(
+            Authentication authentication,
+            @PathVariable String idRendezVous
+    ) {
+        return ResponseEntity.ok(rendezVousService.getMeetingAccessAvocat(authentication.getName(), idRendezVous));
     }
 
     @Operation(summary = "Proposer / fixer un creneau")
