@@ -69,6 +69,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up JDK 17 (for Sonar Java analysis)
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Prepare Java binaries for Sonar
+        if: ${{ env.SONAR_TOKEN != '' }}
+        working-directory: backend
+        run: mvn -q -B compile -DskipTests
+
       - name: SonarCloud Scan
         if: ${{ env.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@v5
