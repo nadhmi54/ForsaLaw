@@ -81,6 +81,5 @@ jobs:
             -Dsonar.organization=forsalaw
             -Dsonar.projectName=ForsaLaw
             -Dsonar.sources=backend/src/main,frontend/src
-            -Dsonar.tests=backend/src/test
             -Dsonar.java.binaries=backend/target/classes
             -Dsonar.sourceEncoding=UTF-8
