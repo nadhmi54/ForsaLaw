@@ -186,6 +186,58 @@ public class DocumentService {
         return toDTO(requireDocument(documentId));
     }
 
+    // ─── Public Vault Verification ────────────────────────────────────────────
+
+    /**
+     * Vérifie l'authenticité d'un document sans authentification.
+     * Recalcule le SHA-256 du fichier soumis et le compare à la base ForsaLaw.
+     * Retourne les informations de signature si le document est reconnu.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> verifierDocumentPublic(MultipartFile fichier) throws IOException {
+        String hashSoumis = hashingService.calculerHashSha256(fichier.getInputStream());
+
+        // Chercher d'abord par hash après signature (document signé), sinon hash original
+        java.util.Optional<DocumentMetadata> found = documentRepository.findByHashApresSignature(hashSoumis);
+        if (found.isEmpty()) {
+            found = documentRepository.findByHashSha256(hashSoumis);
+        }
+
+        if (found.isEmpty()) {
+            return java.util.Map.of(
+                "authentique", false,
+                "hashSoumis", hashSoumis,
+                "message", "Ce document n'est pas reconnu dans le registre ForsaLaw. Il n'a peut-être pas été émis ou signé via cette plateforme."
+            );
+        }
+
+        DocumentMetadata doc = found.get();
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("authentique", true);
+        result.put("hashSoumis", hashSoumis);
+        result.put("documentId", doc.getId());
+        result.put("nomOriginal", doc.getNomOriginal());
+        result.put("dateDepot", doc.getDateCreation());
+        result.put("estSigne", doc.isEstSigne());
+        result.put("message", "Document authentifié dans le registre ForsaLaw.");
+
+        if (doc.isEstSigne()) {
+            result.put("signataire", doc.getSignataireEmail());
+            result.put("dateSignature", doc.getDateSignature());
+        }
+
+        // Deposeur anonymisé pour la vie privée
+        if (doc.getDeposeur() != null) {
+            String nom = doc.getDeposeur().getNom();
+            String prenom = doc.getDeposeur().getPrenom();
+            // Masquer partiellement : "A. Martin"
+            String initiale = (prenom != null && !prenom.isEmpty()) ? prenom.charAt(0) + "." : "";
+            result.put("deposeur", initiale + " " + (nom != null ? nom : ""));
+        }
+
+        return result;
+    }
+
     // ─── Admin ────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
