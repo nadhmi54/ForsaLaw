@@ -106,6 +106,44 @@ public class AffaireService {
         }
     }
 
+    // ─── Timeline (Métier avancée) ────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> getTimelinePourAdmin(String affaireId, String emailActeur) {
+        assertAdmin(requireUser(emailActeur));
+        Affaire affaire = requireAffaire(affaireId);
+        return genererTimeline(affaire.getStatut());
+    }
+
+    private java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> genererTimeline(StatutAffaire statutActuel) {
+        StatutAffaire[] ordre = {
+            StatutAffaire.INSTRUCTION,
+            StatutAffaire.AUDIENCE,
+            StatutAffaire.DELIBERE,
+            StatutAffaire.JUGEMENT,
+            StatutAffaire.APPEL,
+            StatutAffaire.CLOS
+        };
+        
+        java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> timeline = new java.util.ArrayList<>();
+        boolean foundCurrent = false;
+        
+        for (int i = 0; i < ordre.length; i++) {
+            StatutAffaire s = ordre[i];
+            boolean active = (s == statutActuel);
+            if (active) foundCurrent = true;
+            boolean completed = !foundCurrent && !active;
+            
+            timeline.add(new com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO(
+                "STEP_" + (i + 1),
+                s.name(),
+                completed,
+                active
+            ));
+        }
+        return timeline;
+    }
+
     private AffaireDTO toDTO(Affaire a, boolean includePrivate) {
         AffaireDTO dto = new AffaireDTO();
         dto.setId(a.getId());

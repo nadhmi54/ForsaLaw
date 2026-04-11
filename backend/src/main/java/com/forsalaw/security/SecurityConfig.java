@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/messenger/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/audit-logs/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/documents/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/documents/public/verify").permitAll()
                         .requestMatchers("/api/documents/**").authenticated()
                         .requestMatchers("/api/admin/affaires/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/whatsapp/**").hasRole("ADMIN")

@@ -38,4 +38,10 @@ public class AdminAffaireController {
     public ResponseEntity<AffaireDTO> getAffaire(Authentication authentication, @PathVariable String id) {
         return ResponseEntity.ok(affaireService.getAffairePourAdmin(id, authentication.getName()));
     }
+
+    @Operation(summary = "Chronologie d'une affaire (admin)")
+    @GetMapping("/{id}/timeline")
+    public ResponseEntity<java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO>> getAffaireTimeline(Authentication authentication, @PathVariable String id) {
+        return ResponseEntity.ok(affaireService.getTimelinePourAdmin(id, authentication.getName()));
+    }
 }

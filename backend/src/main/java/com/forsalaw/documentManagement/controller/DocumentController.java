@@ -39,7 +39,21 @@ public class DocumentController {
     private final DocumentService documentService;
     private final com.forsalaw.documentManagement.service.SignatureService signatureService;
 
-    // ─── Signature Electronique ──────────────────────────────────────────────
+    // ─── Vérification Publique (sans authentification) ────────────────────────
+
+    @Operation(
+        summary = "Vérifier l'authenticité d'un document (public)",
+        description = "Endpoint public : soumettre un fichier PDF pour vérifier s'il est authentifié dans le registre ForsaLaw. Retourne les informations de signature si reconnu, sans exposer les données privées."
+    )
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements // override: no auth needed
+    @PostMapping(value = "/public/verify", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<java.util.Map<String, Object>> verifierPublic(
+            @RequestParam("fichier") MultipartFile fichier
+    ) throws java.io.IOException {
+        return ResponseEntity.ok(documentService.verifierDocumentPublic(fichier));
+    }
+
+
 
     @Operation(summary = "Signer électroniquement un document")
     @PostMapping("/{id}/signer")

@@ -224,6 +224,80 @@ public class MessengerService {
         }
     }
 
+    // ─── Drag & Drop (Métier avancée) ─────────────────────────────────────────
+
+    @Transactional
+    public MessengerMessageDTO processDragAndDropAsClient(String clientEmail, String conversationId, MultipartFile[] files) {
+        User client = requireUser(clientEmail);
+        MessengerConversation c = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée."));
+        if (!c.getClient().getId().equals(client.getId())) {
+            throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
+        }
+        try {
+            return processDragAndDropPayload(c, client, MessengerSenderRole.CLIENT, files, client.getEmail());
+        } catch (IOException e) {
+            throw new IllegalStateException("Echec compilation Drag&Drop.", e);
+        }
+    }
+
+    @Transactional
+    public MessengerMessageDTO processDragAndDropAsAvocat(String avocatUserEmail, String conversationId, MultipartFile[] files) {
+        Avocat avocat = requireAvocatByUserEmail(avocatUserEmail);
+        MessengerConversation c = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée."));
+        if (!c.getAvocat().getId().equals(avocat.getId())) {
+            throw new IllegalArgumentException("Cette conversation ne vous appartient pas.");
+        }
+        User sender = avocat.getUser();
+        try {
+            return processDragAndDropPayload(c, sender, MessengerSenderRole.AVOCAT, files, sender.getEmail());
+        } catch (IOException e) {
+            throw new IllegalStateException("Echec compilation Drag&Drop.", e);
+        }
+    }
+
+    private MessengerMessageDTO processDragAndDropPayload(MessengerConversation c, User sender, MessengerSenderRole role,
+                                                          MultipartFile[] files, String viewerEmailForResponse) throws IOException {
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("Aucun fichier fourni pour le Drag & Drop.");
+        }
+        String content = "[Fichiers groupés - Drag & Drop]";
+        if (files.length == 1) {
+            return persistMessageWithAttachments(c, sender, role, content, files, viewerEmailForResponse);
+        }
+        MultipartFile zipFile = createInMemoryZip(files);
+        return persistMessageWithAttachments(c, sender, role, content, new MultipartFile[]{zipFile}, viewerEmailForResponse);
+    }
+
+    private MultipartFile createInMemoryZip(MultipartFile[] files) throws IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(baos)) {
+            for (MultipartFile file : files) {
+                String name = file.getOriginalFilename() != null ? file.getOriginalFilename() : "fichier_inconnu";
+                java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(name);
+                zos.putNextEntry(entry);
+                zos.write(file.getBytes());
+                zos.closeEntry();
+            }
+        }
+        final byte[] content = baos.toByteArray();
+        return new MultipartFile() {
+            @Override public String getName() { return "files"; }
+            @Override public String getOriginalFilename() { return "Depot_Groupe.zip"; }
+            @Override public String getContentType() { return "application/zip"; }
+            @Override public boolean isEmpty() { return content.length == 0; }
+            @Override public long getSize() { return content.length; }
+            @Override public byte[] getBytes() throws IOException { return content; }
+            @Override public java.io.InputStream getInputStream() throws IOException {
+                return new java.io.ByteArrayInputStream(content);
+            }
+            @Override public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
+                java.nio.file.Files.write(dest.toPath(), content);
+            }
+        };
+    }
+
     /**
      * Client : envoie un message en ne fournissant que l'id avocat + le texte (crée la conversation si besoin).
      */

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DocumentMetadataRepository extends JpaRepository<DocumentMetadata, String> {
@@ -19,4 +20,8 @@ public interface DocumentMetadataRepository extends JpaRepository<DocumentMetada
             ContexteDocument contexteType, String contexteId, boolean supprime);
 
     Page<DocumentMetadata> findBySupprime(boolean supprime, Pageable pageable);
+
+    Optional<DocumentMetadata> findByHashSha256(String hashSha256);
+
+    Optional<DocumentMetadata> findByHashApresSignature(String hashApresSignature);
 }

@@ -101,6 +101,17 @@ public class MessengerAvocatController {
                 authentication.getName(), conversationId, form.getContent(), form.getFilesAsArray()));
     }
 
+    @Operation(summary = "Drag & Drop Payload (Avocat)", description = "Compression automatique si plusieurs fichiers déposés.")
+    @PostMapping(value = "/conversations/{id}/messages/drag-and-drop", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MessengerMessageDTO> dragAndDropAvocat(
+            Authentication authentication,
+            @PathVariable("id") String conversationId,
+            @Parameter(hidden = true) @ModelAttribute MessengerMultipartForm form
+    ) {
+        return ResponseEntity.ok(messengerService.processDragAndDropAsAvocat(
+                authentication.getName(), conversationId, form.getFilesAsArray()));
+    }
+
     @Operation(summary = "Marquer comme lu", description = "Marque les messages reçus des clients comme lus.")
     @PostMapping("/conversations/{id}/read")
     public ResponseEntity<Void> markRead(
