@@ -10,6 +10,7 @@ import com.forsalaw.userManagement.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -20,6 +21,13 @@ import org.springframework.web.servlet.view.RedirectView;
 public class AuthController {
 
     private final AuthService authService;
+
+    /**
+     * URL publique du backend (port API). Obligatoire pour /api/auth/google : une redirection relative /oauth2/...
+     * serait résolue par le navigateur sur l'origine du front (ex. localhost:3000) au lieu de l'API (8081).
+     */
+    @Value("${forsalaw.server.public-url:http://localhost:8081}")
+    private String publicApiBaseUrl;
 
     @Operation(summary = "Inscription", description = "Cree un nouveau compte utilisateur et retourne un token JWT.")
     @PostMapping("/register")
@@ -56,6 +64,9 @@ public class AuthController {
     @Operation(summary = "Login with Google", description = "Redirige vers Google OAuth2 pour authentification.")
     @GetMapping("/google")
     public RedirectView googleLogin() {
-        return new RedirectView("/oauth2/authorization/google");
+        String base = publicApiBaseUrl.endsWith("/")
+                ? publicApiBaseUrl.substring(0, publicApiBaseUrl.length() - 1)
+                : publicApiBaseUrl;
+        return new RedirectView(base + "/oauth2/authorization/google");
     }
 }

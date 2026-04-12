@@ -10,25 +10,37 @@ import ScrollToTopButton from './components/ScrollToTopButton'
 import SiteVideoBackground from './components/SiteVideoBackground'
 import './styles/App.css'
 import { lazyRoute } from './utils/lazyRoute'
+import { useAuth } from './context/AuthContext.jsx'
+import * as authApi from './api/auth.js'
 
 const HomePage = lazyRoute(() => import('./pages/HomePage'))
 const ForumPage = lazyRoute(() => import('./pages/ForumPage'))
 const LawyersPage = lazyRoute(() => import('./pages/LawyersPage'))
 const DossierPage = lazyRoute(() => import('./pages/DossierPage'))
-const LawyerDashboardPage = lazyRoute(() => import('./pages/LawyerDashboardPage'))
+const LawyerSpacePage = lazyRoute(() => import('./pages/LawyerSpacePage'))
 const ClientSpacePage = lazyRoute(() => import('./pages/ClientSpacePage'))
 const SupportPage = lazyRoute(() => import('./pages/SupportPage'))
 const CalendarPage = lazyRoute(() => import('./pages/CalendarPage'))
 const AiSanctumPage = lazyRoute(() => import('./pages/AiSanctumPage'))
 const AdminSpacePage = lazyRoute(() => import('./pages/AdminSpacePage'))
 const InboxPage = lazyRoute(() => import('./pages/InboxPage'))
+const AuthPage = lazyRoute(() => import('./pages/AuthPage'))
+const GoogleOAuthCallbackPage = lazyRoute(() => import('./pages/GoogleOAuthCallbackPage'))
 
 function App() {
   const { t, i18n } = useTranslation()
+  const { user, isAuthenticated, login, register, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [isNavOpen,   setIsNavOpen]   = useState(false)
   const [authMode, setAuthMode] = useState(null) // 'login' | 'register' | 'forgot' | null
+  const [formNom, setFormNom] = useState('')
+  const [formPrenom, setFormPrenom] = useState('')
+  const [formEmail, setFormEmail] = useState('')
+  const [formPassword, setFormPassword] = useState('')
+  const [authFormError, setAuthFormError] = useState(null)
+  const [authFormSuccess, setAuthFormSuccess] = useState(null)
+  const [authSubmitting, setAuthSubmitting] = useState(false)
   const authCardRef = useRef(null)
   const lastActiveElRef = useRef(null)
 
@@ -128,6 +140,60 @@ function App() {
 
   const isInboxRoute = location.pathname === '/inbox'
 
+  const openAuth = (mode) => {
+    setAuthFormError(null)
+    setAuthFormSuccess(null)
+    setAuthMode(mode)
+  }
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault()
+    setAuthFormError(null)
+    setAuthFormSuccess(null)
+    const email = formEmail.trim()
+    if (authMode === 'forgot') {
+      setAuthSubmitting(true)
+      try {
+        const msg = await authApi.forgotPassword({ email })
+        setAuthFormSuccess(typeof msg === 'string' ? msg : String(msg))
+      } catch (err) {
+        setAuthFormError(err?.message || String(err))
+      } finally {
+        setAuthSubmitting(false)
+      }
+      return
+    }
+    if (!email) {
+      setAuthFormError("L'email est requis.")
+      return
+    }
+    if (!formPassword) {
+      setAuthFormError('Le mot de passe est requis.')
+      return
+    }
+    setAuthSubmitting(true)
+    try {
+      if (authMode === 'login') {
+        await login({ email, motDePasse: formPassword })
+        setAuthMode(null)
+      } else if (authMode === 'register') {
+        const nom = formNom.trim()
+        const prenom = formPrenom.trim()
+        if (!nom || !prenom) {
+          setAuthFormError('Le nom et le prénom sont requis.')
+          setAuthSubmitting(false)
+          return
+        }
+        await register({ nom, prenom, email, motDePasse: formPassword })
+        setAuthMode(null)
+      }
+    } catch (err) {
+      setAuthFormError(err?.message || String(err))
+    } finally {
+      setAuthSubmitting(false)
+    }
+  }
+
   const navigateToPageKey = (pageKey) => {
     const map = {
       home: '/',
@@ -173,10 +239,58 @@ function App() {
       {/* Auth and language controls — hidden on inbox (app owns the full screen there) */}
       {!isInboxRoute && (
         <div className="top-right-controls">
-          <button className="auth-top-btn" onClick={() => setAuthMode('login')}>
-            {t('top_login')}
-          </button>
-          <button className="lang-toggle-btn" onClick={toggleLanguage}>
+          {isAuthenticated ? (
+            <>
+              {user?.roleUser === 'client' ? (
+                <>
+                  <button
+                    type="button"
+                    className="auth-top-btn"
+                    onClick={() => navigate('/client-space?tab=profile')}
+                    title={user?.email ?? ''}
+                  >
+                    {t('nav_client_space')}
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-top-btn"
+                    onClick={() => navigate('/lawyer-space')}
+                    title={user?.email ?? ''}
+                  >
+                    {t('nav_lawyer_space')}
+                  </button>
+                </>
+              ) : user?.roleUser === 'avocat' ? (
+                <button
+                  type="button"
+                  className="auth-top-btn"
+                  onClick={() => navigate('/lawyer-space')}
+                  title={user?.email ?? ''}
+                >
+                  {t('nav_lawyer_space')}
+                </button>
+              ) : (
+                <span className="auth-user-label" title={user?.email}>
+                  {user?.prenom} {user?.nom}
+                </span>
+              )}
+              <button
+                type="button"
+                className="auth-top-btn"
+                onClick={() => {
+                  logout()
+                  setAuthMode(null)
+                }}
+              >
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <button type="button" className="auth-top-btn" onClick={() => openAuth('login')}>
+              {t('top_login')}
+            </button>
+          )}
+          <button type="button" className="lang-toggle-btn" onClick={toggleLanguage}>
             {i18n.language.toUpperCase()}
           </button>
         </div>
@@ -199,12 +313,14 @@ function App() {
                   <Route path="/lawyers" element={<LawyersPage />} />
                   <Route path="/cases" element={<DossierPage />} />
                   <Route path="/ai" element={<AiSanctumPage />} />
-                  <Route path="/lawyer-space" element={<LawyerDashboardPage />} />
+                  <Route path="/lawyer-space" element={<LawyerSpacePage />} />
                   <Route path="/client-space" element={<ClientSpacePage />} />
                   <Route path="/admin-space" element={<AdminSpacePage />} />
                   <Route path="/support" element={<SupportPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/inbox" element={<InboxPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/auth/google/callback" element={<GoogleOAuthCallbackPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </motion.div>
@@ -276,38 +392,91 @@ function App() {
               ref={authCardRef}
             >
               <div className="auth-modal-tabs">
-                <button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>Connexion</button>
-                <button className={authMode === 'register' ? 'active' : ''} onClick={() => setAuthMode('register')}>Inscription</button>
-                <button className={authMode === 'forgot' ? 'active' : ''} onClick={() => setAuthMode('forgot')}>Mdp oublie</button>
+                <button type="button" className={authMode === 'login' ? 'active' : ''} onClick={() => openAuth('login')}>
+                  Connexion
+                </button>
+                <button type="button" className={authMode === 'register' ? 'active' : ''} onClick={() => openAuth('register')}>
+                  Inscription
+                </button>
+                <button type="button" className={authMode === 'forgot' ? 'active' : ''} onClick={() => openAuth('forgot')}>
+                  Mdp oublie
+                </button>
               </div>
 
-              <form className="auth-modal-form" onSubmit={(e) => e.preventDefault()}>
+              <form className="auth-modal-form" onSubmit={handleAuthSubmit} noValidate>
                 {authMode === 'register' && (
                   <>
-                    <label><User size={14} /> Nom</label>
-                    <input type="text" placeholder="Nom" />
-                    <label><User size={14} /> Prenom</label>
-                    <input type="text" placeholder="Prenom" />
+                    <label htmlFor="auth-modal-nom">
+                      <User size={14} /> Nom
+                    </label>
+                    <input
+                      id="auth-modal-nom"
+                      type="text"
+                      autoComplete="family-name"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                    />
+                    <label htmlFor="auth-modal-prenom">
+                      <User size={14} /> Prenom
+                    </label>
+                    <input
+                      id="auth-modal-prenom"
+                      type="text"
+                      autoComplete="given-name"
+                      placeholder="Prenom"
+                      value={formPrenom}
+                      onChange={(e) => setFormPrenom(e.target.value)}
+                    />
                   </>
                 )}
 
-                <label><Mail size={14} /> Email</label>
-                <input type="email" placeholder="vous@domaine.com" />
+                <label htmlFor="auth-modal-email">
+                  <Mail size={14} /> Email
+                </label>
+                <input
+                  id="auth-modal-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="vous@domaine.com"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                />
 
                 {authMode !== 'forgot' && (
                   <>
-                    <label><Lock size={14} /> Mot de passe</label>
-                    <input type="password" placeholder="••••••••" />
+                    <label htmlFor="auth-modal-password">
+                      <Lock size={14} /> Mot de passe
+                    </label>
+                    <input
+                      id="auth-modal-password"
+                      type="password"
+                      autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                      placeholder="••••••••"
+                      value={formPassword}
+                      onChange={(e) => setFormPassword(e.target.value)}
+                    />
                   </>
                 )}
 
                 {authMode === 'login' && (
-                  <button type="button" className="auth-link-btn" onClick={() => setAuthMode('forgot')}>
+                  <button type="button" className="auth-link-btn" onClick={() => openAuth('forgot')}>
                     Mot de passe oublie ?
                   </button>
                 )}
 
-                <button className="auth-submit-main" type="submit">
+                {authFormError && (
+                  <p className="auth-form-message auth-form-message--error" role="alert">
+                    {authFormError}
+                  </p>
+                )}
+                {authFormSuccess && (
+                  <p className="auth-form-message auth-form-message--success" role="status">
+                    {authFormSuccess}
+                  </p>
+                )}
+
+                <button className="auth-submit-main" type="submit" disabled={authSubmitting}>
                   {authMode === 'login'
                     ? 'Se connecter'
                     : authMode === 'register'
