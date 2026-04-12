@@ -11,7 +11,18 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
         secure: false,
-      }
+      },
+      // Si une redirection relative /oauth2/... atteint le navigateur sur le port du front, on proxifie vers l'API.
+      '/oauth2': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/login/oauth2': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
     }
   },
   build: {

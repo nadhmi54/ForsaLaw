@@ -39,6 +39,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                // Sinon, après OAuth2, Spring peut rediriger vers une URL sauvegardée (ex. Swagger) au lieu du handler JWT.
+                .requestCache(cache -> cache.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth

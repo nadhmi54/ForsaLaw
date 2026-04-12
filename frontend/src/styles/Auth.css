@@ -175,6 +175,50 @@
   box-shadow: 2px 2px 0 var(--black);
 }
 
+.auth-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-page-message {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  font-family: 'Lexend', sans-serif;
+}
+
+.auth-page-message--error {
+  color: #ff8a80;
+}
+
+.auth-page-message--ok {
+  color: #a5d6a7;
+}
+
+.auth-google-btn-page {
+  margin-top: 0.5rem;
+  background: var(--white);
+  border: 4px solid var(--black);
+  padding: 0.85rem;
+  color: var(--black);
+  text-decoration: none;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  font-size: 0.75rem;
+  box-shadow: 4px 4px 0 var(--black);
+  transition: all var(--transition-fast);
+  display: block;
+}
+
+.auth-google-btn-page:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+  background: #f0f0f0;
+}
+
 /* Footer Links */
 .auth-footer {
   text-align: center;
