@@ -47,6 +47,55 @@
   margin: 1.2rem 0;
 }
 
+/* ============================================================
+   ForsaLaw — Admin & Client Platform Spaces
+   Brutalist DNA: 4px borders, hard shadows, gold/charcoal
+   ============================================================ */
+
+/* ── Shared Page Shell ── */
+.platform-page {
+  min-height: 100vh;
+  padding: 7.5rem 2rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Lexend', sans-serif;
+}
+
+@media (min-width: 1200px) {
+  .platform-page {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+.platform-eyebrow {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.75;
+  margin-bottom: 0.6rem;
+  font-family: ui-monospace, monospace;
+}
+
+.platform-title {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height: 1.05;
+}
+
+.platform-title-divider {
+  width: 60px;
+  height: 4px;
+  background: var(--gold);
+  margin: 1.2rem 0;
+}
+
 .platform-subtitle {
   font-size: 0.875rem;
   font-weight: 300;
@@ -56,9 +105,7 @@
   margin-bottom: 3rem;
 }
 
-/* ════════════════════════════════════════════════
-   ADMIN CONSOLE (new layout)
-════════════════════════════════════════════════ */
+/* --- ADMIN CONSOLE --- */
 .admin-console-header .platform-subtitle { margin-bottom: 2.5rem; }
 
 .admin-console {
@@ -66,7 +113,7 @@
   grid-template-columns: 260px 1fr 340px;
   gap: 0;
   border: 4px solid var(--black);
-  box-shadow: 0 0 60px rgba(0,0,0,0.85);
+  box-shadow: var(--shadow-lg);
   background: var(--charcoal);
 }
 
@@ -75,62 +122,22 @@
   background: #0d0d0d;
 }
 
-.admin-nav-list {
-  display: flex;
-  flex-direction: column;
-}
+.admin-nav-list { display: flex; flex-direction: column; }
 
 .admin-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
-  border: none;
-  border-bottom: 2px solid var(--black);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  color: rgba(255,255,255,0.55);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-family: 'Lexend', sans-serif;
-  transition: all 0.15s;
-  border-left: 4px solid transparent;
-  width: 100%;
+  display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+  border-bottom: 2px solid var(--black); background: transparent;
+  color: rgba(255,255,255,0.55); font-size: 0.72rem; font-weight: 800;
+  text-transform: uppercase; font-family: 'Lexend', sans-serif;
+  transition: all 0.15s; border-left: 4px solid transparent; width: 100%;
 }
 
-.admin-nav-item svg { color: var(--gold); flex-shrink: 0; }
-
-.admin-nav-item:hover,
-.admin-nav-item.active {
-  background: #111108;
-  color: var(--white);
-  border-left-color: var(--gold);
-}
-
-.admin-nav-pill {
-  margin-left: auto;
-  min-width: 22px;
-  height: 18px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ff6b6b;
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 900;
-  font-family: ui-monospace, monospace;
-  letter-spacing: 0.05em;
+.admin-nav-item:hover, .admin-nav-item.active {
+  background: #111108; color: var(--white); border-left-color: var(--gold);
 }
 
 .admin-console-main {
-  min-width: 0;
-  border-right: 4px solid var(--black);
-  background: rgba(0,0,0,0.2);
-  backdrop-filter: blur(10px);
+  min-width: 0; border-right: 4px solid var(--black); background: var(--charcoal);
 }
 
 .admin-console-toolbar {
@@ -1384,93 +1391,17 @@
   color: rgba(255,255,255,0.5);
   font-family: ui-monospace, monospace;
   font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: 0.2s;
-  text-align: left;
 }
 
-.command-button:nth-child(5n) { border-right: none; }
-.command-button:nth-child(n+6) { border-bottom: none; }
-
-.command-button:hover, .command-button.active {
-  background: #111108;
-  color: var(--white);
-  box-shadow: inset 0 3px 0 0 var(--gold);
-}
-
-.command-button svg { color: var(--gold); }
-
-/* --- THE NEXUS UPGRADE --- */
-.nexus-radar {
-  position: relative;
-  height: 200px;
-  background: rgba(0,0,0,0.4);
-  border: 3px solid var(--black);
+.ledger-feed {
+  border: 4px solid var(--black);
+  background: #0a0a0a;
+  margin-top: 2rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.nexus-radar::before {
-  content: '';
-  position: absolute;
-  width: 200%;
-  height: 2px;
-  background: rgba(212, 175, 55, 0.2);
-  top: 50%;
-  animation: radar-sweep 4s linear infinite;
-}
-
-@keyframes radar-sweep {
-  from { transform: translateY(-100px); }
-  to { transform: translateY(100px); }
-}
-
-.totem-card {
-  background: rgba(20,20,20,0.7);
-  backdrop-filter: blur(10px);
-  border: 3px solid var(--black);
-  padding: 1.5rem;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.totem-card:hover {
-  border-color: var(--gold);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.totem-card::after {
-  content: '';
-  position: absolute;
-  top: 8px; right: 8px;
-  width: 6px; height: 6px;
-  background: var(--gold);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--gold);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
-}
-
-.pulse-chart-container {
-  height: 60px;
-  width: 100%;
-  margin-top: 1rem;
+  flex-direction: column;
 }
 
 .ledger-feed-nexus {
-  border: 4px solid var(--black);
-  background: rgba(0,0,0,0.6);
   backdrop-filter: blur(15px);
   position: relative;
 }
