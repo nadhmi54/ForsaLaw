@@ -1,218 +1,500 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronUp, ChevronDown, MessageSquare, Clock, Pin, Plus, X } from 'lucide-react'
+import {
+  MessageSquare, Clock, Plus, X, Send, Loader2, Trash2,
+  ThumbsUp, ThumbsDown, Heart, Laugh, Lightbulb, ChevronLeft,
+  AlertTriangle,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext.jsx'
 import PageHeader from '../components/PageHeader'
+import * as forumApi from '../api/forum.js'
 import '../styles/Forum.css'
 
-// ─── Placeholder data ─────────────────────────────────────────────────────────
-const THREADS = [
-  {
-    id: 1,
-    pinned: true,
-    tags: ['pinned', 'civil'],
-    title: "Guide officiel : comment soumettre une réclamation en ligne via ForsaLaw",
-    excerpt: "Ce fil récapitule toutes les étapes pour déposer votre dossier de réclamation, les délais légaux à respecter et les pièces justificatives obligatoires.",
-    author: "Équipe ForsaLaw",
-    authorInitial: "F",
-    time: "Épinglé",
-    replies: 42,
-    votes: 118,
-  },
-  {
-    id: 2,
-    pinned: false,
-    tags: ['penal'],
-    title: "Mon voisin construit sans permis — que peuvent faire les autorités ?",
-    excerpt: "Il a commencé les travaux il y a trois semaines. J'ai déjà contacté la mairie. Qui est compétent pour intervenir ?",
-    author: "Citoyen_Tunis",
-    authorInitial: "C",
-    time: "Il y a 2 h",
-    replies: 14,
-    votes: 37,
-  },
-  {
-    id: 3,
-    pinned: false,
-    tags: ['travail'],
-    title: "Licenciement sans préavis : quels sont mes droits selon le Code du travail tunisien ?",
-    excerpt: "Mon employeur m'a remis une lettre de rupture immédiate sans respecter le préavis de deux mois. Puis-je saisir le tribunal ?",
-    author: "MedAli2024",
-    authorInitial: "M",
-    time: "Il y a 5 h",
-    replies: 28,
-    votes: 64,
-  },
-  {
-    id: 4,
-    pinned: false,
-    tags: ['famille'],
-    title: "Divorce par consentement mutuel : déroulement et durée de la procédure",
-    excerpt: "Nous sommes d'accord pour divorcer mais nous avons des enfants. Comment se déroule la procédure et combien de temps cela prend-il ?",
-    author: "AnonymeTN",
-    authorInitial: "A",
-    time: "Il y a 1 j",
-    replies: 61,
-    votes: 92,
-  },
-  {
-    id: 5,
-    pinned: false,
-    tags: ['civil'],
-    title: "Transaction immobilière bloquée : recours contre l'agence défaillante",
-    excerpt: "L'agence a encaissé la commission mais n'a pas finalisé l'acte notarié. Quels sont les recours possibles ?",
-    author: "Hamza_Sfax",
-    authorInitial: "H",
-    time: "Il y a 2 j",
-    replies: 9,
-    votes: 20,
-  },
+// ─── Reaction config ──────────────────────────────────────────────────────────
+const REACTIONS = [
+  { type: 'LIKE',        icon: ThumbsUp,   label: 'J\'aime',     color: '#4ade80' },
+  { type: 'DISLIKE',     icon: ThumbsDown, label: 'Pas d\'accord',color: '#f87171' },
+  { type: 'LOVE',        icon: Heart,      label: 'J\'adore',    color: '#f472b6' },
+  { type: 'LAUGH',       icon: Laugh,      label: 'Drôle',       color: '#facc15' },
+  { type: 'INSIGHTFUL',  icon: Lightbulb,  label: 'Instructif',  color: '#60a5fa' },
 ]
 
-const FILTERS = ['Tous', 'Civil', 'Pénal', 'Famille', 'Travail']
+const REACTION_EMOJI = { LIKE: '👍', DISLIKE: '👎', LOVE: '❤️', LAUGH: '😂', INSIGHTFUL: '💡' }
 
-const TOP_CONTRIBUTORS = [
-  { rank: 1, name: "Maître Dridi",   initials: "MD", posts: 247 },
-  { rank: 2, name: "Citoyen_Tunis",  initials: "CT", posts: 183 },
-  { rank: 3, name: "JuristeTN",      initials: "JT", posts: 141 },
-  { rank: 4, name: "MedAli2024",     initials: "MA", posts: 98  },
-]
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmtTime(v) {
+  if (!v) return '—'
+  try {
+    const d = new Date(v)
+    const diff = (Date.now() - d.getTime()) / 1000
+    if (diff < 60) return 'À l\'instant'
+    if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`
+    if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`
+    if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)} j`
+    return d.toLocaleDateString('fr-FR')
+  } catch { return String(v) }
+}
 
-const TRENDING_TAGS = ['#Réclamation', '#Divorce', '#Travail', '#Immobilier', '#Pénal', '#Tutelle', '#Succession', '#CNSS']
+function initials(nom) {
+  if (!nom) return '?'
+  return nom.split(' ').map(p => p[0] ?? '').join('').toUpperCase().slice(0, 2)
+}
 
-// ─── New Post Modal ───────────────────────────────────────────────────────────
-const NewPostModal = ({ onClose }) => {
-  const { t } = useTranslation()
+function roleBadge(role) {
+  if (!role) return null
+  if (role === 'AVOCAT') return <span className="forum-role-badge avocat">Avocat</span>
+  if (role === 'ADMIN') return <span className="forum-role-badge admin">Admin</span>
+  return null
+}
+
+// ─── New Topic Modal ───────────────────────────────────────────────────────────
+function NewTopicModal({ token, onCreated, onClose }) {
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!title.trim() || !content.trim()) {
+      setErr('Le titre et le contenu sont requis.')
+      return
+    }
+    setBusy(true)
+    setErr(null)
+    try {
+      const topic = await forumApi.createTopic(token, { title: title.trim(), content: content.trim() })
+      onCreated(topic)
+    } catch (e) {
+      setErr(e?.message || String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <motion.div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.85)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '2rem'
-      }}
+      className="forum-modal-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        style={{
-          background: '#1a1a1a',
-          border: '4px solid #000',
-          boxShadow: '8px 8px 0 #000',
-          padding: '2rem',
-          width: '100%',
-          maxWidth: 620,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem'
-        }}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        className="forum-modal"
+        initial={{ scale: 0.92, opacity: 0, y: 16 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: 'var(--gold)' }}>{t('forum_new_post_title')}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
-            <X size={20} />
-          </button>
+        <div className="forum-modal__header">
+          <span>Nouveau sujet</span>
+          <button type="button" className="forum-modal__close" onClick={onClose}><X size={14} /></button>
         </div>
-        
-        <div style={{ marginTop: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>{t('forum_post_subject')}</label>
-          <input 
-            type="text" 
-            className="ritual-input"
-            style={{ width: '100%', marginBottom: '1.5rem', background: '#111', border: '2px solid #333' }}
-          />
-
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>{t('forum_post_body')}</label>
-          <textarea 
-            rows={5}
-            className="ritual-input"
-            style={{ width: '100%', background: '#111', border: '2px solid #333', resize: 'none' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
-          <button className="brutal-btn" style={{ background: 'transparent', color: 'var(--white)' }} onClick={onClose}>
-            {t('forum_btn_cancel')}
+        <form className="forum-modal__form" onSubmit={handleSubmit}>
+          <label className="forum-modal__label">
+            Titre
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Ex : Mon employeur m'a licencié sans préavis…"
+              autoFocus
+              maxLength={200}
+            />
+          </label>
+          <label className="forum-modal__label">
+            Contenu
+            <textarea
+              rows={6}
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder="Décrivez votre situation en détail…"
+            />
+          </label>
+          {err && (
+            <p className="forum-modal__error">
+              <AlertTriangle size={13} /> {err}
+            </p>
+          )}
+          <button type="submit" className="forum-modal__submit" disabled={busy}>
+            {busy ? <Loader2 className="forsalaw-spin" size={14} /> : <Plus size={14} />}
+            Publier le sujet
           </button>
-          <button className="brutal-btn" onClick={onClose}>
-            {t('forum_btn_publish')}
-          </button>
-        </div>
+        </form>
       </motion.div>
     </motion.div>
   )
 }
 
+// ─── Thread Detail View ───────────────────────────────────────────────────────
+function ThreadDetail({ topic, token, user, onBack, onTopicDeleted, onMessagesCountChange }) {
+  const [messages, setMessages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [reply, setReply] = useState('')
+  const [sending, setSending] = useState(false)
+  const [err, setErr] = useState(null)
+  const [reactionMenu, setReactionMenu] = useState(null) // messageId
+  const bottomRef = useRef(null)
 
-// ─── Thread Card Component ────────────────────────────────────────────────────
-const ThreadCard = ({ thread }) => {
-  const { t } = useTranslation()
+  const canInteract = user && (user.roleUser === 'client' || user.roleUser === 'avocat' || user.roleUser === 'admin')
+  const canDelete = (msg) => user && (user.email === msg.authorEmail || user.id === msg.authorUserId || user.roleUser === 'admin')
+  const canDeleteTopic = user && (user.id === topic.authorUserId || user.roleUser === 'admin')
+
+  const loadMessages = useCallback(async () => {
+    setLoading(true)
+    try {
+      const page = await forumApi.listMessages(token, topic.id, { size: 100 })
+      setMessages(page?.content ?? [])
+    } catch (e) {
+      setErr(e?.message || String(e))
+    } finally {
+      setLoading(false)
+    }
+  }, [token, topic.id])
+
+  useEffect(() => { loadMessages() }, [loadMessages])
+  useEffect(() => {
+    if (!loading) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
+
+  const handleSend = async () => {
+    if (!reply.trim() || !token) return
+    setSending(true)
+    setErr(null)
+    try {
+      const msg = await forumApi.createMessage(token, topic.id, { content: reply.trim() })
+      setMessages(prev => [...prev, msg])
+      setReply('')
+      if (onMessagesCountChange) onMessagesCountChange(1)
+    } catch (e) {
+      setErr(e?.message || String(e))
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleDeleteMsg = async (msgId) => {
+    if (!token || !window.confirm('Supprimer ce message ?')) return
+    try {
+      await forumApi.deleteMessage(token, msgId)
+      setMessages(prev => prev.filter(m => m.id !== msgId))
+      if (onMessagesCountChange) onMessagesCountChange(-1)
+    } catch (e) {
+      setErr(e?.message || String(e))
+    }
+  }
+
+  const handleDeleteTopic = async () => {
+    if (!token || !window.confirm('Supprimer ce sujet et tous ses messages ?')) return
+    try {
+      await forumApi.deleteTopic(token, topic.id)
+      onTopicDeleted(topic.id)
+    } catch (e) {
+      setErr(e?.message || String(e))
+    }
+  }
+
+  const handleReaction = async (msgId, type) => {
+    if (!token) return
+    setReactionMenu(null)
+    const msgIndex = messages.findIndex(m => m.id === msgId)
+    if (msgIndex === -1) return
+    const msg = messages[msgIndex]
+    try {
+      let updated
+      if (msg.myReaction === type) {
+        updated = await forumApi.removeReaction(token, msgId)
+      } else {
+        updated = await forumApi.setReaction(token, msgId, type)
+      }
+      setMessages(prev => prev.map(m => m.id === msgId ? updated : m))
+    } catch (e) {
+      setErr(e?.message || String(e))
+    }
+  }
+
   return (
     <motion.div
-      className={`thread-card ${thread.pinned ? 'pinned' : ''}`}
-      whileHover={{ x: 2 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      className="thread-detail"
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.22 }}
     >
-      <div className="thread-body">
-        <div className="thread-tags">
-          {thread.pinned && <span className="thread-tag pinned">📌 {t('forum_pinned')}</span>}
-          {thread.tags.filter(t => t !== 'pinned').map(tag => (
-            <span key={tag} className={`thread-tag ${tag}`}>{tag}</span>
-          ))}
-        </div>
-        <p className="thread-title">{thread.title}</p>
-        <p className="thread-excerpt">{thread.excerpt}</p>
-        <div className="thread-meta">
-          <span className="thread-author">
-            <div className="author-avatar">{thread.authorInitial}</div>
-            {thread.author}
-          </span>
-          <span className="thread-time">
-            <Clock size={12} />
-            {thread.pinned ? t('forum_pinned') : `${thread.time} ${t('forum_ago')}`}
-          </span>
+      {/* Header */}
+      <div className="thread-detail__header">
+        <button type="button" className="thread-detail__back" onClick={onBack}>
+          <ChevronLeft size={16} /> Retour au forum
+        </button>
+        {canDeleteTopic && (
+          <button type="button" className="thread-detail__del-topic" onClick={handleDeleteTopic}>
+            <Trash2 size={13} /> Supprimer le sujet
+          </button>
+        )}
+      </div>
+
+      <div className="thread-detail__title">
+        <h2>{topic.title}</h2>
+        <div className="thread-detail__meta">
+          <div className="author-avatar sm">{initials(topic.authorNomComplet)}</div>
+          <span>{topic.authorNomComplet}</span>
+          {roleBadge(topic.authorRole)}
+          <Clock size={11} style={{ opacity: 0.4 }} />
+          <span style={{ opacity: 0.4, fontSize: '0.7rem' }}>{fmtTime(topic.createdAt)}</span>
         </div>
       </div>
 
-      {/* Right: Stats */}
+      {/* OP content */}
+      <div className="thread-detail__op">
+        <p>{topic.content}</p>
+      </div>
+
+      {/* Messages */}
+      <div className="thread-detail__messages">
+        {err && (
+          <div className="forum-err"><AlertTriangle size={14} /> {err}</div>
+        )}
+        {loading && (
+          <div className="thread-detail__loading"><Loader2 className="forsalaw-spin" size={22} style={{ color: 'var(--gold)' }} /></div>
+        )}
+        {!loading && messages.length === 0 && (
+          <div className="thread-detail__empty">Aucune réponse pour le moment. Soyez le premier à répondre.</div>
+        )}
+        {!loading && messages.map((msg, i) => {
+          const totalReactions = Object.values(msg.reactionCounts ?? {}).reduce((s, v) => s + v, 0)
+          return (
+            <motion.div
+              key={msg.id}
+              className="forum-msg"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+            >
+              <div className="forum-msg__avatar">{initials(msg.authorNomComplet)}</div>
+              <div className="forum-msg__body">
+                <div className="forum-msg__meta">
+                  <span className="forum-msg__author">{msg.authorNomComplet}</span>
+                  {roleBadge(msg.authorRole)}
+                  <span className="forum-msg__time"><Clock size={10} /> {fmtTime(msg.createdAt)}</span>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem' }}>
+                    {canInteract && (
+                      <button
+                        type="button"
+                        className="forum-msg__react-btn"
+                        onClick={() => setReactionMenu(reactionMenu === msg.id ? null : msg.id)}
+                        title="Réagir"
+                      >
+                        {msg.myReaction ? REACTION_EMOJI[msg.myReaction] : '😶'}
+                      </button>
+                    )}
+                    {canDelete(msg) && (
+                      <button type="button" className="forum-msg__del" onClick={() => handleDeleteMsg(msg.id)}>
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="forum-msg__content">{msg.content}</p>
+                {/* Reaction counts */}
+                {totalReactions > 0 && (
+                  <div className="forum-msg__reactions">
+                    {Object.entries(msg.reactionCounts ?? {}).filter(([, v]) => v > 0).map(([type, count]) => (
+                      <span
+                        key={type}
+                        className={`forum-msg__reaction-pill${msg.myReaction === type ? ' mine' : ''}`}
+                        onClick={() => canInteract && handleReaction(msg.id, type)}
+                        style={{ cursor: canInteract ? 'pointer' : 'default' }}
+                      >
+                        {REACTION_EMOJI[type]} {count}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Reaction picker */}
+                <AnimatePresence>
+                  {reactionMenu === msg.id && (
+                    <motion.div
+                      className="forum-reaction-picker"
+                      initial={{ opacity: 0, scale: 0.85, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.85, y: 4 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {REACTIONS.map(r => {
+                        const Icon = r.icon
+                        const active = msg.myReaction === r.type
+                        return (
+                          <button
+                            key={r.type}
+                            type="button"
+                            className={`forum-reaction-btn${active ? ' active' : ''}`}
+                            title={r.label}
+                            style={{ '--rc': r.color }}
+                            onClick={() => handleReaction(msg.id, r.type)}
+                          >
+                            <Icon size={16} />
+                          </button>
+                        )
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Reply box */}
+      {canInteract ? (
+        <div className="thread-detail__reply">
+          <textarea
+            className="thread-detail__textarea"
+            rows={3}
+            value={reply}
+            onChange={e => setReply(e.target.value)}
+            placeholder="Votre réponse…"
+            onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleSend() }}
+          />
+          <button
+            type="button"
+            className="thread-detail__send"
+            disabled={sending || !reply.trim()}
+            onClick={handleSend}
+          >
+            {sending ? <Loader2 className="forsalaw-spin" size={14} /> : <Send size={14} />}
+            Publier
+          </button>
+        </div>
+      ) : (
+        <div className="thread-detail__login-prompt">
+          Connectez-vous pour participer à la discussion.
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// ─── Thread Card Component ────────────────────────────────────────────────────
+function ThreadCard({ topic, onClick }) {
+  return (
+    <motion.div
+      className="thread-card"
+      whileHover={{ x: 3 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+    >
+      <div className="thread-body">
+        <p className="thread-title">{topic.title}</p>
+        <p className="thread-excerpt">{topic.content?.slice(0, 160)}{(topic.content?.length ?? 0) > 160 ? '…' : ''}</p>
+        <div className="thread-meta">
+          <span className="thread-author">
+            <div className="author-avatar">{initials(topic.authorNomComplet)}</div>
+            {topic.authorNomComplet}
+            {roleBadge(topic.authorRole)}
+          </span>
+          <span className="thread-time">
+            <Clock size={12} />
+            {fmtTime(topic.updatedAt)}
+          </span>
+        </div>
+      </div>
       <div className="thread-stats">
         <div className="stat-item tooltip-container">
           <MessageSquare size={16} />
-          <span>{thread.replies}</span>
-          <span className="tooltip">{t('forum_replies')}</span>
-        </div>
-        <div className="stat-item tooltip-container" style={{ color: 'var(--gold)' }}>
-          <ChevronUp size={18} />
-          <span>{thread.votes}</span>
-          <span className="tooltip">{t('forum_votes')}</span>
+          <span>{topic.messagesCount ?? 0}</span>
+          <span className="tooltip">Réponses</span>
         </div>
       </div>
     </motion.div>
   )
 }
 
+// ─── TRENDING TAGS (static visual fallback) ───────────────────────────────────
+const TRENDING_TAGS = ['#Réclamation', '#Divorce', '#Travail', '#Immobilier', '#Pénal', '#Tutelle', '#Succession', '#CNSS']
+
 // ─── Forum Page ───────────────────────────────────────────────────────────────
-const ForumPage = () => {
+export default function ForumPage() {
   const { t } = useTranslation()
-  const [activeFilter, setActiveFilter] = useState(t('forum_filter_all'))
+  const { token, user, isAuthenticated } = useAuth()
+
+  const [topics,      setTopics]      = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [err,         setErr]         = useState(null)
   const [showNewPost, setShowNewPost] = useState(false)
+  const [activeTopic, setActiveTopic] = useState(null) // ForumTopicDTO
 
-  const filtered = activeFilter === t('forum_filter_all')
-    ? THREADS
-    : THREADS.filter(t => t.tags.some(tag =>
-        tag.toLowerCase() === activeFilter.toLowerCase()
-      ))
+  const canPost = isAuthenticated && user && (user.roleUser === 'client' || user.roleUser === 'avocat')
 
-  const filters = [t('forum_filter_all'), t('forum_filter_civil'), t('forum_filter_penal'), t('forum_filter_family'), t('forum_filter_work')]
+  const loadTopics = useCallback(async () => {
+    setLoading(true)
+    setErr(null)
+    try {
+      const page = await forumApi.listTopics(token, { size: 50 })
+      setTopics(page?.content ?? [])
+    } catch (e) {
+      setErr(e?.message || String(e))
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
+  useEffect(() => { loadTopics() }, [loadTopics])
+
+  const handleTopicCreated = (topic) => {
+    setTopics(prev => [topic, ...prev])
+    setShowNewPost(false)
+    setActiveTopic(topic)
+  }
+
+  const handleTopicDeleted = (topicId) => {
+    setTopics(prev => prev.filter(t => t.id !== topicId))
+    setActiveTopic(null)
+  }
+
+  const handleMessagesCountChange = (delta) => {
+    setActiveTopic(prev => prev ? { ...prev, messagesCount: (prev.messagesCount ?? 0) + delta } : null)
+    setTopics(prev => prev.map(t => t.id === activeTopic?.id ? { ...t, messagesCount: (t.messagesCount ?? 0) + delta } : t))
+  }
+
+  // If a topic is selected, show detail view
+  if (activeTopic) {
+    return (
+      <div className="forum-page">
+        <PageHeader
+          className="forum-header"
+          tag={t('forum_tag')}
+          tagClassName="forum-header-tag"
+          title={t('forum_title')}
+          titleClassName="forum-title"
+        />
+        <div className="forum-content">
+          <AnimatePresence mode="wait">
+            <ThreadDetail
+              key={activeTopic.id}
+              topic={activeTopic}
+              token={token}
+              user={user}
+              onBack={() => setActiveTopic(null)}
+              onTopicDeleted={handleTopicDeleted}
+              onMessagesCountChange={handleMessagesCountChange}
+            />
+          </AnimatePresence>
+          <aside className="forum-sidebar">
+            <SidebarWidgets t={t} topics={topics} onSelectTopic={setActiveTopic} />
+          </aside>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="forum-page">
-      {/* Heavy Brutalist Header */}
       <PageHeader
         className="forum-header"
         tag={t('forum_tag')}
@@ -221,84 +503,123 @@ const ForumPage = () => {
         titleClassName="forum-title"
       />
 
-      {/* Control Bar (Filters & Search & Action) */}
+      {/* Toolbar */}
       <section className="forum-toolbar">
         <div className="forum-filters">
-          {filters.map(filter => (
-            <button 
-              key={filter}
-              className={`forum-filter-btn ${activeFilter === filter ? 'active' : ''}`}
-              onClick={() => setActiveFilter(filter)}
-            >
-              {filter}
-            </button>
-          ))}
+          <span className="forum-count-label">
+            {loading ? <Loader2 className="forsalaw-spin" size={14} style={{ color: 'var(--gold)' }} /> : `${topics.length} sujets`}
+          </span>
         </div>
-
         <div className="forum-actions">
-          <button className="forum-new-btn" onClick={() => setShowNewPost(true)}>
-            {t('forum_new_post')}
-          </button>
+          {canPost ? (
+            <button className="forum-new-btn" onClick={() => setShowNewPost(true)}>
+              <Plus size={14} style={{ display: 'inline', marginRight: 5 }} />
+              {t('forum_new_post')}
+            </button>
+          ) : (
+            <span className="forum-login-hint">Connectez-vous pour poster</span>
+          )}
         </div>
       </section>
 
       {/* Main content */}
       <div className="forum-content">
         <div className="forum-threads">
+          {err && <div className="forum-err"><AlertTriangle size={14} /> {err}</div>}
+          {loading && (
+            <div className="forum-loading">
+              {[0,1,2,3].map(i => (
+                <div key={i} className="forum-skeleton" style={{ animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+          )}
           <AnimatePresence mode="popLayout">
-            {filtered.map(thread => (
+            {!loading && topics.map((topic, i) => (
               <motion.div
-                key={thread.id}
+                key={topic.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.18, delay: i * 0.04 }}
               >
-                <ThreadCard thread={thread} />
+                <ThreadCard topic={topic} onClick={() => setActiveTopic(topic)} />
               </motion.div>
             ))}
           </AnimatePresence>
+          {!loading && topics.length === 0 && !err && (
+            <div className="forum-empty">
+              <p>Aucun sujet pour le moment.</p>
+              {canPost && (
+                <button className="forum-new-btn" style={{ marginTop: '1rem' }} onClick={() => setShowNewPost(true)}>
+                  Créer le premier sujet
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Sidebar */}
         <aside className="forum-sidebar">
-          <div className="sidebar-widget fellawra-widget">
-            <img src="/fellawra.png" alt="Fellawra" className="fellawra-widget-img" />
-            <p className="fellawra-widget-text">
-              {t('forum_fellawra_text')}
-            </p>
-            <button className="fellawra-ask-btn">{t('forum_ask_fellawra')}</button>
-          </div>
-
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">{t('forum_contributors')}</p>
-            {TOP_CONTRIBUTORS.map(c => (
-              <div className="contributor-item" key={c.rank}>
-                <span className="contributor-rank">#{c.rank}</span>
-                <div className="contributor-avatar">{c.initials}</div>
-                <span className="contributor-name">{c.name}</span>
-                <span className="contributor-posts">{c.posts} {t('forum_posts')}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">{t('forum_trending')}</p>
-            <div className="trending-tags">
-              {TRENDING_TAGS.map(tag => (
-                <button key={tag} className="trending-tag">{tag}</button>
-              ))}
-            </div>
-          </div>
+          <SidebarWidgets t={t} topics={topics} onSelectTopic={setActiveTopic} />
         </aside>
       </div>
 
-      {/* New Post Modal */}
+      {/* New Topic Modal */}
       <AnimatePresence>
-        {showNewPost && <NewPostModal onClose={() => setShowNewPost(false)} />}
+        {showNewPost && isAuthenticated && (
+          <NewTopicModal
+            key="new-topic-modal"
+            token={token}
+            onCreated={handleTopicCreated}
+            onClose={() => setShowNewPost(false)}
+          />
+        )}
       </AnimatePresence>
     </div>
   )
 }
 
-export default ForumPage
+// ─── Sidebar Widgets ──────────────────────────────────────────────────────────
+function SidebarWidgets({ t, topics, onSelectTopic }) {
+  const recent = [...topics]
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .slice(0, 5)
+
+  const topReplied = [...topics]
+    .sort((a, b) => (b.messagesCount ?? 0) - (a.messagesCount ?? 0))
+    .slice(0, 4)
+
+  return (
+    <>
+      <div className="sidebar-widget fellawra-widget">
+        <img src="/fellawra.png" alt="Fellawra" className="fellawra-widget-img" />
+        <p className="fellawra-widget-text">{t('forum_fellawra_text')}</p>
+        <button className="fellawra-ask-btn">{t('forum_ask_fellawra')}</button>
+      </div>
+
+      {topReplied.length > 0 && (
+        <div className="sidebar-widget">
+          <p className="sidebar-widget-title">Plus actifs</p>
+          {topReplied.map((topic, i) => (
+            <div key={topic.id} className="contributor-item" style={{ cursor: 'pointer' }} onClick={() => onSelectTopic(topic)}>
+              <span className="contributor-rank">#{i + 1}</span>
+              <div className="contributor-avatar sm">{initials(topic.authorNomComplet)}</div>
+              <span className="contributor-name" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.72rem' }}>
+                {topic.title}
+              </span>
+              <span className="contributor-posts">{topic.messagesCount ?? 0} rép.</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="sidebar-widget">
+        <p className="sidebar-widget-title">{t('forum_trending')}</p>
+        <div className="trending-tags">
+          {TRENDING_TAGS.map(tag => (
+            <button key={tag} className="trending-tag">{tag}</button>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}

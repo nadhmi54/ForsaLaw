@@ -543,6 +543,112 @@
   background: rgba(212, 175, 55, 0.05);
 }
 
+.inbox-tool-btn.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+/* ─── RDV Proposal Panel ─── */
+.inbox-rdv-panel {
+  background: #0a0a0a;
+  border: 3px solid var(--gold);
+  border-bottom: none;
+  margin-bottom: 10px;
+}
+
+.inbox-rdv-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(212, 175, 55, 0.08);
+  border-bottom: 2px solid rgba(212, 175, 55, 0.25);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.inbox-rdv-panel__close {
+  background: none;
+  border: 1.5px solid rgba(212,175,55,0.4);
+  color: rgba(212,175,55,0.6);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.inbox-rdv-panel__close:hover { background: var(--gold); color: var(--black); }
+
+.inbox-rdv-panel__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.inbox-rdv-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.inbox-rdv-label--full { grid-column: 1 / -1; }
+
+.inbox-rdv-label input,
+.inbox-rdv-label select {
+  background: #111;
+  border: 2px solid var(--black);
+  color: var(--white);
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.inbox-rdv-label input:focus,
+.inbox-rdv-label select:focus { border-color: var(--gold); }
+
+.inbox-rdv-msg {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+  padding: 4px 14px;
+  margin: 0;
+}
+
+.inbox-rdv-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: var(--gold);
+  color: var(--black);
+  border: none;
+  border-top: 2px solid rgba(0,0,0,0.2);
+  padding: 10px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Lexend', sans-serif;
+  transition: background 0.15s;
+}
+.inbox-rdv-submit:hover:not(:disabled) { background: #fff; }
+.inbox-rdv-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+
 .inbox-input-row {
   display: flex;
   align-items: center;

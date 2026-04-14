@@ -80,12 +80,17 @@ public class AuditLogService {
     ) {
         return auditLogRepository.findForAdmin(
                 blankToNull(actorUserId),
-                toLowerOrNull(moduleName),
-                toLowerOrNull(action),
-                blankToNull(method),
+                clean(moduleName),
+                clean(action),
+                toUpperOrNull(method),
                 httpStatus,
                 pageable
         ).map(this::toDTO);
+    }
+
+    private String toUpperOrNull(String value) {
+        String cleaned = clean(value);
+        return cleaned == null ? null : cleaned.toUpperCase();
     }
 
     @Transactional(readOnly = true)

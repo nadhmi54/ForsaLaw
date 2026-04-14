@@ -219,7 +219,7 @@ function App() {
     <div className={`app-root${isInboxRoute ? ' app-root--inbox' : ''}`}>
       <ScrollToTop />
       <ScrollToTopButton />
-      <SiteVideoBackground />
+      {location.pathname === '/' && <SiteVideoBackground />}
       {/* Architectural background columns */}
       <div className="arch-bg">
         {[...Array(8)].map((_, i) => (

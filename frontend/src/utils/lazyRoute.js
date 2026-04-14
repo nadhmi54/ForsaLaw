@@ -11,7 +11,7 @@ function effectiveMinMs(minMs) {
 }
 
 /** Durée minimale d’affichage du loader (vidéo dans le panneau) avant d’afficher la page. */
-const DEFAULT_MIN_LOADING_MS = 2400
+const DEFAULT_MIN_LOADING_MS = 0
 
 /**
  * lazy() avec attente minimale pour que le fallback Suspense reste visible assez longtemps

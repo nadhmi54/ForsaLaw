@@ -47,6 +47,55 @@
   margin: 1.2rem 0;
 }
 
+/* ============================================================
+   ForsaLaw — Admin & Client Platform Spaces
+   Brutalist DNA: 4px borders, hard shadows, gold/charcoal
+   ============================================================ */
+
+/* ── Shared Page Shell ── */
+.platform-page {
+  min-height: 100vh;
+  padding: 7.5rem 2rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Lexend', sans-serif;
+}
+
+@media (min-width: 1200px) {
+  .platform-page {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+.platform-eyebrow {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.75;
+  margin-bottom: 0.6rem;
+  font-family: ui-monospace, monospace;
+}
+
+.platform-title {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height: 1.05;
+}
+
+.platform-title-divider {
+  width: 60px;
+  height: 4px;
+  background: var(--gold);
+  margin: 1.2rem 0;
+}
+
 .platform-subtitle {
   font-size: 0.875rem;
   font-weight: 300;
@@ -56,9 +105,7 @@
   margin-bottom: 3rem;
 }
 
-/* ════════════════════════════════════════════════
-   ADMIN CONSOLE (new layout)
-════════════════════════════════════════════════ */
+/* --- ADMIN CONSOLE --- */
 .admin-console-header .platform-subtitle { margin-bottom: 2.5rem; }
 
 .admin-console {
@@ -75,61 +122,22 @@
   background: #0d0d0d;
 }
 
-.admin-nav-list {
-  display: flex;
-  flex-direction: column;
-}
+.admin-nav-list { display: flex; flex-direction: column; }
 
 .admin-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
-  border: none;
-  border-bottom: 2px solid var(--black);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  color: rgba(255,255,255,0.55);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-family: 'Lexend', sans-serif;
-  transition: all 0.15s;
-  border-left: 4px solid transparent;
-  width: 100%;
+  display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+  border-bottom: 2px solid var(--black); background: transparent;
+  color: rgba(255,255,255,0.55); font-size: 0.72rem; font-weight: 800;
+  text-transform: uppercase; font-family: 'Lexend', sans-serif;
+  transition: all 0.15s; border-left: 4px solid transparent; width: 100%;
 }
 
-.admin-nav-item svg { color: var(--gold); flex-shrink: 0; }
-
-.admin-nav-item:hover,
-.admin-nav-item.active {
-  background: #111108;
-  color: var(--white);
-  border-left-color: var(--gold);
-}
-
-.admin-nav-pill {
-  margin-left: auto;
-  min-width: 22px;
-  height: 18px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ff6b6b;
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 900;
-  font-family: ui-monospace, monospace;
-  letter-spacing: 0.05em;
+.admin-nav-item:hover, .admin-nav-item.active {
+  background: #111108; color: var(--white); border-left-color: var(--gold);
 }
 
 .admin-console-main {
-  min-width: 0;
-  border-right: 4px solid var(--black);
-  background: var(--charcoal);
+  min-width: 0; border-right: 4px solid var(--black); background: var(--charcoal);
 }
 
 .admin-console-toolbar {
@@ -1230,3 +1238,257 @@
   .admin-console-nav { border-right: none; border-bottom: 4px solid var(--black); }
   .admin-search input { width: 48vw; }
 }
+
+
+/* ------------------------------------------------
+   FORSALAW ARCHITECTURAL DOSSIER SYSTEM
+   The true soul of ForsaLaw.
+------------------------------------------------ */
+
+.dossier-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dossier-seal-header {
+  border: 4px solid var(--black);
+  background: var(--charcoal);
+  padding: 3rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.dossier-seal-avatar {
+  width: 100px;
+  height: 100px;
+  background: var(--black);
+  border: 4px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.dossier-seal-info {
+  flex: 1;
+}
+
+.dossier-seal-name {
+  font-size: 2.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height:1;
+}
+
+.dossier-seal-meta {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.judicial-registry-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.judicial-tab {
+  background: #0a0a0a;
+  border: 4px solid var(--black);
+  border-bottom: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: rgba(255,255,255,0.4);
+  text-align: left;
+}
+
+.judicial-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left:0;
+  right:0;
+  height: 4px;
+  background: var(--black);
+  transition: 0.2s;
+}
+
+.judicial-tab:hover, .judicial-tab.active {
+  background: #111108;
+  color: var(--white);
+}
+
+.judicial-tab.active::after {
+  background: var(--gold);
+}
+
+.judicial-tab-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.judicial-tab-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin:0;
+}
+
+.command-array-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border: 4px solid var(--black);
+  background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-console::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 2px);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.command-button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: transparent;
+  border: none;
+  border-right: 2px solid var(--black);
+  border-bottom: 2px solid var(--black);
+  color: rgba(255,255,255,0.5);
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem;
+}
+
+.ledger-feed {
+  border: 4px solid var(--black);
+  background: #0a0a0a;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ledger-feed-nexus {
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+.ledger-feed-nexus::before {
+  content: 'ENCRYPTED FEED';
+  position: absolute;
+  top: -12px; left: 20px;
+  background: var(--black);
+  color: var(--gold);
+  padding: 2px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  border: 2px solid var(--gold);
+}
+
+.ledger-feed {
+  border: 4px solid var(--black);
+  background: #0a0a0a;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ledger-feed-header {
+  padding: 1rem 1.5rem;
+  background: var(--black);
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid var(--black);
+  align-items: center;
+}
+
+.ledger-row-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em;
+}
+
+.ledger-row-subject {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.command-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 4px solid var(--black);
+  margin-bottom: 2.5rem;
+}
+
+.command-kpi-block {
+  padding: 1.5rem 2rem;
+  background: var(--charcoal);
+  border-right: 4px solid var(--black);
+}
+
+.command-kpi-lbl {
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.command-kpi-val {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+}
+
