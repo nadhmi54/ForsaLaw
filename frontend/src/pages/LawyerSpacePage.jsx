@@ -315,9 +315,7 @@ export default function LawyerSpacePage() {
     return <Navigate to="/" replace />
   }
 
-  if (user?.roleUser === 'admin') {
-    return <Navigate to="/" replace />
-  }
+  // Admin is now allowed to view Lawyer Space, no strict block.
 
   return (
     <motion.main

@@ -66,7 +66,7 @@
   grid-template-columns: 260px 1fr 340px;
   gap: 0;
   border: 4px solid var(--black);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 0 60px rgba(0,0,0,0.85);
   background: var(--charcoal);
 }
 
@@ -129,7 +129,8 @@
 .admin-console-main {
   min-width: 0;
   border-right: 4px solid var(--black);
-  background: var(--charcoal);
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
 }
 
 .admin-console-toolbar {
@@ -1230,3 +1231,333 @@
   .admin-console-nav { border-right: none; border-bottom: 4px solid var(--black); }
   .admin-search input { width: 48vw; }
 }
+
+
+/* ------------------------------------------------
+   FORSALAW ARCHITECTURAL DOSSIER SYSTEM
+   The true soul of ForsaLaw.
+------------------------------------------------ */
+
+.dossier-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dossier-seal-header {
+  border: 4px solid var(--black);
+  background: var(--charcoal);
+  padding: 3rem 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.dossier-seal-avatar {
+  width: 100px;
+  height: 100px;
+  background: var(--black);
+  border: 4px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.dossier-seal-info {
+  flex: 1;
+}
+
+.dossier-seal-name {
+  font-size: 2.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  margin: 0 0 0.5rem;
+  line-height:1;
+}
+
+.dossier-seal-meta {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.judicial-registry-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.judicial-tab {
+  background: #0a0a0a;
+  border: 4px solid var(--black);
+  border-bottom: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: rgba(255,255,255,0.4);
+  text-align: left;
+}
+
+.judicial-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left:0;
+  right:0;
+  height: 4px;
+  background: var(--black);
+  transition: 0.2s;
+}
+
+.judicial-tab:hover, .judicial-tab.active {
+  background: #111108;
+  color: var(--white);
+}
+
+.judicial-tab.active::after {
+  background: var(--gold);
+}
+
+.judicial-tab-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.judicial-tab-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin:0;
+}
+
+.command-array-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border: 4px solid var(--black);
+  background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-console::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 2px);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.command-button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: transparent;
+  border: none;
+  border-right: 2px solid var(--black);
+  border-bottom: 2px solid var(--black);
+  color: rgba(255,255,255,0.5);
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: left;
+}
+
+.command-button:nth-child(5n) { border-right: none; }
+.command-button:nth-child(n+6) { border-bottom: none; }
+
+.command-button:hover, .command-button.active {
+  background: #111108;
+  color: var(--white);
+  box-shadow: inset 0 3px 0 0 var(--gold);
+}
+
+.command-button svg { color: var(--gold); }
+
+/* --- THE NEXUS UPGRADE --- */
+.nexus-radar {
+  position: relative;
+  height: 200px;
+  background: rgba(0,0,0,0.4);
+  border: 3px solid var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.nexus-radar::before {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 2px;
+  background: rgba(212, 175, 55, 0.2);
+  top: 50%;
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes radar-sweep {
+  from { transform: translateY(-100px); }
+  to { transform: translateY(100px); }
+}
+
+.totem-card {
+  background: rgba(20,20,20,0.7);
+  backdrop-filter: blur(10px);
+  border: 3px solid var(--black);
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.totem-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.totem-card::after {
+  content: '';
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 6px; height: 6px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--gold);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.pulse-chart-container {
+  height: 60px;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.ledger-feed-nexus {
+  border: 4px solid var(--black);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+.ledger-feed-nexus::before {
+  content: 'ENCRYPTED FEED';
+  position: absolute;
+  top: -12px; left: 20px;
+  background: var(--black);
+  color: var(--gold);
+  padding: 2px 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  border: 2px solid var(--gold);
+}
+
+.ledger-feed {
+  border: 4px solid var(--black);
+  background: #0a0a0a;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ledger-feed-header {
+  padding: 1rem 1.5rem;
+  background: var(--black);
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid var(--black);
+  align-items: center;
+}
+
+.ledger-row-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em;
+}
+
+.ledger-row-subject {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.command-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 4px solid var(--black);
+  margin-bottom: 2.5rem;
+}
+
+.command-kpi-block {
+  padding: 1.5rem 2rem;
+  background: var(--charcoal);
+  border-right: 4px solid var(--black);
+}
+
+.command-kpi-lbl {
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.command-kpi-val {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+}
+

@@ -20,13 +20,15 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import * as usersApi from '../api/users.js'
 import * as rdvApi from '../api/rdv.js'
+import * as reclamationApi from '../api/reclamation.js'
 import '../styles/PlatformSpaces.css'
 
-const MOCK_CASES = [
-  { id: 'DOS-2026-0142', subject: 'Litige Foncier — Terrain Ariana', avocat: 'Me. Y. Mansour', status: 'in-progress', statusLabel: 'EN COURS' },
-  { id: 'DOS-2026-0089', subject: 'Harcèlement Professionnel', avocat: 'Me. K. Ouertani', status: 'open', statusLabel: 'OUVERTE' },
-  { id: 'DOS-2025-0402', subject: 'Contestation Héritage', avocat: 'Me. S. Ben Amor', status: 'closed', statusLabel: 'CLOSE' },
-]
+const STATUT_DISPLAY = {
+  OUVERTE: { label: 'OUVERTE', cls: 'open' },
+  EN_COURS: { label: 'EN COURS', cls: 'in-progress' },
+  RESOLUE: { label: 'RÉSOLUE', cls: 'closed' },
+  FERMEE: { label: 'FERMÉE', cls: 'closed' },
+}
 
 const VALID_TABS = new Set(['cases', 'appointments', 'messages', 'profile'])
 
@@ -63,6 +65,10 @@ export default function ClientSpacePage() {
   const [me, setMe] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [loadingMe, setLoadingMe] = useState(true)
+
+  // Cases (reclamations)
+  const [cases, setCases] = useState([])
+  const [casesLoading, setCasesLoading] = useState(false)
 
   const [editNom, setEditNom] = useState('')
   const [editPrenom, setEditPrenom] = useState('')
@@ -140,6 +146,7 @@ export default function ClientSpacePage() {
         const page = await rdvApi.listClientAppointments(token, { page: 0, size: 50 })
         if (!cancelled) setAppointments(page?.content ?? [])
       } catch (e) {
+        if (user?.roleUser === 'admin') return
         if (!cancelled) setLoadError(e?.message || String(e))
       } finally {
         if (!cancelled) setAppointmentsLoading(false)
@@ -155,6 +162,24 @@ export default function ClientSpacePage() {
     const page = await rdvApi.listClientAppointments(token, { page: 0, size: 50 })
     setAppointments(page?.content ?? [])
   }, [token])
+
+  useEffect(() => {
+    if (!token || activeTab !== 'cases') return
+    let cancelled = false
+    ;(async () => {
+      setCasesLoading(true)
+      try {
+        const page = await reclamationApi.listMyReclamations(token, { page: 0, size: 50 })
+        if (!cancelled) setCases(page?.content ?? [])
+      } catch (e) {
+        if (user?.roleUser === 'admin') return
+        if (!cancelled) setLoadError(e?.message || String(e))
+      } finally {
+        if (!cancelled) setCasesLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [token, activeTab])
 
   useEffect(() => {
     if (!token) {
@@ -205,7 +230,7 @@ export default function ClientSpacePage() {
     return <Navigate to="/" replace />
   }
 
-  if (user?.roleUser !== 'client') {
+  if (user?.roleUser !== 'client' && user?.roleUser !== 'admin') {
     return <Navigate to="/" replace />
   }
 
@@ -326,129 +351,108 @@ export default function ClientSpacePage() {
         </p>
       )}
 
-      <div className="client-layout">
-        <div className="client-profile-col">
-          <div className="client-profile-card">
-            <div className="client-avatar-ring" style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
-              {photoBlobUrl ? (
-                <img src={photoBlobUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                initials
-              )}
-              {loadingMe && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.45)',
-                  }}
-                >
-                  <Loader2 className="forsalaw-spin" size={22} />
+      <div className="dossier-layout">
+        {/* THE SEAL HEADER */}
+        <header className="dossier-seal-header">
+          <div className="dossier-seal-avatar">
+            {photoBlobUrl ? (
+              <img src={photoBlobUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initials
+            )}
+            {loadingMe && (
+              <div style={{ position: 'absolute', background: 'rgba(0,0,0,0.6)', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Loader2 className="forsalaw-spin" size={24} />
+              </div>
+            )}
+          </div>
+          <div className="dossier-seal-info">
+            <h2 className="dossier-seal-name">{displayName}</h2>
+            <div className="dossier-seal-meta">
+              <span>{me?.email ?? user?.email}</span>
+              <span>·</span>
+              <span className="role-badge client">{(me?.roleUser ?? user?.roleUser ?? 'CLIENT').toString().toUpperCase()}</span>
+              <span>·</span>
+              <span>INSERIT LE {formatApiDate(me?.dateCreation)}</span>
+            </div>
+          </div>
+          <div>
+            <button type="button" className="quick-action-btn" onClick={() => navigate('/cases')} style={{ padding:'0.75rem 1.5rem', marginBottom:'0.5rem', background: 'var(--gold)', color:'var(--black)' }}>
+              <FilePlus2 size={16} /> NOUVEAU DOSSIER
+            </button>
+            <button type="button" className="quick-action-btn" onClick={() => logout()} style={{ padding:'0.75rem 1.5rem', border: '2px solid rgba(255,107,107,0.5)', color: '#ff6b6b' }}>
+               QUITTER LE PALAIS
+            </button>
+          </div>
+        </header>
+
+        {/* FOLDER TABS */}
+        <nav className="judicial-registry-tabs">
+          {CLIENT_NAV.map((item, idx) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`judicial-tab ${activeTab === item.key ? 'active' : ''}`}
+              onClick={() => setActiveTab(item.key)}
+            >
+              <span className="judicial-tab-code">DOC. 0{idx + 1}</span>
+              <h4 className="judicial-tab-title">{item.label}</h4>
+            </button>
+          ))}
+        </nav>
+
+        {/* LEDGER CONTENT */}
+        <div className="dossier-main-realm">
+          {activeTab === 'cases' && (
+            <div className="ledger-feed">
+              <div className="ledger-feed-header">
+                REGISTRE DES AFFAIRES — {cases.length} ENTRIES
+              </div>
+              {casesLoading && (
+                <div style={{ padding: '1rem', color: 'var(--gold)' }}>
+                  <Loader2 className="forsalaw-spin" size={18} />
                 </div>
               )}
+              {!casesLoading && cases.length === 0 && (
+                <div style={{ padding: '1rem', opacity: 0.6, fontSize: '0.82rem' }}>
+                  Aucune réclamation pour le moment.
+                  <button
+                    type="button"
+                    style={{ marginLeft: '0.75rem', color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: 'inherit' }}
+                    onClick={() => navigate('/cases')}
+                  >
+                    Créer une réclamation
+                  </button>
+                </div>
+              )}
+              {!casesLoading && cases.map((c, i) => {
+                const { label, cls } = STATUT_DISPLAY[c.statut] || { label: c.statut, cls: 'open' }
+                return (
+                  <motion.div
+                    key={c.id}
+                    className="ledger-row"
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.07 }}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate('/cases')}
+                  >
+                    <div className="ledger-row-mono">ID: {c.id}</div>
+                    <div>
+                      <div className="ledger-row-subject">{c.titre}</div>
+                      <div className="ledger-row-mono" style={{ marginTop: '4px' }}>CAT: {c.categorie || '—'}</div>
+                    </div>
+                    <span className={`status-badge-admin ${cls}`}>{label}</span>
+                  </motion.div>
+                )
+              })}
             </div>
-            <div className="client-profile-name">{displayName}</div>
-            <div className="client-profile-email">{me?.email ?? user?.email}</div>
-            <span className="role-badge client">{(me?.roleUser ?? user?.roleUser ?? 'CLIENT').toString().toUpperCase()}</span>
-            <div
-              style={{
-                marginTop: 12,
-                fontSize: '0.5rem',
-                color: 'rgba(255,255,255,0.15)',
-                fontFamily: 'monospace',
-                letterSpacing: '0.2em',
-              }}
-            >
-              {t('client_member_since')} {formatApiDate(me?.dateCreation)}
-            </div>
-          </div>
-
-          <nav className="client-nav-list">
-            {CLIENT_NAV.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`client-nav-item${activeTab === item.key ? ' active' : ''}`}
-                onClick={() => setActiveTab(item.key)}
-              >
-                {item.icon}
-                {item.label}
-                <ChevronRight size={12} style={{ marginLeft: 'auto', opacity: 0.3 }} />
-              </button>
-            ))}
-          </nav>
-
-          <div className="platform-section-header" style={{ marginTop: 'auto', borderTop: '4px solid var(--black)' }}>
-            <span className="platform-section-title">{t('client_quick_actions')}</span>
-          </div>
-          <button type="button" className="quick-action-btn">
-            <FilePlus2 size={16} />
-            {t('client_action_new_case')}
-          </button>
-          <button type="button" className="quick-action-btn">
-            <MessageSquare size={16} />
-            {t('client_action_contact')}
-          </button>
-          <button
-            type="button"
-            className="quick-action-btn"
-            style={{ color: 'rgba(255,107,107,0.5)' }}
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
-          >
-            <LogOut size={16} style={{ color: 'rgba(255,107,107,0.5)' }} />
-            {t('client_action_logout')}
-          </button>
-        </div>
-
-        <div className="client-main-col">
-          {activeTab === 'cases' && (
-            <>
-              <div className="platform-section-header">
-                <span className="platform-section-title">
-                  <FileText size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  {t('client_cases_active')}
-                </span>
-                <span className="platform-section-badge">
-                  {MOCK_CASES.length} {t('client_cases_count')}
-                </span>
-              </div>
-              {MOCK_CASES.map((c, i) => (
-                <motion.div
-                  key={c.id}
-                  className="case-row"
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07 }}
-                >
-                  <div>
-                    <div className="case-id">{c.id}</div>
-                  </div>
-                  <div>
-                    <div className="case-subject">{c.subject}</div>
-                  </div>
-                  <div className="case-lawyer">{c.avocat}</div>
-                  <span className={`status-badge-admin ${c.status}`}>{c.statusLabel}</span>
-                </motion.div>
-              ))}
-            </>
           )}
 
           {activeTab === 'appointments' && (
-            <>
-              <div className="platform-section-header">
-                <span className="platform-section-title">
-                  <Calendar size={12} style={{ display: 'inline', marginRight: 6 }} />
-                  {t('client_appts_upcoming')}
-                </span>
-                <span className="platform-section-badge">
-                  {appointments.length} {t('client_appts_count')}
-                </span>
+            <div className="ledger-feed">
+              <div className="ledger-feed-header">
+                REGISTRE DES AUDIENCES (RDV) — {appointments.length} ENTRIES
               </div>
               {appointmentsLoading && (
                 <div style={{ padding: '1rem', color: 'var(--gold)' }}>
@@ -461,7 +465,7 @@ export default function ClientSpacePage() {
               {!appointmentsLoading && appointments.map((a, i) => (
                 <motion.div
                   key={a.idRendezVous}
-                  className="appt-row"
+                  className="ledger-row"
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
@@ -470,10 +474,10 @@ export default function ClientSpacePage() {
                     <span className="appt-day">{(a.dateHeureDebut ? new Date(a.dateHeureDebut) : new Date()).getDate()}</span>
                     <span className="appt-month">{a.dateHeureDebut ? new Date(a.dateHeureDebut).toLocaleString('fr-FR', { month: 'short' }).toUpperCase() : '—'}</span>
                   </div>
-                  <div className="appt-info">
-                    <div className="appt-subject">{a.motifConsultation || 'Demande de rendez-vous'}</div>
-                    <div className="appt-meta">
-                      Me. {a.nomAvocat} · {fmtDateTime(a.dateHeureDebut)} {a.dateHeureFin ? `→ ${fmtDateTime(a.dateHeureFin)}` : ''} · {a.typeRendezVous}
+                  <div>
+                    <div className="ledger-row-subject">{a.motifConsultation || 'Demande de rendez-vous'}</div>
+                    <div className="ledger-row-mono" style={{ marginTop: '0.4rem' }}>
+                      ME. {a.nomAvocat} · {fmtDateTime(a.dateHeureDebut)} {a.dateHeureFin ? `→ ${fmtDateTime(a.dateHeureFin)}` : ''} · {a.typeRendezVous}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -482,8 +486,7 @@ export default function ClientSpacePage() {
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button
                           type="button"
-                          className="brutal-btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem' }}
+                          className="tbl-btn approve"
                           onClick={async () => {
                             try {
                               await rdvApi.clientAcceptProposal(token, a.idRendezVous)
@@ -497,8 +500,7 @@ export default function ClientSpacePage() {
                         </button>
                         <button
                           type="button"
-                          className="brutal-btn"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem', background: '#2b1b1b', color: '#ffc9c9' }}
+                          className="tbl-btn reject"
                           onClick={async () => {
                             const raison = window.prompt('Raison du refus ?') || ''
                             try {
@@ -516,10 +518,9 @@ export default function ClientSpacePage() {
                     {a.statutRendezVous !== 'ANNULE' && (
                       <button
                         type="button"
-                        className="brutal-btn"
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem' }}
+                        className="tbl-btn reject"
                         onClick={async () => {
-                          const raison = window.prompt('Raison d annulation ?') || ''
+                          const raison = window.prompt('Raison annulation ?') || ''
                           try {
                             await rdvApi.clientCancelAppointment(token, a.idRendezVous, raison)
                             await reloadAppointments()
@@ -534,15 +535,8 @@ export default function ClientSpacePage() {
                     {a.statutRendezVous === 'CONFIRME' && a.typeRendezVous === 'EN_LIGNE' && (
                       <button
                         type="button"
-                        className="brutal-btn"
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          fontSize: '0.65rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          background: '#333',
-                        }}
+                        className="tbl-btn approve"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                         onClick={async () => {
                           try {
                             const x = await rdvApi.clientMeetingAccess(token, a.idRendezVous)
@@ -553,34 +547,33 @@ export default function ClientSpacePage() {
                           }
                         }}
                       >
-                        <Video size={12} /> {t('client_appts_join')}
+                        <Video size={12} /> ENTRER SALLE
                       </button>
                     )}
                   </div>
                 </motion.div>
               ))}
-            </>
+            </div>
           )}
 
           {activeTab === 'messages' && (
-            <>
-              <div className="platform-section-header">
-                <span className="platform-section-title">{t('client_nav_messages')}</span>
+            <div className="ledger-feed">
+              <div className="ledger-feed-header">
+                {t('client_nav_messages')}
               </div>
-              <div
-                style={{
-                  padding: '3rem 2rem',
-                  textAlign: 'center',
-                  color: 'rgba(255,255,255,0.15)',
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.3em',
-                  fontFamily: 'monospace',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {t('client_msg_notice')}
+              <div style={{ padding: '2rem 1.5rem' }}>
+                <p className="ledger-row-mono" style={{ marginBottom: '1.5rem' }}>{t('client_msg_notice')}</p>
+                <button
+                  type="button"
+                  className="tbl-btn approve"
+                  onClick={() => navigate('/inbox')}
+                  style={{ display: 'inline-flex', fontSize: '0.7rem', padding: '0.6rem 1rem' }}
+                >
+                  <MessageSquare size={16} style={{marginRight:'8px'}} />
+                  OUVRIR LA MESSAGERIE
+                </button>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'profile' && (

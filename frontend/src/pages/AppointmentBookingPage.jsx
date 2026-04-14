@@ -126,15 +126,36 @@ export default function AppointmentBookingPage() {
 
           <section className="client-pro-card" style={{ marginTop: '1rem' }}>
             <div className="client-pro-card__head">
-              <h3 className="client-pro-card__title">Creneaux disponibles (info)</h3>
+              <h3 className="client-pro-card__title">Créneaux disponibles ({range.start.split('T')[0]} - {range.end.split('T')[0]})</h3>
             </div>
             <div className="client-pro-card__body">
               {slots.length === 0 ? (
-                <p>Aucun creneau publie sur la periode.</p>
+                <p style={{ opacity: 0.6, fontSize: '0.8rem', fontStyle: 'italic' }}>Aucun créneau libre publié sur cette période. L'avocat pourra tout de même vous proposer une date personnalisée.</p>
               ) : (
-                slots.slice(0, 30).map((s, i) => (
-                  <p key={i}>{String(s.debut).replace('T', ' ')} {'\u2192'} {String(s.fin).replace('T', ' ')}</p>
-                ))
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {slots.slice(0, 24).map((s, i) => {
+                    const startDt = new Date(s.debut)
+                    const endDt = new Date(s.fin)
+                    const day = startDt.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase()
+                    const timeStart = startDt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute:'2-digit' })
+                    const timeEnd = endDt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute:'2-digit' })
+
+                    return (
+                      <div key={i} style={{ 
+                        border: '2px solid var(--black)',
+                        background: 'var(--white)',
+                        color: 'var(--black)',
+                        padding: '0.4rem 0.6rem',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        boxShadow: '2px 2px 0 var(--black)'
+                      }}>
+                        <span style={{ color: '#444', marginRight: '5px' }}>{day}</span>
+                        {timeStart} - {timeEnd}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           </section>

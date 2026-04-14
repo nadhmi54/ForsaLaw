@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Calendar, Paperclip, Loader2 } from 'lucide-react'
+import { Send, Calendar, Paperclip, Loader2, X } from 'lucide-react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import * as messengerApi from '../api/messenger.js'
+import * as rdvApi from '../api/rdv.js'
 import '../styles/Inbox.css'
 
 const initials = (prenom, nom) =>
@@ -38,6 +39,15 @@ export default function InboxPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
+
+  // RDV Proposal panel (avocat only)
+  const [showRdvPanel, setShowRdvPanel] = useState(false)
+  const [proposeStart, setProposeStart] = useState('')
+  const [proposeEnd, setProposeEnd] = useState('')
+  const [proposeType, setProposeType] = useState('EN_LIGNE')
+  const [proposeComment, setProposeComment] = useState('')
+  const [rdvBusy, setRdvBusy] = useState(false)
+  const [rdvMsg, setRdvMsg] = useState(null)
 
   const endRef = useRef(null)
   const textareaRef = useRef(null)
@@ -327,10 +337,17 @@ export default function InboxPage() {
 
         <div className="inbox-input-area">
           <div className="inbox-input-tools">
-            <button className="inbox-tool-btn" type="button" disabled title="Bientôt disponible">
-              <Calendar size={13} color="var(--gold)" />
-              Proposer un RDV
-            </button>
+            {roleUser === 'avocat' && (
+              <button
+                className={`inbox-tool-btn${showRdvPanel ? ' active' : ''}`}
+                type="button"
+                onClick={() => { setShowRdvPanel((p) => !p); setRdvMsg(null) }}
+                disabled={isClosed || !activeConversation}
+              >
+                <Calendar size={13} color="var(--gold)" />
+                Proposer un RDV
+              </button>
+            )}
             <button
               className="inbox-tool-btn"
               type="button"
@@ -349,6 +366,94 @@ export default function InboxPage() {
               onChange={onSelectFiles}
             />
           </div>
+
+          {/* RDV Proposal panel — avocat only */}
+          <AnimatePresence>
+            {showRdvPanel && roleUser === 'avocat' && activeConversation && (
+              <motion.div
+                className="inbox-rdv-panel"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                <div className="inbox-rdv-panel__header">
+                  <span>Proposer un créneau</span>
+                  <button type="button" className="inbox-rdv-panel__close" onClick={() => setShowRdvPanel(false)}>
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="inbox-rdv-panel__body">
+                  <label className="inbox-rdv-label">
+                    <span>Début</span>
+                    <input type="datetime-local" value={proposeStart} onChange={(e) => setProposeStart(e.target.value)} />
+                  </label>
+                  <label className="inbox-rdv-label">
+                    <span>Fin</span>
+                    <input type="datetime-local" value={proposeEnd} onChange={(e) => setProposeEnd(e.target.value)} />
+                  </label>
+                  <label className="inbox-rdv-label">
+                    <span>Type</span>
+                    <select value={proposeType} onChange={(e) => setProposeType(e.target.value)}>
+                      <option value="EN_LIGNE">En ligne</option>
+                      <option value="CABINET">Cabinet</option>
+                      <option value="TELEPHONE">Téléphone</option>
+                    </select>
+                  </label>
+                  <label className="inbox-rdv-label inbox-rdv-label--full">
+                    <span>Commentaire (optionnel)</span>
+                    <input
+                      type="text"
+                      value={proposeComment}
+                      onChange={(e) => setProposeComment(e.target.value)}
+                      placeholder="ex: Préparez vos documents..."
+                    />
+                  </label>
+                </div>
+                {rdvMsg && <p className="inbox-rdv-msg">{rdvMsg}</p>}
+                <button
+                  className="inbox-rdv-submit"
+                  type="button"
+                  disabled={rdvBusy || !proposeStart || !proposeEnd}
+                  onClick={async () => {
+                    if (!token || !activeConversation) return
+                    // Find the rdv matching this conversation's client
+                    setRdvBusy(true)
+                    setRdvMsg(null)
+                    try {
+                      // List received RDV requests and find one EN_ATTENTE for this client
+                      const rdvPage = await rdvApi.listLawyerAppointments(token, { page: 0, size: 50 })
+                      const pending = (rdvPage?.content ?? []).find(
+                        (r) => r.statutRendezVous === 'EN_ATTENTE' &&
+                          String(r.clientUserId ?? r.clientId) === String(activeConversation.clientUserId)
+                      )
+                      if (!pending) {
+                        setRdvMsg('Aucune demande EN_ATTENTE pour ce client.')
+                        return
+                      }
+                      await rdvApi.lawyerProposeSlot(token, pending.idRendezVous, {
+                        dateHeureDebut: proposeStart,
+                        dateHeureFin: proposeEnd,
+                        typeRendezVous: proposeType,
+                        commentaireAvocat: proposeComment.trim() || undefined,
+                      })
+                      setRdvMsg('✓ Créneau proposé avec succès.')
+                      setProposeStart('')
+                      setProposeEnd('')
+                      setProposeComment('')
+                    } catch (e) {
+                      setRdvMsg(e?.message || String(e))
+                    } finally {
+                      setRdvBusy(false)
+                    }
+                  }}
+                >
+                  {rdvBusy ? <Loader2 className="forsalaw-spin" size={14} /> : <Calendar size={14} />}
+                  Envoyer la proposition
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {selectedFiles.length > 0 && (
             <div style={{ marginBottom: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
