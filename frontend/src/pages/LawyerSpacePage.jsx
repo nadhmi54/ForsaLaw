@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import * as avocatsApi from '../api/avocats.js'
+import * as rdvApi from '../api/rdv.js'
 import '../styles/PlatformSpaces.css'
 import '../styles/LawyerSpacePage.css'
 
@@ -56,6 +57,13 @@ export default function LawyerSpacePage() {
   const [photoMsg, setPhotoMsg] = useState(null)
 
   const [deactivateBusy, setDeactivateBusy] = useState(false)
+  const [appointments, setAppointments] = useState([])
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false)
+  const [proposeStart, setProposeStart] = useState('')
+  const [proposeEnd, setProposeEnd] = useState('')
+  const [proposeType, setProposeType] = useState('EN_LIGNE')
+  const [proposeComment, setProposeComment] = useState('')
+  const [agendaSnapshot, setAgendaSnapshot] = useState(null)
 
   const jwtRole = useMemo(() => avocatsApi.parseJwtRole(token), [token])
   const canUseAvocatEndpoints = jwtRole === 'avocat'
@@ -152,6 +160,43 @@ export default function LawyerSpacePage() {
   const isApproved = profile?.verificationStatus === 'APPROVED' && profile?.verifie === true
   const isPending = profile && profile.verificationStatus === 'PENDING'
   const isRejected = profile && profile.verificationStatus === 'REJECTED'
+
+  const fmtDateTime = (v) => {
+    if (!v) return '—'
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return String(v)
+    return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  const reloadAppointments = useCallback(async () => {
+    if (!token || !canUseAvocatEndpoints || !isApproved) return
+    setAppointmentsLoading(true)
+    try {
+      const page = await rdvApi.listLawyerAppointments(token, { page: 0, size: 60 })
+      setAppointments(page?.content ?? [])
+    } catch (e) {
+      setLoadError(e?.message || String(e))
+    } finally {
+      setAppointmentsLoading(false)
+    }
+  }, [token, canUseAvocatEndpoints, isApproved])
+
+  useEffect(() => {
+    if (!token || !canUseAvocatEndpoints || !isApproved) return
+    reloadAppointments()
+  }, [token, canUseAvocatEndpoints, isApproved, reloadAppointments])
+
+  useEffect(() => {
+    if (!token || !canUseAvocatEndpoints || !isApproved) return
+    ;(async () => {
+      try {
+        const a = await rdvApi.getAgenda(token)
+        setAgendaSnapshot(a)
+      } catch {
+        setAgendaSnapshot(null)
+      }
+    })()
+  }, [token, canUseAvocatEndpoints, isApproved])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -601,6 +646,131 @@ export default function LawyerSpacePage() {
 
           {canUseAvocatEndpoints && (
             <>
+              <section className="client-pro-card lawyer-space-section">
+                <div className="client-pro-card__head">
+                  <div className="client-pro-card__icon">
+                    <Award size={18} />
+                  </div>
+                  <div>
+                    <h2 className="client-pro-card__title">Horaires de travail (agenda)</h2>
+                    <p className="client-pro-card__sub">Configuration active visible dans votre espace avocat.</p>
+                  </div>
+                </div>
+                <div className="client-pro-card__body">
+                  {!agendaSnapshot && <p>Configurer via la page Calendrier.</p>}
+                  {agendaSnapshot && (
+                    <>
+                      <p>Fuseau: {agendaSnapshot.zoneId} · Creneau: {agendaSnapshot.dureeCreneauMinutes} min · Marge: {agendaSnapshot.bufferMinutes} min · {agendaSnapshot.agendaActif ? 'Actif' : 'Inactif'}</p>
+                      <p style={{ marginTop: '0.5rem' }}><strong>Plages:</strong></p>
+                      {(agendaSnapshot.plages ?? []).map((p) => (
+                        <p key={p.id}>Jour {p.dayOfWeek}: {String(p.heureDebut)} - {String(p.heureFin)}</p>
+                      ))}
+                      {(agendaSnapshot.exceptions ?? []).length > 0 && (
+                        <>
+                          <p style={{ marginTop: '0.5rem' }}><strong>Indisponibilites:</strong></p>
+                          {agendaSnapshot.exceptions.map((x) => (
+                            <p key={x.id}>{String(x.dateDebut)} → {String(x.dateFin)} · {x.libelle}</p>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section className="client-pro-card lawyer-space-section">
+                <div className="client-pro-card__head">
+                  <div className="client-pro-card__icon">
+                    <Award size={18} />
+                  </div>
+                  <div>
+                    <h2 className="client-pro-card__title">Demandes et rendez-vous</h2>
+                    <p className="client-pro-card__sub">Proposez un creneau depuis les demandes en attente et suivez les confirmations clients.</p>
+                  </div>
+                </div>
+                <div className="client-pro-card__body">
+                  {appointmentsLoading && <Loader2 className="forsalaw-spin" size={18} />}
+                  {!appointmentsLoading && appointments.length === 0 && <p>Aucune demande recue.</p>}
+                  {!appointmentsLoading && appointments.map((a) => (
+                    <div key={a.idRendezVous} style={{ border: '2px solid var(--black)', padding: '0.75rem', marginBottom: '0.75rem', background: '#0f0f0f' }}>
+                      <p><strong>{a.nomClient}</strong> - {a.motifConsultation || 'Demande de rendez-vous'}</p>
+                      <p style={{ opacity: 0.8 }}>{a.statutRendezVous} · {a.typeRendezVous} · {fmtDateTime(a.dateHeureDebut)}</p>
+                      {a.commentaireAvocat && <p style={{ opacity: 0.8 }}>Commentaire: {a.commentaireAvocat}</p>}
+                      {a.statutRendezVous === 'EN_ATTENTE' && (
+                        <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <div style={{ display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                            <input type="datetime-local" value={proposeStart} onChange={(e) => setProposeStart(e.target.value)} />
+                            <input type="datetime-local" value={proposeEnd} onChange={(e) => setProposeEnd(e.target.value)} />
+                            <select value={proposeType} onChange={(e) => setProposeType(e.target.value)}>
+                              <option value="EN_LIGNE">En ligne</option>
+                              <option value="CABINET">Cabinet</option>
+                              <option value="TELEPHONE">Telephone</option>
+                            </select>
+                          </div>
+                          <input placeholder="Commentaire avocat (optionnel)" value={proposeComment} onChange={(e) => setProposeComment(e.target.value)} />
+                          <button
+                            type="button"
+                            className="lawyer-space-btn-primary"
+                            onClick={async () => {
+                              try {
+                                await rdvApi.lawyerProposeSlot(token, a.idRendezVous, {
+                                  dateHeureDebut: proposeStart,
+                                  dateHeureFin: proposeEnd,
+                                  typeRendezVous: proposeType,
+                                  commentaireAvocat: proposeComment || undefined,
+                                })
+                                setProposeComment('')
+                                await reloadAppointments()
+                              } catch (e) {
+                                window.alert(e?.message || String(e))
+                              }
+                            }}
+                          >
+                            Proposer ce creneau
+                          </button>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+                        {a.statutRendezVous !== 'ANNULE' && (
+                          <button
+                            type="button"
+                            className="lawyer-space-btn-danger"
+                            onClick={async () => {
+                              const raison = window.prompt('Raison annulation ?') || ''
+                              try {
+                                await rdvApi.lawyerCancelAppointment(token, a.idRendezVous, raison)
+                                await reloadAppointments()
+                              } catch (e) {
+                                window.alert(e?.message || String(e))
+                              }
+                            }}
+                          >
+                            Annuler
+                          </button>
+                        )}
+                        {a.statutRendezVous === 'CONFIRME' && a.typeRendezVous === 'EN_LIGNE' && (
+                          <button
+                            type="button"
+                            className="lawyer-space-btn-secondary"
+                            onClick={async () => {
+                              try {
+                                const x = await rdvApi.lawyerMeetingAccess(token, a.idRendezVous)
+                                const url = x.joinPath?.startsWith('http') ? x.joinPath : `${window.location.origin}${x.joinPath}`
+                                window.open(url, '_blank', 'noopener,noreferrer')
+                              } catch (e) {
+                                window.alert(e?.message || String(e))
+                              }
+                            }}
+                          >
+                            Ouvrir la salle
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               <section className="client-pro-card lawyer-space-section">
                 <div className="client-pro-card__head">
                   <div className="client-pro-card__icon">

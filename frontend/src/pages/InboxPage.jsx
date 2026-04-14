@@ -1,101 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Calendar, Paperclip } from 'lucide-react'
+import { Send, Calendar, Paperclip, Loader2 } from 'lucide-react'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
+import * as messengerApi from '../api/messenger.js'
 import '../styles/Inbox.css'
-
-// ─── Mock data per conversation ID ─────────────────────────────
-const MOCK_CONVERSATIONS = [
-  {
-    id: 'CNV-001',
-    avocatNom: 'Dridi',
-    avocatPrenom: 'Youssef',
-    status: 'OPEN',
-    lastMessagePreview: 'Avez-vous des disponibilités pour une signature ?',
-    lastMessageAt: '2026-03-29T10:05:00',
-    unreadCount: 0,
-  },
-  {
-    id: 'CNV-002',
-    avocatNom: 'Mansour',
-    avocatPrenom: 'Sami',
-    status: 'OPEN',
-    lastMessagePreview: 'Vos documents ont été transmis au greffe.',
-    lastMessageAt: '2026-03-28T14:20:00',
-    unreadCount: 2,
-  },
-  {
-    id: 'CNV-SYS',
-    avocatNom: 'Greffe',
-    avocatPrenom: 'Système',
-    status: 'CLOSED',
-    lastMessagePreview: 'Notification de clôture de dossier.',
-    lastMessageAt: '2026-03-24T09:00:00',
-    unreadCount: 0,
-  },
-]
-
-const MOCK_TIMELINES = {
-  'CNV-001': [
-    {
-      type: 'MESSAGE',
-      id: 'MSM-1',
-      senderRole: 'AVOCAT',
-      content: "Bonjour, j'ai bien reçu les pièces du dossier 2026-REC-00142. Il manque cependant le reçu de dépôt.",
-      createdAt: '2026-03-29T09:45:00',
-    },
-    {
-      type: 'MESSAGE',
-      id: 'MSM-2',
-      senderRole: 'CLIENT',
-      content: "Bonjour Maître. Je vous transfère le reçu via le portail des pièces jointes immédiatement.",
-      createdAt: '2026-03-29T09:52:00',
-    },
-    {
-      type: 'MESSAGE',
-      id: 'MSM-3',
-      senderRole: 'AVOCAT',
-      content: "Parfait. Dès réception, j'introduis la requête auprès du tribunal. Avez-vous des disponibilités pour une signature formelle ?",
-      createdAt: '2026-03-29T10:05:00',
-    },
-    {
-      type: 'MEETING',
-      id: 'RDV-1',
-      idRendezVous: 'RDV-1',
-      statutRendezVous: 'PROPOSE',
-      motifConsultation: 'Signature requête & stratégie procédurale',
-      dateHeureDebut: '2026-04-02T14:30:00',
-      dateHeureFin: '2026-04-02T15:30:00',
-      typeRendezVous: 'EN_PRESENTIEL',
-      creePar: 'AVOCAT',
-      createdAt: '2026-03-29T10:10:00',
-    },
-    {
-      type: 'MESSAGE',
-      id: 'MSM-4',
-      senderRole: 'CLIENT',
-      content: "Je confirme ma disponibilité pour le mercredi 2 avril à 14h30. À bientôt, Maître.",
-      createdAt: '2026-03-29T10:18:00',
-    },
-  ],
-  'CNV-002': [
-    {
-      type: 'MESSAGE',
-      id: 'MSM-M1',
-      senderRole: 'AVOCAT',
-      content: "Maître Mansour à votre service. Vos documents ont été transmis au greffe.",
-      createdAt: '2026-03-28T14:20:00',
-    }
-  ],
-  'CNV-SYS': [
-    {
-      type: 'MESSAGE',
-      id: 'MSM-S1',
-      senderRole: 'AVOCAT',
-      content: "Notification de clôture de dossier pour l'affaire #2025-A-99.",
-      createdAt: '2026-03-24T09:00:00',
-    }
-  ]
-}
 
 const initials = (prenom, nom) =>
   ((prenom?.[0] ?? '') + (nom?.[0] ?? '')).toUpperCase()
@@ -106,71 +15,173 @@ const fmtTime = (iso) =>
 const fmtDateShort = (iso) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
-const fmtDateFull = (iso) =>
-  iso ? new Date(iso).toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-  }) : ''
-
 const isSameDay = (a, b) =>
   a && b && new Date(a).toDateString() === new Date(b).toDateString()
 
+function displayNameForConversation(c, roleUser) {
+  if (roleUser === 'avocat') return `${c.clientPrenom ?? ''} ${c.clientNom ?? ''}`.trim() || 'Client'
+  return `Me. ${c.avocatPrenom ?? ''} ${c.avocatNom ?? ''}`.trim() || 'Avocat'
+}
+
 export default function InboxPage() {
-  const [activeId, setActiveId] = useState('CNV-001')
+  const { token, user, isAuthenticated } = useAuth()
+  const roleUser = user?.roleUser
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [conversations, setConversations] = useState([])
+  const [activeId, setActiveId] = useState(null)
+  const [messages, setMessages] = useState([])
   const [inputText, setInputText] = useState('')
-  const [timeline, setTimeline] = useState([])
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [loadingConversations, setLoadingConversations] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [errorMsg, setErrorMsg] = useState(null)
+
   const endRef = useRef(null)
   const textareaRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  const contact = MOCK_CONVERSATIONS.find((c) => c.id === activeId)
-  const isClosed = contact?.status === 'CLOSED'
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeId) ?? null,
+    [conversations, activeId],
+  )
+  const isClosed = activeConversation?.status === 'CLOSED'
+
+  const loadConversations = useCallback(async () => {
+    if (!token || !roleUser) return
+    setLoadingConversations(true)
+    setErrorMsg(null)
+    try {
+      const page = await messengerApi.listConversations(token, roleUser, { page: 0, size: 50 })
+      const list = page?.content ?? []
+      setConversations(list)
+      setActiveId((prev) => (prev && list.some((c) => c.id === prev) ? prev : list[0]?.id ?? null))
+    } catch (e) {
+      setErrorMsg(e?.message || String(e))
+    } finally {
+      setLoadingConversations(false)
+    }
+  }, [token, roleUser])
+
+  const loadMessages = useCallback(async () => {
+    if (!token || !roleUser || !activeId) return
+    setLoadingMessages(true)
+    setErrorMsg(null)
+    try {
+      const page = await messengerApi.getConversationMessages(token, roleUser, activeId, { page: 0, size: 150 })
+      setMessages(page?.content ?? [])
+      await messengerApi.markConversationRead(token, roleUser, activeId)
+      setConversations((prev) => prev.map((c) => (c.id === activeId ? { ...c, unreadCount: 0 } : c)))
+    } catch (e) {
+      setErrorMsg(e?.message || String(e))
+    } finally {
+      setLoadingMessages(false)
+    }
+  }, [token, roleUser, activeId])
 
   useEffect(() => {
-    setTimeline(MOCK_TIMELINES[activeId] || [])
+    if (!token || !isAuthenticated) return
+    loadConversations()
+  }, [token, isAuthenticated, loadConversations])
+
+  useEffect(() => {
+    if (!token || !roleUser) return
+    const avocatId = searchParams.get('avocatId')
+    const clientUserId = searchParams.get('clientUserId')
+    const targetId = roleUser === 'avocat' ? clientUserId : avocatId
+    if (!targetId) return
+    ;(async () => {
+      try {
+        const conv = await messengerApi.openOrGetConversation(token, roleUser, targetId)
+        setConversations((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]))
+        setActiveId(conv.id)
+        setSearchParams({})
+      } catch (e) {
+        setErrorMsg(e?.message || String(e))
+      }
+    })()
+  }, [token, roleUser, searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (!activeId) {
+      setMessages([])
+      return
+    }
+    loadMessages()
     setInputText('')
+    setSelectedFiles([])
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-  }, [activeId])
+  }, [activeId, loadMessages])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [timeline])
+  }, [messages])
 
-  const sendMessage = () => {
-    const text = inputText.trim()
-    if (!text || isClosed) return
-    setTimeline((prev) => [
-      ...prev,
-      {
-        type: 'MESSAGE',
-        id: `LOCAL-${Date.now()}`,
-        senderRole: 'CLIENT',
-        content: text,
-        createdAt: new Date().toISOString(),
-      },
-    ])
-    setInputText('')
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-    }
+  if (!isAuthenticated || !token) {
+    return <Navigate to="/" replace />
   }
-
-  const onKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+  if (roleUser !== 'client' && roleUser !== 'avocat') {
+    return <Navigate to="/" replace />
   }
 
   const onInput = (e) => {
     setInputText(e.target.value)
     const el = e.target
     el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      void sendMessage()
+    }
+  }
+
+  const onSelectFiles = (e) => {
+    const files = Array.from(e.target.files ?? [])
+    setSelectedFiles(files)
+    e.target.value = ''
+  }
+
+  const removeFile = (idx) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const sendMessage = async () => {
+    if (!token || !roleUser || !activeConversation || sending || isClosed) return
+    const text = inputText.trim()
+    if (!text && selectedFiles.length === 0) return
+
+    setSending(true)
+    setErrorMsg(null)
+    try {
+      if (selectedFiles.length > 0) {
+        const created = await messengerApi.sendMessageWithAttachments(token, roleUser, activeConversation.id, {
+          content: text,
+          files: selectedFiles,
+        })
+        setMessages((prev) => [...prev, created])
+      } else {
+        const targetId = roleUser === 'avocat' ? activeConversation.clientUserId : activeConversation.avocatId
+        const result = await messengerApi.sendTextMessage(token, roleUser, targetId, text)
+        setMessages((prev) => [...prev, result.message])
+      }
+      setInputText('')
+      setSelectedFiles([])
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
+      await loadConversations()
+    } catch (e) {
+      setErrorMsg(e?.message || String(e))
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
     <div className="inbox-page">
-
-      {/* SIDEBAR */}
       <aside className="inbox-sidebar">
         <div className="inbox-sidebar-top">
           <span className="inbox-sidebar-label">Correspondences</span>
@@ -178,27 +189,42 @@ export default function InboxPage() {
         </div>
 
         <div className="inbox-contact-list">
-          {MOCK_CONVERSATIONS.map((c) => (
+          {loadingConversations && (
+            <div className="inbox-empty-state"><Loader2 className="forsalaw-spin" size={18} /></div>
+          )}
+
+          {!loadingConversations && conversations.length === 0 && (
+            <div className="inbox-empty-state" style={{ flexDirection: 'column', gap: '0.75rem' }}>
+              <p>Aucune conversation pour le moment.</p>
+              {roleUser === 'client' && (
+                <button className="inbox-tool-btn" type="button" onClick={() => navigate('/lawyers')}>
+                  Ouvrir depuis la liste des avocats
+                </button>
+              )}
+            </div>
+          )}
+
+          {conversations.map((c) => (
             <div
               key={c.id}
               className={`inbox-contact${activeId === c.id ? ' active' : ''}`}
               onClick={() => setActiveId(c.id)}
             >
               <div className="inbox-contact-avatar">
-                {initials(c.avocatPrenom, c.avocatNom)}
+                {roleUser === 'avocat'
+                  ? initials(c.clientPrenom, c.clientNom)
+                  : initials(c.avocatPrenom, c.avocatNom)}
               </div>
               <div className="inbox-contact-info">
-                <span className="inbox-contact-name">
-                  {c.avocatNom === 'Greffe' ? 'Greffe — Système' : `Me. ${c.avocatPrenom} ${c.avocatNom}`}
-                </span>
+                <span className="inbox-contact-name">{displayNameForConversation(c, roleUser)}</span>
                 <span className="inbox-contact-preview">
-                  {c.status === 'CLOSED' ? 'Dossier clos' : c.lastMessagePreview}
+                  {c.status === 'CLOSED' ? 'Correspondance fermée' : (c.lastMessagePreview || '—')}
                 </span>
               </div>
               <div className="inbox-contact-meta">
-                <span className="inbox-contact-time">{fmtTime(c.lastMessageAt)}</span>
+                <span className="inbox-contact-time">{fmtTime(c.lastMessageAt || c.updatedAt)}</span>
                 {c.unreadCount > 0 && (
-                  <span className="inbox-unread-badge">{c.unreadCount}</span>
+                  <span className="inbox-unread-badge">{c.unreadCount > 99 ? '99+' : c.unreadCount}</span>
                 )}
               </div>
             </div>
@@ -206,45 +232,47 @@ export default function InboxPage() {
         </div>
       </aside>
 
-      {/* CHAT PANE */}
       <div className="inbox-chat-pane">
-
-        {/* Header */}
         <div className="inbox-chat-header">
           <div className="chat-header-avatar">
-            {initials(contact?.avocatPrenom, contact?.avocatNom)}
+            {activeConversation
+              ? roleUser === 'avocat'
+                ? initials(activeConversation.clientPrenom, activeConversation.clientNom)
+                : initials(activeConversation.avocatPrenom, activeConversation.avocatNom)
+              : '--'}
           </div>
           <div className="chat-header-info">
             <h2 className="chat-header-name">
-              {contact?.avocatNom === 'Greffe'
-                ? 'Greffe — Système'
-                : `Maître ${contact?.avocatPrenom} ${contact?.avocatNom}`}
+              {activeConversation ? displayNameForConversation(activeConversation, roleUser) : 'Aucune conversation'}
             </h2>
             <div className="chat-header-status">
               {isClosed ? 'Correspondance fermée' : 'Session active'}
             </div>
           </div>
-          <span className="chat-header-id">{contact?.id}</span>
+          <span className="chat-header-id">{activeConversation?.id}</span>
         </div>
 
-        {/* Messages */}
+        {errorMsg && (
+          <div style={{ color: '#ffb4a8', fontSize: '0.8rem', padding: '0.5rem 2rem', background: '#221010' }}>
+            {errorMsg}
+          </div>
+        )}
+
         <div className="inbox-messages">
-          <AnimatePresence initial={false}>
-            {timeline.length === 0 ? (
-               <motion.div 
-                 className="inbox-empty-state"
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-               >
-                 <p>Aucun message dans cette correspondance.</p>
-               </motion.div>
-            ) : timeline.map((item, idx) => {
+          {loadingMessages && (
+            <div className="inbox-empty-state"><Loader2 className="forsalaw-spin" size={18} /></div>
+          )}
 
-              const prevCreatedAt = idx > 0 ? (timeline[idx - 1].createdAt) : null
-              const showDate = !isSameDay(item.createdAt, prevCreatedAt)
-
-              if (item.type === 'MESSAGE') {
-                const isMe = item.senderRole === 'CLIENT'
+          {!loadingMessages && activeConversation && (
+            <AnimatePresence initial={false}>
+              {messages.length === 0 ? (
+                <motion.div className="inbox-empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <p>Aucun message dans cette conversation.</p>
+                </motion.div>
+              ) : messages.map((item, idx) => {
+                const prevCreatedAt = idx > 0 ? messages[idx - 1].createdAt : null
+                const showDate = !isSameDay(item.createdAt, prevCreatedAt)
+                const isMe = roleUser === 'avocat' ? item.senderRole === 'AVOCAT' : item.senderRole === 'CLIENT'
                 return (
                   <motion.div
                     key={item.id}
@@ -261,12 +289,29 @@ export default function InboxPage() {
                       <div className="msg-row-inner">
                         {!isMe && (
                           <div className="msg-avatar">
-                            {initials(contact?.avocatPrenom, contact?.avocatNom)}
+                            {activeConversation && (roleUser === 'avocat'
+                              ? initials(activeConversation.clientPrenom, activeConversation.clientNom)
+                              : initials(activeConversation.avocatPrenom, activeConversation.avocatNom))}
                           </div>
                         )}
                         <div className="msg-bubble-col">
                           <div className={`msg-bubble ${isMe ? 'sent' : 'received'}`}>
                             {item.content}
+                            {Array.isArray(item.attachments) && item.attachments.length > 0 && (
+                              <div style={{ marginTop: '0.5rem' }}>
+                                {item.attachments.map((a) => (
+                                  <a
+                                    key={a.id}
+                                    href={a.downloadUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'block', color: 'inherit', textDecoration: 'underline', marginTop: '0.25rem' }}
+                                  >
+                                    {a.originalFilename}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div className="msg-time">{fmtTime(item.createdAt)}</div>
                         </div>
@@ -274,82 +319,52 @@ export default function InboxPage() {
                     </div>
                   </motion.div>
                 )
-              }
-
-              if (item.type === 'MEETING') {
-                return (
-                  <motion.div
-                    key={item.id}
-                    className="meeting-card-row"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="meeting-card">
-                      <div className="meeting-card-header">
-                        <span className="meeting-card-tag">Rendez-vous proposé</span>
-                        <span className="meeting-card-id">{item.idRendezVous}</span>
-                      </div>
-
-                      <div className="meeting-card-body">
-                        <div className="meeting-field full">
-                          <span className="meeting-field-label">Date & heure</span>
-                          <span className="meeting-field-value">{fmtDateFull(item.dateHeureDebut)}</span>
-                        </div>
-                        <div className="meeting-field">
-                          <span className="meeting-field-label">Modalité</span>
-                          <span className="meeting-field-value">
-                            {item.typeRendezVous === 'EN_PRESENTIEL' ? '🏛 Présentiel' : '💻 Visioconférence'}
-                          </span>
-                        </div>
-                        <div className="meeting-field">
-                          <span className="meeting-field-label">Durée</span>
-                          <span className="meeting-field-value">60 minutes</span>
-                        </div>
-                        <div className="meeting-field full">
-                          <span className="meeting-field-label">Motif</span>
-                          <span className="meeting-field-value">{item.motifConsultation}</span>
-                        </div>
-                      </div>
-
-                      {item.statutRendezVous === 'PROPOSE' && item.creePar === 'AVOCAT' && (
-                        <div className="meeting-card-actions">
-                          <button
-                            className="meeting-btn-accept"
-                            onClick={() => alert(`RDV ${item.idRendezVous} accepté`)}
-                          >
-                            Accepter
-                          </button>
-                          <button
-                            className="meeting-btn-refuse"
-                            onClick={() => alert(`RDV ${item.idRendezVous} refusé`)}
-                          >
-                            Décliner
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )
-              }
-
-              return null
-            })}
-          </AnimatePresence>
+              })}
+            </AnimatePresence>
+          )}
           <div ref={endRef} />
         </div>
 
-        {/* Input */}
         <div className="inbox-input-area">
           <div className="inbox-input-tools">
-            <button className="inbox-tool-btn">
+            <button className="inbox-tool-btn" type="button" disabled title="Bientôt disponible">
               <Calendar size={13} color="var(--gold)" />
               Proposer un RDV
             </button>
-            <button className="inbox-tool-btn">
+            <button
+              className="inbox-tool-btn"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isClosed || sending || !activeConversation}
+            >
               <Paperclip size={13} color="var(--gold)" />
               Joindre une pièce
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              multiple
+              accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+              onChange={onSelectFiles}
+            />
           </div>
+
+          {selectedFiles.length > 0 && (
+            <div style={{ marginBottom: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              {selectedFiles.map((f, idx) => (
+                <button
+                  key={`${f.name}-${idx}`}
+                  type="button"
+                  onClick={() => removeFile(idx)}
+                  className="inbox-tool-btn"
+                  style={{ borderColor: 'rgba(212,175,55,0.25)' }}
+                >
+                  {f.name} ×
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="inbox-input-row">
             <textarea
@@ -358,7 +373,7 @@ export default function InboxPage() {
               rows={1}
               placeholder={isClosed ? 'Correspondance fermée.' : 'Écrire un message…'}
               value={inputText}
-              disabled={isClosed}
+              disabled={isClosed || sending || !activeConversation}
               onChange={onInput}
               onKeyDown={onKeyDown}
               spellCheck={false}
@@ -368,10 +383,10 @@ export default function InboxPage() {
             />
             <button
               className="inbox-send-btn"
-              onClick={sendMessage}
-              disabled={isClosed || !inputText.trim()}
+              onClick={() => void sendMessage()}
+              disabled={isClosed || sending || (!inputText.trim() && selectedFiles.length === 0)}
             >
-              <Send size={16} />
+              {sending ? <Loader2 className="forsalaw-spin" size={16} /> : <Send size={16} />}
             </button>
           </div>
         </div>

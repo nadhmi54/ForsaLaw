@@ -26,6 +26,8 @@ const AdminSpacePage = lazyRoute(() => import('./pages/AdminSpacePage'))
 const InboxPage = lazyRoute(() => import('./pages/InboxPage'))
 const AuthPage = lazyRoute(() => import('./pages/AuthPage'))
 const GoogleOAuthCallbackPage = lazyRoute(() => import('./pages/GoogleOAuthCallbackPage'))
+const AppointmentBookingPage = lazyRoute(() => import('./pages/AppointmentBookingPage'))
+const OnlineMeetingRoomPage = lazyRoute(() => import('./pages/OnlineMeetingRoomPage'))
 
 function App() {
   const { t, i18n } = useTranslation()
@@ -319,6 +321,8 @@ function App() {
                   <Route path="/support" element={<SupportPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/inbox" element={<InboxPage />} />
+                  <Route path="/appointments/new/:avocatId" element={<AppointmentBookingPage />} />
+                  <Route path="/rendezvous/:idRendezVous/online-room" element={<OnlineMeetingRoomPage />} />
                   <Route path="/auth" element={<AuthPage />} />
                   <Route path="/auth/google/callback" element={<GoogleOAuthCallbackPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
