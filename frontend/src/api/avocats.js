@@ -6,6 +6,24 @@ export async function getDomaines() {
   return res.json()
 }
 
+export async function listPublicAvocats({ page = 0, size = 60, specialite, ville, verifie } = {}) {
+  const q = new URLSearchParams()
+  q.set('page', String(page))
+  q.set('size', String(size))
+  if (specialite) q.set('specialite', specialite)
+  if (ville) q.set('ville', ville)
+  if (typeof verifie === 'boolean') q.set('verifie', String(verifie))
+  const res = await fetch(`/api/avocats?${q.toString()}`)
+  if (!res.ok) throw new Error(await parseApiError(res))
+  return res.json()
+}
+
+export async function getPublicAvocatById(id) {
+  const res = await fetch(`/api/avocats/${encodeURIComponent(id)}`)
+  if (!res.ok) throw new Error(await parseApiError(res))
+  return res.json()
+}
+
 /**
  * @returns {Promise<object|null>} AvocatDTO, or null if the user has no lawyer profile yet.
  */

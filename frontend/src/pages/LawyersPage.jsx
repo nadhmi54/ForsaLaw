@@ -1,162 +1,147 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { MapPin, User, Shield, Briefcase, Star } from 'lucide-react'
+import { MapPin, User, Star, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
+import { useAuth } from '../context/AuthContext.jsx'
+import * as avocatsApi from '../api/avocats.js'
 import '../styles/Lawyers.css'
 
-// ─── Placeholder Lawyer Data (Trading Cards) ──────────────────────────────────
-const LAWYERS = [
-  {
-    id: 1,
-    name: "Me. Youssef Dridi",
-    title: "Avocat à la Cour de Cassation",
-    specialty: "Droit Pénal",
-    xp: 24, // Years of experience
-    winRate: "92%",
-    cases: 340,
-    rating: 4.9,
-    location: "Tunis, Centre Ville",
-    rank: "S-TIER",
-  },
-  {
-    id: 2,
-    name: "Me. Hela Ben Ali",
-    title: "Avocate au Barreau",
-    specialty: "Droit des Affaires",
-    xp: 12,
-    winRate: "88%",
-    cases: 125,
-    rating: 4.7,
-    location: "Sfax",
-    rank: "A-TIER",
-  },
-  {
-    id: 3,
-    name: "Me. Karim Zayani",
-    title: "Avocat Spécialiste",
-    specialty: "Droit Immobilier",
-    xp: 18,
-    winRate: "95%",
-    cases: 210,
-    rating: 4.8,
-    location: "Sousse",
-    rank: "S-TIER",
-  },
-  {
-    id: 4,
-    name: "Me. Asma Mansour",
-    title: "Avocate au Barreau",
-    specialty: "Droit de la Famille",
-    xp: 8,
-    winRate: "90%",
-    cases: 85,
-    rating: 4.5,
-    location: "Ariana",
-    rank: "B-TIER",
-  },
-  {
-    id: 5,
-    name: "Me. Sami Kallel",
-    title: "Avocat Conseil",
-    specialty: "Droit du Travail",
-    xp: 15,
-    winRate: "85%",
-    cases: 190,
-    rating: 4.6,
-    location: "Nabeul",
-    rank: "A-TIER",
-  },
-  {
-    id: 6,
-    name: "Me. Nawel Gharbi",
-    title: "Avocate à la Cour d'Appel",
-    specialty: "Droit Pénal",
-    xp: 10,
-    winRate: "80%",
-    cases: 110,
-    rating: 4.3,
-    location: "Tunis, Lac 2",
-    rank: "B-TIER",
-  }
-]
+const rankFromProfile = (avocat) => {
+  if (avocat.verificationStatus === 'APPROVED') return 'S-TIER'
+  if (avocat.verificationStatus === 'PENDING') return 'A-TIER'
+  return 'B-TIER'
+}
 
-const SPECIALTIES = ["Droit Pénal", "Droit des Affaires", "Droit Immobilier", "Droit de la Famille", "Droit du Travail"]
-const REGIONS = ["Tunis", "Sfax", "Sousse", "Ariana", "Nabeul"]
+const TradingCard = ({ lawyer, canContact, canBook, onContact, onBook, t }) => {
+  const fullName = `Me. ${lawyer.userPrenom ?? ''} ${lawyer.userNom ?? ''}`.trim()
+  const specialty = lawyer.specialiteLibelle || lawyer.specialite || '—'
+  const statusText = lawyer.verificationStatus === 'APPROVED'
+    ? 'Profil vérifié'
+    : lawyer.verificationStatus === 'PENDING'
+      ? 'Demande en attente'
+      : 'Demande non approuvée'
 
-// ─── Heavy Stone Tile Card Component ───────────────────────────────────────────
-const TradingCard = ({ lawyer }) => {
-  const { t } = useTranslation()
   return (
     <div className="lawyer-card-wrapper">
       <div className="lawyer-card">
-        {/* Holographic Header */}
         <div className="card-header">
           <div className="card-header-bg" />
-          <div className="card-rank">{lawyer.rank}</div>
+          <div className="card-rank">{rankFromProfile(lawyer)}</div>
           <div className="card-avatar">
-            <User size={40} className="icon-heavy-shadow" />
+            {lawyer.profilePhotoPublicUrl ? (
+              <img
+                src={lawyer.profilePhotoPublicUrl}
+                alt={fullName}
+              />
+            ) : (
+              <User size={40} className="icon-heavy-shadow" />
+            )}
           </div>
         </div>
 
-        {/* Card Body */}
         <div className="card-body">
-          <h3 className="card-name">{lawyer.name}</h3>
-          <span className="card-specialty">{lawyer.specialty}</span>
-          
-          {/* RPG Stats */}
+          <h3 className="card-name">{fullName}</h3>
+          <span className="card-specialty">{specialty}</span>
+
           <div className="card-stats">
             <div className="stat-box">
-              <span className="stat-value">{lawyer.winRate}</span>
-              <span className="stat-label">{t('lawyer_wins')}</span>
+              <span className="stat-value">{lawyer.verifie ? '100%' : '—'}</span>
+              <span className="stat-label">profil</span>
             </div>
             <div className="stat-box">
-              <span className="stat-value">{lawyer.xp} {t('lawyer_years')}</span>
+              <span className="stat-value">{lawyer.anneesExperience ?? 0} {t('lawyer_years')}</span>
               <span className="stat-label">{t('lawyer_xp')}</span>
             </div>
             <div className="stat-box">
-              <span className="stat-value">{lawyer.cases}</span>
+              <span className="stat-value">{lawyer.totalDossiers ?? 0}</span>
               <span className="stat-label">{t('lawyer_cases')}</span>
             </div>
             <div className="stat-box">
               <span className="stat-value" style={{ color: 'var(--gold)' }}>
-                {lawyer.rating} <Star size={10} className="icon-heavy-shadow" style={{ display: 'inline', fill: 'var(--gold)' }} />
+                {(lawyer.noteMoyenne ?? 0).toFixed(1)} <Star size={10} className="icon-heavy-shadow" style={{ display: 'inline', fill: 'var(--gold)' }} />
               </span>
               <span className="stat-label">{t('lawyer_rating')}</span>
             </div>
           </div>
 
           <p className="card-location">
-            <MapPin size={14} className="icon-heavy-shadow" /> {lawyer.location}
+            <MapPin size={14} className="icon-heavy-shadow" /> {lawyer.ville || 'Tunisie'}
+          </p>
+          <p className="card-location" style={{ marginTop: '0.2rem', opacity: 0.8 }}>
+            {statusText}
           </p>
 
-          <button className="brutal-btn card-action">
-            {t('lawyer_select')}
-          </button>
+          <div style={{ marginTop: 'auto', display: 'grid', gap: '0.5rem' }}>
+            <button className="brutal-btn card-action" onClick={onContact} disabled={!canContact}>
+              {canContact ? 'Contacter' : 'Connexion requise'}
+            </button>
+            <button className="brutal-btn card-action" onClick={onBook} disabled={!canBook}>
+              {canBook ? 'Prendre RDV' : 'Client requis'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Main Page Component ──────────────────────────────────────────────────────
 const LawyersPage = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
   const [selectedSpecs, setSelectedSpecs] = useState([])
+  const [lawyers, setLawyers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        // No `verifie` filter intentionally: includes newly submitted lawyer requests.
+        const page = await avocatsApi.listPublicAvocats({ page: 0, size: 80 })
+        if (!cancelled) setLawyers(page?.content ?? [])
+      } catch (e) {
+        if (!cancelled) setError(e?.message || String(e))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const specialties = useMemo(() => {
+    const set = new Set(
+      lawyers
+        .map((l) => l.specialiteLibelle || l.specialite)
+        .filter(Boolean),
+    )
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))
+  }, [lawyers])
+
+  const filteredLawyers = useMemo(() => (
+    selectedSpecs.length === 0
+      ? lawyers
+      : lawyers.filter((l) => selectedSpecs.includes(l.specialiteLibelle || l.specialite))
+  ), [lawyers, selectedSpecs])
 
   const toggleSpec = (spec) => {
-    setSelectedSpecs(prev => 
-      prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]
-    )
+    setSelectedSpecs((prev) => (
+      prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec]
+    ))
   }
 
-  const filteredLawyers = selectedSpecs.length === 0 
-    ? LAWYERS 
-    : LAWYERS.filter(l => selectedSpecs.includes(l.specialty))
+  const canContact = isAuthenticated && (user?.roleUser === 'client' || user?.roleUser === 'avocat')
+  const canBook = isAuthenticated && user?.roleUser === 'client'
 
   return (
     <div className="lawyers-page">
-      {/* Heavy Brutalist Header */}
       <PageHeader
         className="lawyers-header"
         tag={t('lawyers_tag')}
@@ -165,15 +150,18 @@ const LawyersPage = () => {
         titleClassName="lawyers-title"
       />
 
+      {error && (
+        <div style={{ color: '#ffb4a8', padding: '0 2rem 1rem' }}>{error}</div>
+      )}
+
       <div className="lawyers-content">
-        {/* Left Sidebar Filter (Brutalist style) */}
         <aside className="lawyers-sidebar">
           <div className="filter-group">
             <h3 className="filter-title">{t('lawyers_filter')}</h3>
-            {SPECIALTIES.map(spec => (
+            {specialties.map((spec) => (
               <label key={spec} className="filter-checkbox">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={selectedSpecs.includes(spec)}
                   onChange={() => toggleSpec(spec)}
                 />
@@ -181,37 +169,48 @@ const LawyersPage = () => {
               </label>
             ))}
           </div>
-
-          <div className="filter-group">
-            <h3 className="filter-title">Région</h3>
-            {REGIONS.map(reg => (
-              <label key={reg} className="filter-checkbox">
-                <input type="checkbox" />
-                {reg}
-              </label>
-            ))}
-          </div>
-          
-          <div className="filter-group" style={{ marginTop: '1rem' }}>
-            <h3 className="filter-title">Rang (Tier List)</h3>
-            <label className="filter-checkbox"><input type="checkbox" /> S-Tier (Expert)</label>
-            <label className="filter-checkbox"><input type="checkbox" /> A-Tier (Sénior)</label>
-            <label className="filter-checkbox"><input type="checkbox" /> B-Tier (Confirmé)</label>
-          </div>
         </aside>
 
-        {/* Right Grid (Trading Cards) */}
         <main className="cards-grid">
-          {filteredLawyers.map((lawyer, idx) => (
+          {loading && (
+            <div style={{ padding: '2rem', color: 'var(--gold)' }}>
+              <Loader2 className="forsalaw-spin" size={24} />
+            </div>
+          )}
+
+          {!loading && filteredLawyers.map((lawyer, idx) => (
             <motion.div
               key={lawyer.id}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: idx * 0.1, duration: 0.4 }}
+              transition={{ delay: idx * 0.05, duration: 0.25 }}
             >
-              <TradingCard lawyer={lawyer} />
+              <TradingCard
+                lawyer={lawyer}
+                canContact={canContact}
+                canBook={canBook}
+                t={t}
+                onContact={() => {
+                  if (!canContact) {
+                    navigate('/auth')
+                    return
+                  }
+                  navigate(`/inbox?avocatId=${encodeURIComponent(lawyer.id)}`)
+                }}
+                onBook={() => {
+                  if (!canBook) {
+                    navigate('/auth')
+                    return
+                  }
+                  navigate(`/appointments/new/${encodeURIComponent(lawyer.id)}`)
+                }}
+              />
             </motion.div>
           ))}
+
+          {!loading && filteredLawyers.length === 0 && (
+            <div style={{ padding: '2rem', opacity: 0.8 }}>Aucun avocat ne correspond au filtre.</div>
+          )}
         </main>
       </div>
     </div>

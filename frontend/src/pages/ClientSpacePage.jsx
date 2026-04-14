@@ -19,17 +19,13 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import * as usersApi from '../api/users.js'
+import * as rdvApi from '../api/rdv.js'
 import '../styles/PlatformSpaces.css'
 
 const MOCK_CASES = [
   { id: 'DOS-2026-0142', subject: 'Litige Foncier — Terrain Ariana', avocat: 'Me. Y. Mansour', status: 'in-progress', statusLabel: 'EN COURS' },
   { id: 'DOS-2026-0089', subject: 'Harcèlement Professionnel', avocat: 'Me. K. Ouertani', status: 'open', statusLabel: 'OUVERTE' },
   { id: 'DOS-2025-0402', subject: 'Contestation Héritage', avocat: 'Me. S. Ben Amor', status: 'closed', statusLabel: 'CLOSE' },
-]
-
-const MOCK_APPOINTMENTS = [
-  { day: '02', month: 'AVR', subject: 'Signature Requête · Stratégie Procédurale', avocat: 'Me. Y. Mansour', time: '14:30 → 15:30', type: 'Présentiel' },
-  { day: '09', month: 'AVR', subject: 'Conseil Juridique · Phase II', avocat: 'Me. K. Ouertani', time: '10:00 → 11:00', type: 'Visioconférence' },
 ]
 
 const VALID_TABS = new Set(['cases', 'appointments', 'messages', 'profile'])
@@ -42,6 +38,13 @@ function formatApiDate(v) {
     return `${String(y)}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
   }
   return String(v)
+}
+
+function fmtDateTime(v) {
+  if (!v) return '—'
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v)
+  return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function ClientSpacePage() {
@@ -83,6 +86,8 @@ export default function ClientSpacePage() {
   const [photoMsg, setPhotoMsg] = useState(null)
 
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [appointments, setAppointments] = useState([])
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false)
 
   const reloadMe = useCallback(async () => {
     if (!token) return
@@ -125,6 +130,31 @@ export default function ClientSpacePage() {
       cancelled = true
     }
   }, [token, activeTab])
+
+  useEffect(() => {
+    if (!token || activeTab !== 'appointments') return
+    let cancelled = false
+    ;(async () => {
+      setAppointmentsLoading(true)
+      try {
+        const page = await rdvApi.listClientAppointments(token, { page: 0, size: 50 })
+        if (!cancelled) setAppointments(page?.content ?? [])
+      } catch (e) {
+        if (!cancelled) setLoadError(e?.message || String(e))
+      } finally {
+        if (!cancelled) setAppointmentsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [token, activeTab])
+
+  const reloadAppointments = useCallback(async () => {
+    if (!token) return
+    const page = await rdvApi.listClientAppointments(token, { page: 0, size: 50 })
+    setAppointments(page?.content ?? [])
+  }, [token])
 
   useEffect(() => {
     if (!token) {
@@ -417,30 +447,91 @@ export default function ClientSpacePage() {
                   {t('client_appts_upcoming')}
                 </span>
                 <span className="platform-section-badge">
-                  {MOCK_APPOINTMENTS.length} {t('client_appts_count')}
+                  {appointments.length} {t('client_appts_count')}
                 </span>
               </div>
-              {MOCK_APPOINTMENTS.map((a, i) => (
+              {appointmentsLoading && (
+                <div style={{ padding: '1rem', color: 'var(--gold)' }}>
+                  <Loader2 className="forsalaw-spin" size={18} />
+                </div>
+              )}
+              {!appointmentsLoading && appointments.length === 0 && (
+                <div style={{ padding: '1rem', opacity: 0.7 }}>Aucune demande de rendez-vous pour le moment.</div>
+              )}
+              {!appointmentsLoading && appointments.map((a, i) => (
                 <motion.div
-                  key={i}
+                  key={a.idRendezVous}
                   className="appt-row"
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
                 >
                   <div className="appt-date-block">
-                    <span className="appt-day">{a.day}</span>
-                    <span className="appt-month">{a.month}</span>
+                    <span className="appt-day">{(a.dateHeureDebut ? new Date(a.dateHeureDebut) : new Date()).getDate()}</span>
+                    <span className="appt-month">{a.dateHeureDebut ? new Date(a.dateHeureDebut).toLocaleString('fr-FR', { month: 'short' }).toUpperCase() : '—'}</span>
                   </div>
                   <div className="appt-info">
-                    <div className="appt-subject">{a.subject}</div>
+                    <div className="appt-subject">{a.motifConsultation || 'Demande de rendez-vous'}</div>
                     <div className="appt-meta">
-                      {a.avocat} · {a.time} · {a.type}
+                      Me. {a.nomAvocat} · {fmtDateTime(a.dateHeureDebut)} {a.dateHeureFin ? `→ ${fmtDateTime(a.dateHeureFin)}` : ''} · {a.typeRendezVous}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <span className="status-badge-admin open">{t('client_appts_confirmed')}</span>
-                    {a.type === 'Visioconférence' && (
+                    <span className="status-badge-admin open">{a.statutRendezVous}</span>
+                    {a.statutRendezVous === 'PROPOSE' && (
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button
+                          type="button"
+                          className="brutal-btn"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem' }}
+                          onClick={async () => {
+                            try {
+                              await rdvApi.clientAcceptProposal(token, a.idRendezVous)
+                              await reloadAppointments()
+                            } catch (e) {
+                              window.alert(e?.message || String(e))
+                            }
+                          }}
+                        >
+                          Accepter
+                        </button>
+                        <button
+                          type="button"
+                          className="brutal-btn"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem', background: '#2b1b1b', color: '#ffc9c9' }}
+                          onClick={async () => {
+                            const raison = window.prompt('Raison du refus ?') || ''
+                            try {
+                              await rdvApi.clientRefuseProposal(token, a.idRendezVous, raison)
+                              await reloadAppointments()
+                            } catch (e) {
+                              window.alert(e?.message || String(e))
+                            }
+                          }}
+                        >
+                          Refuser
+                        </button>
+                      </div>
+                    )}
+                    {a.statutRendezVous !== 'ANNULE' && (
+                      <button
+                        type="button"
+                        className="brutal-btn"
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.6rem' }}
+                        onClick={async () => {
+                          const raison = window.prompt('Raison d annulation ?') || ''
+                          try {
+                            await rdvApi.clientCancelAppointment(token, a.idRendezVous, raison)
+                            await reloadAppointments()
+                          } catch (e) {
+                            window.alert(e?.message || String(e))
+                          }
+                        }}
+                      >
+                        Annuler
+                      </button>
+                    )}
+                    {a.statutRendezVous === 'CONFIRME' && a.typeRendezVous === 'EN_LIGNE' && (
                       <button
                         type="button"
                         className="brutal-btn"
@@ -451,6 +542,15 @@ export default function ClientSpacePage() {
                           alignItems: 'center',
                           gap: '0.5rem',
                           background: '#333',
+                        }}
+                        onClick={async () => {
+                          try {
+                            const x = await rdvApi.clientMeetingAccess(token, a.idRendezVous)
+                            const url = x.joinPath?.startsWith('http') ? x.joinPath : `${window.location.origin}${x.joinPath}`
+                            window.open(url, '_blank', 'noopener,noreferrer')
+                          } catch (e) {
+                            window.alert(e?.message || String(e))
+                          }
                         }}
                       >
                         <Video size={12} /> {t('client_appts_join')}
