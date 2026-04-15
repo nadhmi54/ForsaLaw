@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { useAuth } from '../context/AuthContext.jsx'
 import * as avocatsApi from '../api/avocats.js'
+import * as rdvApi from '../api/rdv.js'
 import '../styles/Lawyers.css'
 
 const rankFromProfile = (avocat) => {
@@ -14,7 +15,29 @@ const rankFromProfile = (avocat) => {
   return 'B-TIER'
 }
 
-const TradingCard = ({ lawyer, canContact, canBook, onContact, onBook, t }) => {
+const DAY_LABELS = {
+  1: 'Lun',
+  2: 'Mar',
+  3: 'Mer',
+  4: 'Jeu',
+  5: 'Ven',
+  6: 'Sam',
+  7: 'Dim',
+}
+
+const timeLabel = (v) => (typeof v === 'string' ? v.slice(0, 5) : '')
+
+const TradingCard = ({
+  lawyer,
+  canContact,
+  canBook,
+  onContact,
+  onBook,
+  t,
+  scheduleSummary,
+  contactLabel,
+  showActions = true,
+}) => {
   const fullName = `Me. ${lawyer.userPrenom ?? ''} ${lawyer.userNom ?? ''}`.trim()
   const specialty = lawyer.specialiteLibelle || lawyer.specialite || '—'
   const statusText = lawyer.verificationStatus === 'APPROVED'
@@ -72,15 +95,27 @@ const TradingCard = ({ lawyer, canContact, canBook, onContact, onBook, t }) => {
           <p className="card-location" style={{ marginTop: '0.2rem', opacity: 0.8 }}>
             {statusText}
           </p>
-
-          <div style={{ marginTop: 'auto', display: 'grid', gap: '0.5rem' }}>
-            <button className="brutal-btn card-action" onClick={onContact} disabled={!canContact}>
-              {canContact ? 'Contacter' : 'Connexion requise'}
-            </button>
-            <button className="brutal-btn card-action" onClick={onBook} disabled={!canBook}>
-              {canBook ? 'Prendre RDV' : 'Client requis'}
-            </button>
+          <div className="card-schedule">
+            <p className="card-schedule__title">Horaires</p>
+            {scheduleSummary ? (
+              <p className="card-schedule__line">{scheduleSummary}</p>
+            ) : (
+              <p className="card-schedule__line card-schedule__line--muted">
+                Horaires indisponibles pour le moment
+              </p>
+            )}
           </div>
+
+          {showActions && (
+            <div style={{ marginTop: 'auto', display: 'grid', gap: '0.5rem' }}>
+              <button className="brutal-btn card-action" onClick={onContact} disabled={!canContact}>
+                {canContact ? 'Contacter' : contactLabel}
+              </button>
+              <button className="brutal-btn card-action" onClick={onBook} disabled={!canBook}>
+                {canBook ? 'Prendre RDV' : 'Client requis'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -90,11 +125,13 @@ const TradingCard = ({ lawyer, canContact, canBook, onContact, onBook, t }) => {
 const LawyersPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, token } = useAuth()
   const [selectedSpecs, setSelectedSpecs] = useState([])
   const [lawyers, setLawyers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [scheduleByLawyerId, setScheduleByLawyerId] = useState({})
+  const [canContactByLawyerId, setCanContactByLawyerId] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -137,8 +174,71 @@ const LawyersPage = () => {
     ))
   }
 
-  const canContact = isAuthenticated && (user?.roleUser === 'client' || user?.roleUser === 'avocat')
+  const canContactBase = isAuthenticated && user?.roleUser === 'client'
   const canBook = isAuthenticated && user?.roleUser === 'client'
+
+  useEffect(() => {
+    if (lawyers.length === 0) {
+      setScheduleByLawyerId({})
+      return
+    }
+
+    let cancelled = false
+
+    ;(async () => {
+      const pairs = await Promise.all(
+        lawyers.map(async (lawyer) => {
+          try {
+            const agenda = await rdvApi.getPublicAgenda(lawyer.id)
+            const plages = agenda?.plages ?? []
+            if (plages.length === 0) {
+              return [lawyer.id, agenda?.agendaActif === false ? 'Agenda inactif' : 'Horaires non renseignes']
+            }
+            const plagesSummary = plages
+              .map((p) => `${DAY_LABELS[p.dayOfWeek] || `J${p.dayOfWeek}`} ${timeLabel(p.heureDebut)}-${timeLabel(p.heureFin)}`)
+              .join(' | ')
+            const summary = agenda?.agendaActif === false
+              ? `Agenda inactif · ${plagesSummary}`
+              : plagesSummary
+            return [lawyer.id, summary]
+          } catch {
+            return [lawyer.id, null]
+          }
+        }),
+      )
+      if (!cancelled) setScheduleByLawyerId(Object.fromEntries(pairs))
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [lawyers])
+
+  useEffect(() => {
+    if (!isAuthenticated || !user || user.roleUser !== 'client') {
+      setCanContactByLawyerId({})
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const page = await rdvApi.listClientAppointments(token, { page: 0, size: 300 })
+        const confirmedAvocatIds = new Set(
+          (page?.content ?? [])
+            .filter((r) => r.statutRendezVous === 'CONFIRME')
+            .map((r) => String(r.idAvocat ?? r.avocatId ?? ''))
+            .filter(Boolean),
+        )
+        const map = Object.fromEntries(lawyers.map((l) => [l.id, confirmedAvocatIds.has(String(l.id))]))
+        if (!cancelled) setCanContactByLawyerId(map)
+      } catch {
+        if (!cancelled) setCanContactByLawyerId({})
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, user, token, lawyers])
 
   return (
     <div className="lawyers-page">
@@ -187,12 +287,22 @@ const LawyersPage = () => {
             >
               <TradingCard
                 lawyer={lawyer}
-                canContact={canContact}
+                canContact={canContactBase && !!canContactByLawyerId[lawyer.id]}
                 canBook={canBook}
+                showActions={user?.roleUser !== 'avocat'}
                 t={t}
+                scheduleSummary={scheduleByLawyerId[lawyer.id] ?? null}
+                contactLabel={
+                  !isAuthenticated
+                    ? 'Connexion requise'
+                    : user?.roleUser !== 'client'
+                      ? 'Client requis'
+                      : '1er RDV confirme requis'
+                }
                 onContact={() => {
-                  if (!canContact) {
-                    navigate('/auth')
+                  const allowed = canContactBase && !!canContactByLawyerId[lawyer.id]
+                  if (!allowed) {
+                    if (!isAuthenticated) navigate('/auth')
                     return
                   }
                   navigate(`/inbox?avocatId=${encodeURIComponent(lawyer.id)}`)

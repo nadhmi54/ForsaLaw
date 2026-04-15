@@ -166,6 +166,20 @@ public class AvocatAgendaService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public AgendaCompletDTO getAgendaCompletPublic(String idAvocat) {
+        Avocat avocat = avocatRepository.findById(idAvocat)
+                .orElseThrow(() -> new IllegalArgumentException("Avocat non trouve."));
+        if (!avocat.isActif()) {
+            throw new IllegalArgumentException("Cet avocat n'est pas disponible.");
+        }
+        AvocatAgendaConfig cfg = agendaConfigRepository.findById(avocat.getId()).orElse(null);
+        if (cfg == null) {
+            return new AgendaCompletDTO("Africa/Tunis", 45, 10, false, List.of(), List.of());
+        }
+        return toAgendaCompletDTO(cfg);
+    }
+
     /**
      * Si l'agenda est actif et qu'il existe au moins une plage : valide le creneau propose.
      */

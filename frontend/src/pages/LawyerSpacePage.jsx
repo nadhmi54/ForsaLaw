@@ -15,6 +15,20 @@ function statusPillClass(status) {
   return 'lawyer-space-pill lawyer-space-pill--wait'
 }
 
+const DAY_LABELS = {
+  1: 'Lundi',
+  2: 'Mardi',
+  3: 'Mercredi',
+  4: 'Jeudi',
+  5: 'Vendredi',
+  6: 'Samedi',
+  7: 'Dimanche',
+}
+
+function asTime(v) {
+  return typeof v === 'string' ? v.slice(0, 5) : ''
+}
+
 export default function LawyerSpacePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -64,6 +78,21 @@ export default function LawyerSpacePage() {
   const [proposeType, setProposeType] = useState('EN_LIGNE')
   const [proposeComment, setProposeComment] = useState('')
   const [agendaSnapshot, setAgendaSnapshot] = useState(null)
+  const [agendaBusy, setAgendaBusy] = useState(false)
+  const [agendaMsg, setAgendaMsg] = useState(null)
+  const [agendaError, setAgendaError] = useState(null)
+  const [agendaConfig, setAgendaConfig] = useState({
+    zoneId: 'Africa/Tunis',
+    dureeCreneauMinutes: 30,
+    bufferMinutes: 0,
+    agendaActif: true,
+  })
+  const [newPlage, setNewPlage] = useState({ dayOfWeek: 1, heureDebut: '09:00', heureFin: '17:00' })
+  const [newException, setNewException] = useState({
+    dateDebut: '',
+    dateFin: '',
+    libelle: '',
+  })
 
   const jwtRole = useMemo(() => avocatsApi.parseJwtRole(token), [token])
   const canUseAvocatEndpoints = jwtRole === 'avocat'
@@ -181,6 +210,22 @@ export default function LawyerSpacePage() {
     }
   }, [token, canUseAvocatEndpoints, isApproved])
 
+  const reloadAgenda = useCallback(async () => {
+    if (!token || !canUseAvocatEndpoints || !isApproved) return
+    try {
+      const a = await rdvApi.getAgenda(token)
+      setAgendaSnapshot(a)
+      setAgendaConfig({
+        zoneId: a?.zoneId || 'Africa/Tunis',
+        dureeCreneauMinutes: Number(a?.dureeCreneauMinutes) || 30,
+        bufferMinutes: Number(a?.bufferMinutes) || 0,
+        agendaActif: a?.agendaActif !== false,
+      })
+    } catch {
+      setAgendaSnapshot(null)
+    }
+  }, [token, canUseAvocatEndpoints, isApproved])
+
   useEffect(() => {
     if (!token || !canUseAvocatEndpoints || !isApproved) return
     reloadAppointments()
@@ -188,15 +233,105 @@ export default function LawyerSpacePage() {
 
   useEffect(() => {
     if (!token || !canUseAvocatEndpoints || !isApproved) return
-    ;(async () => {
-      try {
-        const a = await rdvApi.getAgenda(token)
-        setAgendaSnapshot(a)
-      } catch {
-        setAgendaSnapshot(null)
-      }
-    })()
-  }, [token, canUseAvocatEndpoints, isApproved])
+    reloadAgenda()
+  }, [token, canUseAvocatEndpoints, isApproved, reloadAgenda])
+
+  const handleSaveAgendaConfig = async (e) => {
+    e.preventDefault()
+    if (!token) return
+    setAgendaBusy(true)
+    setAgendaMsg(null)
+    setAgendaError(null)
+    try {
+      await rdvApi.updateAgendaConfig(token, {
+        zoneId: agendaConfig.zoneId.trim() || 'Africa/Tunis',
+        dureeCreneauMinutes: Number(agendaConfig.dureeCreneauMinutes) || 30,
+        bufferMinutes: Number(agendaConfig.bufferMinutes) || 0,
+        agendaActif: !!agendaConfig.agendaActif,
+      })
+      await reloadAgenda()
+      setAgendaMsg('Configuration agenda enregistree.')
+    } catch (e2) {
+      setAgendaError(e2?.message || String(e2))
+    } finally {
+      setAgendaBusy(false)
+    }
+  }
+
+  const handleAddPlage = async (e) => {
+    e.preventDefault()
+    if (!token) return
+    setAgendaBusy(true)
+    setAgendaMsg(null)
+    setAgendaError(null)
+    try {
+      await rdvApi.addAgendaPlage(token, {
+        dayOfWeek: Number(newPlage.dayOfWeek),
+        heureDebut: newPlage.heureDebut,
+        heureFin: newPlage.heureFin,
+      })
+      await reloadAgenda()
+      setAgendaMsg('Plage ajoutee.')
+    } catch (e2) {
+      setAgendaError(e2?.message || String(e2))
+    } finally {
+      setAgendaBusy(false)
+    }
+  }
+
+  const handleDeletePlage = async (idPlage) => {
+    if (!token) return
+    setAgendaBusy(true)
+    setAgendaMsg(null)
+    setAgendaError(null)
+    try {
+      await rdvApi.deleteAgendaPlage(token, idPlage)
+      await reloadAgenda()
+      setAgendaMsg('Plage supprimee.')
+    } catch (e2) {
+      setAgendaError(e2?.message || String(e2))
+    } finally {
+      setAgendaBusy(false)
+    }
+  }
+
+  const handleAddException = async (e) => {
+    e.preventDefault()
+    if (!token) return
+    setAgendaBusy(true)
+    setAgendaMsg(null)
+    setAgendaError(null)
+    try {
+      await rdvApi.addAgendaException(token, {
+        dateDebut: newException.dateDebut,
+        dateFin: newException.dateFin || newException.dateDebut,
+        libelle: newException.libelle.trim() || undefined,
+      })
+      setNewException({ dateDebut: '', dateFin: '', libelle: '' })
+      await reloadAgenda()
+      setAgendaMsg('Exception ajoutee.')
+    } catch (e2) {
+      setAgendaError(e2?.message || String(e2))
+    } finally {
+      setAgendaBusy(false)
+    }
+  }
+
+  const handleDeleteException = async (idException) => {
+    if (!token) return
+    setAgendaBusy(true)
+    setAgendaMsg(null)
+    setAgendaError(null)
+    try {
+      await rdvApi.deleteAgendaException(token, idException)
+      await reloadAgenda()
+      setAgendaMsg('Exception supprimee.')
+    } catch (e2) {
+      setAgendaError(e2?.message || String(e2))
+    } finally {
+      setAgendaBusy(false)
+    }
+  }
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -655,24 +790,148 @@ export default function LawyerSpacePage() {
                   </div>
                 </div>
                 <div className="client-pro-card__body">
-                  {!agendaSnapshot && <p>Configurer via la page Calendrier.</p>}
-                  {agendaSnapshot && (
-                    <>
-                      <p>Fuseau: {agendaSnapshot.zoneId} · Creneau: {agendaSnapshot.dureeCreneauMinutes} min · Marge: {agendaSnapshot.bufferMinutes} min · {agendaSnapshot.agendaActif ? 'Actif' : 'Inactif'}</p>
-                      <p style={{ marginTop: '0.5rem' }}><strong>Plages:</strong></p>
-                      {(agendaSnapshot.plages ?? []).map((p) => (
-                        <p key={p.id}>Jour {p.dayOfWeek}: {String(p.heureDebut)} - {String(p.heureFin)}</p>
-                      ))}
-                      {(agendaSnapshot.exceptions ?? []).length > 0 && (
-                        <>
-                          <p style={{ marginTop: '0.5rem' }}><strong>Indisponibilites:</strong></p>
-                          {agendaSnapshot.exceptions.map((x) => (
-                            <p key={x.id}>{String(x.dateDebut)} → {String(x.dateFin)} · {x.libelle}</p>
+                  <form className="client-pro-form" onSubmit={handleSaveAgendaConfig}>
+                    <div className="client-pro-form__grid">
+                      <label className="lawyer-space-label">
+                        <span>Fuseau horaire</span>
+                        <input
+                          value={agendaConfig.zoneId}
+                          onChange={(e) => setAgendaConfig((prev) => ({ ...prev, zoneId: e.target.value }))}
+                          placeholder="Africa/Tunis"
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Duree creneau (min)</span>
+                        <input
+                          type="number"
+                          min={10}
+                          step={5}
+                          value={agendaConfig.dureeCreneauMinutes}
+                          onChange={(e) => setAgendaConfig((prev) => ({ ...prev, dureeCreneauMinutes: e.target.value }))}
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Marge entre creneaux (min)</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={5}
+                          value={agendaConfig.bufferMinutes}
+                          onChange={(e) => setAgendaConfig((prev) => ({ ...prev, bufferMinutes: e.target.value }))}
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Agenda actif</span>
+                        <select
+                          value={agendaConfig.agendaActif ? 'true' : 'false'}
+                          onChange={(e) => setAgendaConfig((prev) => ({ ...prev, agendaActif: e.target.value === 'true' }))}
+                        >
+                          <option value="true">Oui</option>
+                          <option value="false">Non</option>
+                        </select>
+                      </label>
+                    </div>
+                    <button type="submit" className="lawyer-space-btn-primary" disabled={agendaBusy}>
+                      {agendaBusy ? <Loader2 className="forsalaw-spin" size={18} /> : 'Enregistrer la configuration'}
+                    </button>
+                  </form>
+
+                  <div className="lawyer-space-readonly-block">
+                    <p><strong>Plages actuelles</strong></p>
+                    {(agendaSnapshot?.plages ?? []).length === 0 && <p>Aucune plage configuree.</p>}
+                    {(agendaSnapshot?.plages ?? []).map((p) => (
+                      <p key={p.id}>
+                        {DAY_LABELS[p.dayOfWeek] || `Jour ${p.dayOfWeek}`}: {asTime(p.heureDebut)} - {asTime(p.heureFin)}
+                        {' '}
+                        <button type="button" className="lawyer-space-btn-ghost" onClick={() => handleDeletePlage(p.id)} disabled={agendaBusy}>Supprimer</button>
+                      </p>
+                    ))}
+                  </div>
+
+                  <form className="client-pro-form lawyer-space-subform" onSubmit={handleAddPlage}>
+                    <div className="client-pro-form__grid">
+                      <label className="lawyer-space-label">
+                        <span>Jour</span>
+                        <select
+                          value={newPlage.dayOfWeek}
+                          onChange={(e) => setNewPlage((prev) => ({ ...prev, dayOfWeek: Number(e.target.value) }))}
+                        >
+                          {Object.entries(DAY_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
                           ))}
-                        </>
-                      )}
-                    </>
-                  )}
+                        </select>
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Debut</span>
+                        <input
+                          type="time"
+                          value={newPlage.heureDebut}
+                          onChange={(e) => setNewPlage((prev) => ({ ...prev, heureDebut: e.target.value }))}
+                          required
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Fin</span>
+                        <input
+                          type="time"
+                          value={newPlage.heureFin}
+                          onChange={(e) => setNewPlage((prev) => ({ ...prev, heureFin: e.target.value }))}
+                          required
+                        />
+                      </label>
+                    </div>
+                    <button type="submit" className="lawyer-space-btn-secondary" disabled={agendaBusy}>
+                      Ajouter une plage
+                    </button>
+                  </form>
+
+                  <div className="lawyer-space-readonly-block">
+                    <p><strong>Indisponibilites</strong></p>
+                    {(agendaSnapshot?.exceptions ?? []).length === 0 && <p>Aucune indisponibilite.</p>}
+                    {(agendaSnapshot?.exceptions ?? []).map((x) => (
+                      <p key={x.id}>
+                        {String(x.dateDebut)} - {String(x.dateFin)} {x.libelle ? `· ${x.libelle}` : ''}
+                        {' '}
+                        <button type="button" className="lawyer-space-btn-ghost" onClick={() => handleDeleteException(x.id)} disabled={agendaBusy}>Supprimer</button>
+                      </p>
+                    ))}
+                  </div>
+
+                  <form className="client-pro-form lawyer-space-subform" onSubmit={handleAddException}>
+                    <div className="client-pro-form__grid">
+                      <label className="lawyer-space-label">
+                        <span>Date debut</span>
+                        <input
+                          type="date"
+                          value={newException.dateDebut}
+                          onChange={(e) => setNewException((prev) => ({ ...prev, dateDebut: e.target.value }))}
+                          required
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Date fin</span>
+                        <input
+                          type="date"
+                          value={newException.dateFin}
+                          onChange={(e) => setNewException((prev) => ({ ...prev, dateFin: e.target.value }))}
+                        />
+                      </label>
+                      <label className="lawyer-space-label">
+                        <span>Motif</span>
+                        <input
+                          value={newException.libelle}
+                          onChange={(e) => setNewException((prev) => ({ ...prev, libelle: e.target.value }))}
+                          placeholder="Conge, audience externe..."
+                        />
+                      </label>
+                    </div>
+                    <button type="submit" className="lawyer-space-btn-secondary" disabled={agendaBusy}>
+                      Ajouter une indisponibilite
+                    </button>
+                  </form>
+
+                  {agendaMsg && <p className="lawyer-space-form-msg">{agendaMsg}</p>}
+                  {agendaError && <p className="lawyer-space-form-msg lawyer-space-form-msg--err">{agendaError}</p>}
                 </div>
               </section>
 
@@ -690,13 +949,13 @@ export default function LawyerSpacePage() {
                   {appointmentsLoading && <Loader2 className="forsalaw-spin" size={18} />}
                   {!appointmentsLoading && appointments.length === 0 && <p>Aucune demande recue.</p>}
                   {!appointmentsLoading && appointments.map((a) => (
-                    <div key={a.idRendezVous} style={{ border: '2px solid var(--black)', padding: '0.75rem', marginBottom: '0.75rem', background: '#0f0f0f' }}>
-                      <p><strong>{a.nomClient}</strong> - {a.motifConsultation || 'Demande de rendez-vous'}</p>
-                      <p style={{ opacity: 0.8 }}>{a.statutRendezVous} · {a.typeRendezVous} · {fmtDateTime(a.dateHeureDebut)}</p>
-                      {a.commentaireAvocat && <p style={{ opacity: 0.8 }}>Commentaire: {a.commentaireAvocat}</p>}
+                    <div key={a.idRendezVous} className="lawyer-rdv-card">
+                      <p className="lawyer-rdv-card__title"><strong>{a.nomClient}</strong> - {a.motifConsultation || 'Demande de rendez-vous'}</p>
+                      <p className="lawyer-rdv-card__meta">{a.statutRendezVous} · {a.typeRendezVous} · {fmtDateTime(a.dateHeureDebut)}</p>
+                      {a.commentaireAvocat && <p className="lawyer-rdv-card__meta">Commentaire: {a.commentaireAvocat}</p>}
                       {a.statutRendezVous === 'EN_ATTENTE' && (
-                        <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <div style={{ display: 'grid', gap: '0.5rem', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                        <div className="lawyer-rdv-card__proposal">
+                          <div className="lawyer-rdv-card__proposal-row">
                             <input type="datetime-local" value={proposeStart} onChange={(e) => setProposeStart(e.target.value)} />
                             <input type="datetime-local" value={proposeEnd} onChange={(e) => setProposeEnd(e.target.value)} />
                             <select value={proposeType} onChange={(e) => setProposeType(e.target.value)}>
@@ -728,7 +987,7 @@ export default function LawyerSpacePage() {
                           </button>
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+                      <div className="lawyer-rdv-card__actions">
                         {a.statutRendezVous !== 'ANNULE' && (
                           <button
                             type="button"

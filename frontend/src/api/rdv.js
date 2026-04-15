@@ -29,6 +29,17 @@ export async function listAvailableSlots(token, avocatId, debutIso, finIso) {
   return jsonOrThrow(res)
 }
 
+export async function listPublicAvailableSlots(avocatId, debutIso, finIso) {
+  const q = new URLSearchParams({ debut: debutIso, fin: finIso })
+  const res = await fetch(`/api/rendezvous/public/avocats/${encodeURIComponent(avocatId)}/creneaux-disponibles?${q.toString()}`)
+  return jsonOrThrow(res)
+}
+
+export async function getPublicAgenda(avocatId) {
+  const res = await fetch(`/api/rendezvous/public/avocats/${encodeURIComponent(avocatId)}/agenda`)
+  return jsonOrThrow(res)
+}
+
 export async function clientAcceptProposal(token, rdvId) {
   const res = await fetch(`/api/rendezvous/${encodeURIComponent(rdvId)}/accepter-proposition`, {
     method: 'PATCH',
