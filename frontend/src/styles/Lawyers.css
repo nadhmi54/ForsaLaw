@@ -294,6 +294,32 @@
   margin-bottom: 1.5rem;
 }
 
+.card-schedule {
+  margin-bottom: 1rem;
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  padding: 0.55rem 0.65rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.card-schedule__title {
+  margin: 0 0 0.3rem;
+  color: var(--gold);
+  font-size: 0.63rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+
+.card-schedule__line {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.card-schedule__line--muted {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .card-action {
   margin-top: auto;
   width: 100%;

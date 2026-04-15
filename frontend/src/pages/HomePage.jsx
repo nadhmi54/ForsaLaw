@@ -52,16 +52,19 @@ const CODEX_ARTICLES = [
     roman: 'I',
     title: 'CONSULTATION',
     body: 'Exposez votre situation à Fellawra ou à un avocat certifié. Le dialogue précède le dossier.',
+    image: '/home/home-phase-consultation.jpg',
   },
   {
     roman: 'II',
     title: 'DOSSIER',
     body: 'Chaque affaire est formalisée, archivée, et suivie dans nos registres numériques immuables.',
+    image: '/home/home-phase-dossier.jpg',
   },
   {
     roman: 'III',
     title: 'VERDICT',
     body: 'La Justice est rendue. Le système trace, préserve, et protège chaque étape de votre parcours.',
+    image: '/home/home-phase-justice.jpg',
   },
 ]
 
@@ -83,6 +86,7 @@ export default function HomePage({ onNavigate }) {
           Full viewport. The Scale of Fate is the only gateway.
       ═══════════════════════════════════════════════════════ */}
       <section className="home-atrium">
+        <div className="home-atrium-bg" aria-hidden="true" />
         <div className="home-atrium-inner">
           <motion.div
             className="home-atrium-headline"
@@ -90,9 +94,10 @@ export default function HomePage({ onNavigate }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.7 }}
           >
-            <h1 className="home-atrium-title">{t('welcome')}</h1>
-            <div className="home-atrium-divider" />
-            <p className="home-atrium-sub">{t('subtitle')}</p>
+            <div className="home-brand-block" aria-label="ForsaLaw brand statement">
+              <img src="/fellawra.png" alt="ForsaLaw logo" className="home-brand-block__logo" />
+              <p className="home-brand-block__slogan">ForsaLaw — Comprenez vos droits, trouvez votre avocat.</p>
+            </div>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
@@ -131,6 +136,15 @@ export default function HomePage({ onNavigate }) {
             {t('home_trust_title')}
           </h2>
         </motion.div>
+        <motion.figure
+          className="home-trust-visual"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.55 }}
+        >
+          <img src="/home/home-trust-law.png" alt="Balance, marteau de juge et livre de droit" />
+        </motion.figure>
         <ul className="home-trust-grid">
           {TRUST_PILLARS.map((pillar, i) => {
             const Icon = pillar.icon
@@ -174,6 +188,15 @@ export default function HomePage({ onNavigate }) {
         >
           {t('home_about_lead')}
         </motion.p>
+        <motion.figure
+          className="home-about-hero"
+          initial={{ opacity: 0, y: 22 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.55 }}
+        >
+          <img src="/home/home-hero-palais.jpg" alt="Facade du palais de justice" />
+        </motion.figure>
 
         <motion.div
           className="home-about-seal"
@@ -339,6 +362,9 @@ export default function HomePage({ onNavigate }) {
               <div className="home-codex-content">
                 <h3 className="home-codex-title">{article.title}</h3>
                 <p className="home-codex-body">{article.body}</p>
+              </div>
+              <div className="home-codex-media" aria-hidden="true">
+                <img src={article.image} alt="" />
               </div>
             </motion.article>
           ))}

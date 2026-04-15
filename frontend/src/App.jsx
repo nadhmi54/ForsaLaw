@@ -36,6 +36,8 @@ function App() {
   const navigate = useNavigate()
   const [isNavOpen,   setIsNavOpen]   = useState(false)
   const [authMode, setAuthMode] = useState(null) // 'login' | 'register' | 'forgot' | null
+  const [authIntroMode, setAuthIntroMode] = useState(null)
+  const [authIntroStriking, setAuthIntroStriking] = useState(false)
   const [formNom, setFormNom] = useState('')
   const [formPrenom, setFormPrenom] = useState('')
   const [formEmail, setFormEmail] = useState('')
@@ -45,14 +47,30 @@ function App() {
   const [authSubmitting, setAuthSubmitting] = useState(false)
   const authCardRef = useRef(null)
   const lastActiveElRef = useRef(null)
+  const authIntroTimerRef = useRef(null)
 
   useEffect(() => {
     document.body.dir = i18n.dir()
   }, [i18n.language])
 
   useEffect(() => {
+    return () => {
+      if (authIntroTimerRef.current) {
+        clearTimeout(authIntroTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key !== 'Escape') return
+
+      if (authIntroMode) {
+        e.preventDefault()
+        setAuthIntroMode(null)
+        setAuthIntroStriking(false)
+        return
+      }
 
       if (authMode) {
         e.preventDefault()
@@ -69,7 +87,7 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [authMode, isNavOpen])
+  }, [authMode, authIntroMode, isNavOpen])
 
   useEffect(() => {
     if (!authMode) return
@@ -121,19 +139,24 @@ function App() {
     }
   }, [authMode])
 
-  const NAV_ITEMS = useMemo(() => ([
-    { key: 'nav_home', path: '/', icon: <LayoutGrid size={28} /> },
-    { key: 'nav_cases', path: '/cases', icon: <FileText size={28} /> },
-    { key: 'nav_support', path: '/support', icon: <MessageSquare size={28} /> },
-    { key: 'nav_calendar', path: '/calendar', icon: <LucideCalendar size={28} /> },
-    { key: 'nav_inbox', path: '/inbox', icon: <Mail size={28} /> },
-    { key: 'nav_lawyers', path: '/lawyers', icon: <Users size={28} /> },
-    { key: 'nav_client_space', path: '/client-space', icon: <UserCog size={28} /> },
-    { key: 'nav_lawyer_space', path: '/lawyer-space', icon: <Award size={28} /> },
-    { key: 'nav_forum', path: '/forum', icon: <MessageCircle size={28} /> },
-    { key: 'nav_ai', path: '/ai', icon: <Sparkles size={28} /> },
-    { key: 'nav_admin', path: '/admin-space', icon: <Shield size={28} /> },
-  ]), [])
+  const NAV_ITEMS = useMemo(() => {
+    const items = [
+      { key: 'nav_home', path: '/', icon: <LayoutGrid size={28} /> },
+      { key: 'nav_cases', path: '/cases', icon: <FileText size={28} /> },
+      { key: 'nav_support', path: '/support', icon: <MessageSquare size={28} /> },
+      { key: 'nav_calendar', path: '/calendar', icon: <LucideCalendar size={28} /> },
+      { key: 'nav_inbox', path: '/inbox', icon: <Mail size={28} /> },
+      { key: 'nav_lawyers', path: '/lawyers', icon: <Users size={28} /> },
+      { key: 'nav_lawyer_space', path: '/lawyer-space', icon: <Award size={28} /> },
+      { key: 'nav_forum', path: '/forum', icon: <MessageCircle size={28} /> },
+      { key: 'nav_ai', path: '/ai', icon: <Sparkles size={28} /> },
+      { key: 'nav_admin', path: '/admin-space', icon: <Shield size={28} /> },
+    ]
+    if (isAuthenticated) {
+      items.splice(6, 0, { key: 'nav_client_space', path: '/client-space', icon: <UserCog size={28} /> })
+    }
+    return items
+  }, [isAuthenticated])
 
   const toggleLanguage = () => {
     const cycle = { fr: 'ar', ar: 'en', en: 'fr' }
@@ -142,10 +165,31 @@ function App() {
 
   const isInboxRoute = location.pathname === '/inbox'
 
-  const openAuth = (mode) => {
+  const openAuth = (mode, withIntro = false) => {
     setAuthFormError(null)
     setAuthFormSuccess(null)
+    if (withIntro) {
+      setAuthMode(null)
+      setAuthIntroMode(mode)
+      setAuthIntroStriking(false)
+      return
+    }
+    setAuthIntroMode(null)
+    setAuthIntroStriking(false)
     setAuthMode(mode)
+  }
+
+  const handleAuthIntroStrike = () => {
+    if (!authIntroMode || authIntroStriking) return
+    setAuthIntroStriking(true)
+    if (authIntroTimerRef.current) {
+      clearTimeout(authIntroTimerRef.current)
+    }
+    authIntroTimerRef.current = setTimeout(() => {
+      setAuthIntroMode(null)
+      setAuthIntroStriking(false)
+      setAuthMode(authIntroMode)
+    }, 680)
   }
 
   const handleAuthSubmit = async (e) => {
@@ -288,7 +332,7 @@ function App() {
               </button>
             </>
           ) : (
-            <button type="button" className="auth-top-btn" onClick={() => openAuth('login')}>
+            <button type="button" className="auth-top-btn" onClick={() => openAuth('login', true)}>
               {t('top_login')}
             </button>
           )}
@@ -375,6 +419,62 @@ function App() {
       </AnimatePresence>
 
       {/* Authentication modal without dedicated page */}
+      <AnimatePresence>
+        {authIntroMode && (
+          <motion.div
+            className="auth-intro-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className={`auth-intro-stage${authIntroStriking ? ' is-striking' : ''}`}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.97, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <p className="auth-intro-title">Validation d&apos;audience</p>
+              <p className="auth-intro-sub">Cliquez sur le marteau pour ouvrir la chambre de connexion.</p>
+              <button
+                type="button"
+                className="auth-intro-gavel-btn"
+                onClick={handleAuthIntroStrike}
+                disabled={authIntroStriking}
+                aria-label="Frapper avec le marteau"
+              >
+                <svg
+                  className="auth-intro-gavel-svg"
+                  viewBox="0 0 320 130"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <defs>
+                    <linearGradient id="gavelWood" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#7b4a2c" />
+                      <stop offset="45%" stopColor="#5a331f" />
+                      <stop offset="100%" stopColor="#2c180f" />
+                    </linearGradient>
+                    <linearGradient id="gavelMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#f4d27b" />
+                      <stop offset="100%" stopColor="#ab7a2b" />
+                    </linearGradient>
+                  </defs>
+                  <g transform="rotate(0 180 72)">
+                    <rect x="40" y="64" width="160" height="12" rx="6" fill="url(#gavelWood)" />
+                    <rect x="178" y="45" width="80" height="40" rx="9" fill="url(#gavelWood)" />
+                    <rect x="201" y="50" width="34" height="30" rx="6" fill="url(#gavelMetal)" />
+                    <rect x="170" y="47" width="12" height="36" rx="5" fill="#3c2113" />
+                    <rect x="257" y="47" width="12" height="36" rx="5" fill="#3c2113" />
+                  </g>
+                </svg>
+              </button>
+              <div className="auth-intro-block" aria-hidden />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {authMode && (
           <motion.div

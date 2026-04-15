@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/avocats/domaines", "/api/avocats/specialites").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/forum/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rendezvous/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/messenger/attachments/download").permitAll()
                         .requestMatchers(getAvocatsPublicMatcher()).permitAll()
                         .requestMatchers("/api/admin/rendezvous/**").hasRole("ADMIN")

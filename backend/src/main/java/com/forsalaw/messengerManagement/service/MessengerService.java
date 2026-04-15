@@ -13,6 +13,8 @@ import com.forsalaw.messengerManagement.repository.MessengerAttachmentRepository
 import com.forsalaw.messengerManagement.repository.MessengerConversationRepository;
 import com.forsalaw.messengerManagement.repository.MessengerMessageRepository;
 import com.forsalaw.messengerManagement.util.MessengerContentHasher;
+import com.forsalaw.rdvManagement.entity.StatutRendezVous;
+import com.forsalaw.rdvManagement.repository.RendezVousRepository;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
@@ -46,6 +48,7 @@ public class MessengerService {
     private final MessengerAttachmentService messengerAttachmentService;
     private final UserRepository userRepository;
     private final AvocatRepository avocatRepository;
+    private final RendezVousRepository rendezVousRepository;
     private final UserService userService;
     private final MessengerRealtimePublisher messengerRealtimePublisher;
 
@@ -60,6 +63,7 @@ public class MessengerService {
         if (!avocat.isActif()) {
             throw new IllegalArgumentException("Cet avocat n'est pas disponible.");
         }
+        ensureMessagingAllowed(client.getId(), avocat.getId());
 
         return conversationRepository.findByClient_IdAndAvocat_Id(client.getId(), avocat.getId())
                 .map(this::toSummaryForClient)
@@ -88,6 +92,7 @@ public class MessengerService {
         if (!client.isActif()) {
             throw new IllegalArgumentException("Ce compte client n'est pas disponible.");
         }
+        ensureMessagingAllowed(client.getId(), avocat.getId());
 
         return conversationRepository.findByClient_IdAndAvocat_Id(client.getId(), avocat.getId())
                 .map(this::toSummaryForAvocat)
@@ -564,6 +569,17 @@ public class MessengerService {
             return t;
         }
         return t.substring(0, PREVIEW_MAX - 3) + "...";
+    }
+
+    private void ensureMessagingAllowed(String clientUserId, String avocatId) {
+        boolean hasConfirmed = rendezVousRepository.existsByClient_IdAndAvocat_IdAndStatutRendezVous(
+                clientUserId,
+                avocatId,
+                StatutRendezVous.CONFIRME
+        );
+        if (!hasConfirmed) {
+            throw new IllegalArgumentException("Messagerie disponible apres le premier rendez-vous confirme entre le client et l'avocat.");
+        }
     }
 
     private ConversationSummaryDTO toSummaryForClient(MessengerConversation c) {

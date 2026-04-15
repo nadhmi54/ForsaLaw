@@ -30,6 +30,8 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, String> 
 
     Page<RendezVous> findByAvocat_IdOrderByDateMiseAJourDesc(String avocatId, Pageable pageable);
 
+    boolean existsByClient_IdAndAvocat_IdAndStatutRendezVous(String clientId, String avocatId, StatutRendezVous statutRendezVous);
+
     @Query("""
         SELECT r FROM RendezVous r
         WHERE (:clientUserId IS NULL OR r.client.id = :clientUserId)
