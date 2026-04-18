@@ -4,13 +4,16 @@ import com.forsalaw.affaireManagement.entity.Affaire;
 import com.forsalaw.affaireManagement.entity.StatutAffaire;
 import com.forsalaw.affaireManagement.entity.TypeAffaire;
 import com.forsalaw.affaireManagement.model.AffaireDTO;
+import com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO;
 import com.forsalaw.affaireManagement.repository.AffaireRepository;
+import com.forsalaw.auditManagement.entity.AuditLog;
+import com.forsalaw.auditManagement.repository.AuditLogRepository;
 import com.forsalaw.rdvManagement.entity.RendezVous;
 import com.forsalaw.rdvManagement.entity.StatutRendezVous;
 import com.forsalaw.userManagement.entity.RoleUser;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
-import com.forsalaw.userManagement.service.UserService;
+import com.forsalaw.userManagement.service.IdSequenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,16 +23,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AffaireService {
 
     private static final int TITRE_MAX = 250;
+    /** Module name used when writing affaire milestone events to the AuditLog. */
+    public static final String MODULE_AFFAIRE = "AFFAIRE";
 
     private final AffaireRepository affaireRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final AuditLogRepository auditLogRepository;
+    private final IdSequenceService idSequenceService;
 
     /**
      * Appelé lorsque le RDV passe à {@link StatutRendezVous#CONFIRME} (client a accepté la proposition de l'avocat).
@@ -45,7 +56,7 @@ public class AffaireService {
         }
 
         Affaire affaire = new Affaire();
-        affaire.setId(userService.generateNextId("AFF"));
+        affaire.setId(idSequenceService.generateNextId("AFF"));
         affaire.setTitre(buildTitreDepuisRdv(rdv));
         affaire.setDescription(rdv.getMotifConsultation());
         affaire.setType(TypeAffaire.CIVIL);
@@ -56,6 +67,11 @@ public class AffaireService {
         affaire.setDateProchaineAudience(rdv.getDateHeureDebut());
 
         affaireRepository.save(affaire);
+
+        // Record the opening event in the audit log so the dynamic timeline can track it
+        recordAffaireEvent(affaire.getId(), "OUVERTURE_AFFAIRE",
+                "Dossier ouvert automatiquement suite au RDV " + rdv.getIdRendezVous());
+
         log.info("Affaire {} ouverte automatiquement depuis RDV confirme {}", affaire.getId(), rdv.getIdRendezVous());
     }
 
@@ -106,16 +122,34 @@ public class AffaireService {
         }
     }
 
-    // ─── Timeline (Métier avancée) ────────────────────────────────────────────
+    // ─── Timeline (Dynamique — pilotée par l'AuditLog) ───────────────────────
 
     @Transactional(readOnly = true)
-    public java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> getTimelinePourAdmin(String affaireId, String emailActeur) {
+    public List<AffaireTimelineStepDTO> getTimelinePourAdmin(String affaireId, String emailActeur) {
         assertAdmin(requireUser(emailActeur));
         Affaire affaire = requireAffaire(affaireId);
-        return genererTimeline(affaire.getStatut());
+        return genererTimelineDynamique(affaire);
     }
 
-    private java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> genererTimeline(StatutAffaire statutActuel) {
+    /**
+     * Generates a timeline by combining:
+     * 1. All audit log events tagged with MODULE_AFFAIRE + this affaire's ID (real timestamps).
+     * 2. A static scaffold of the standard status progression as pending future steps.
+     */
+    private List<AffaireTimelineStepDTO> genererTimelineDynamique(Affaire affaire) {
+        // Fetch real audit events for this affaire
+        List<AuditLog> events = auditLogRepository
+                .findByModuleNameAndResourceIdOrderByCreatedAtAsc(MODULE_AFFAIRE, affaire.getId());
+
+        // Build a map: actionName → earliest occurrence timestamp
+        Map<String, java.time.LocalDateTime> eventTimestamps = events.stream()
+                .collect(Collectors.toMap(
+                        AuditLog::getAction,
+                        AuditLog::getCreatedAt,
+                        (a, b) -> a // keep earliest
+                ));
+
+        // Standard status progression scaffold
         StatutAffaire[] ordre = {
             StatutAffaire.INSTRUCTION,
             StatutAffaire.AUDIENCE,
@@ -124,24 +158,67 @@ public class AffaireService {
             StatutAffaire.APPEL,
             StatutAffaire.CLOS
         };
-        
-        java.util.List<com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO> timeline = new java.util.ArrayList<>();
+
+        List<AffaireTimelineStepDTO> timeline = new ArrayList<>();
         boolean foundCurrent = false;
-        
+
         for (int i = 0; i < ordre.length; i++) {
             StatutAffaire s = ordre[i];
-            boolean active = (s == statutActuel);
+            boolean active = (s == affaire.getStatut());
             if (active) foundCurrent = true;
             boolean completed = !foundCurrent && !active;
-            
-            timeline.add(new com.forsalaw.affaireManagement.model.AffaireTimelineStepDTO(
+
+            // Look for a matching audit event: action name matches the status name or OUVERTURE_AFFAIRE for INSTRUCTION
+            java.time.LocalDateTime occurredAt = null;
+            if (s == StatutAffaire.INSTRUCTION) {
+                occurredAt = eventTimestamps.getOrDefault("OUVERTURE_AFFAIRE",
+                             eventTimestamps.get(StatutAffaire.INSTRUCTION.name()));
+            } else {
+                occurredAt = eventTimestamps.get(s.name());
+            }
+            // If no specific event, use the affaire opening date for completed steps
+            if (occurredAt == null && completed && affaire.getDateOuverture() != null) {
+                occurredAt = affaire.getDateOuverture();
+            }
+
+            timeline.add(new AffaireTimelineStepDTO(
                 "STEP_" + (i + 1),
                 s.name(),
                 completed,
-                active
+                active,
+                occurredAt
             ));
         }
+
+        // Append any extra audit events not part of the standard scaffold (custom milestones)
+        events.stream()
+              .filter(e -> !e.getAction().equals("OUVERTURE_AFFAIRE") &&
+                           java.util.Arrays.stream(ordre).noneMatch(s -> s.name().equals(e.getAction())))
+              .forEach(e -> timeline.add(new AffaireTimelineStepDTO(
+                      e.getId(),
+                      e.getAction(),
+                      true,
+                      false,
+                      e.getCreatedAt()
+              )));
+
         return timeline;
+    }
+
+    /**
+     * Records a named affaire event to the AuditLog so it appears in the dynamic timeline.
+     * Call this from any service method that represents a meaningful affaire milestone.
+     */
+    @Transactional
+    public void recordAffaireEvent(String affaireId, String action, String details) {
+        AuditLog event = new AuditLog();
+        event.setId(idSequenceService.generateNextId("ADT"));
+        event.setModuleName(MODULE_AFFAIRE);
+        event.setAction(action);
+        event.setResourceId(affaireId);
+        event.setMethod("SYSTEM");
+        event.setDetails(details != null && details.length() > 8000 ? details.substring(0, 7997) + "..." : details);
+        auditLogRepository.save(event);
     }
 
     private AffaireDTO toDTO(Affaire a, boolean includePrivate) {

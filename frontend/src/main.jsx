@@ -1,3 +1,4 @@
+if (typeof window !== 'undefined') window.global = window
 import './index.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -41,20 +42,28 @@ async function boot() {
 
   try {
     await import('./i18n.js')
-    const [{ BrowserRouter }, { default: App }, { default: RootErrorBoundary }, { AuthProvider }] =
-      await Promise.all([
-        import('react-router-dom'),
-        import('./App.jsx'),
-        import('./components/RootErrorBoundary.jsx'),
-        import('./context/AuthContext.jsx'),
-      ])
+    const [
+      { BrowserRouter },
+      { default: App },
+      { default: RootErrorBoundary },
+      { AuthProvider },
+      { WebSocketProvider },
+    ] = await Promise.all([
+      import('react-router-dom'),
+      import('./App.jsx'),
+      import('./components/RootErrorBoundary.jsx'),
+      import('./context/AuthContext.jsx'),
+      import('./context/WebSocketContext.jsx'),
+    ])
 
     createRoot(rootEl).render(
       <StrictMode>
         <RootErrorBoundary>
           <BrowserRouter>
             <AuthProvider>
-              <App />
+              <WebSocketProvider>
+                <App />
+              </WebSocketProvider>
             </AuthProvider>
           </BrowserRouter>
         </RootErrorBoundary>

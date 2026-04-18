@@ -13,6 +13,9 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, String> {
 
     Page<AuditLog> findByActor_Id(String actorUserId, Pageable pageable);
 
+    /** Used by the affaire timeline: fetches all audit events for a given resource, ordered chronologically. */
+    java.util.List<AuditLog> findByModuleNameAndResourceIdOrderByCreatedAtAsc(String moduleName, String resourceId);
+
     @Query("SELECT a FROM AuditLog a WHERE " +
             "(:actorUserId IS NULL OR a.actor.id = :actorUserId) AND " +
             "(:moduleName IS NULL OR LOWER(a.moduleName) LIKE LOWER(CONCAT('%', :moduleName, '%'))) AND " +

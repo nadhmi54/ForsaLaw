@@ -14,6 +14,7 @@ import {
   Shield,
   Bell,
   Trash2,
+  Lock,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
@@ -21,6 +22,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import * as usersApi from '../api/users.js'
 import * as rdvApi from '../api/rdv.js'
 import * as reclamationApi from '../api/reclamation.js'
+import * as documentsApi from '../api/documents.js'
 import '../styles/PlatformSpaces.css'
 
 const STATUT_DISPLAY = {
@@ -30,7 +32,7 @@ const STATUT_DISPLAY = {
   FERMEE: { label: 'FERMÉE', cls: 'closed' },
 }
 
-const VALID_TABS = new Set(['cases', 'appointments', 'messages', 'profile'])
+const VALID_TABS = new Set(['cases', 'appointments', 'messages', 'profile', 'vault'])
 
 function formatApiDate(v) {
   if (v == null) return '—'
@@ -94,6 +96,8 @@ export default function ClientSpacePage() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [appointments, setAppointments] = useState([])
   const [appointmentsLoading, setAppointmentsLoading] = useState(false)
+
+  const [vaultCount, setVaultCount] = useState(null)
 
   const reloadMe = useCallback(async () => {
     if (!token) return
@@ -223,6 +227,7 @@ export default function ClientSpacePage() {
     { key: 'cases', label: t('client_nav_cases'), icon: <FileText size={16} /> },
     { key: 'appointments', label: t('client_nav_appointments'), icon: <Calendar size={16} /> },
     { key: 'messages', label: t('client_nav_messages'), icon: <MessageSquare size={16} /> },
+    { key: 'vault', label: 'COFFRE-FORT', icon: <Lock size={16} /> },
     { key: 'profile', label: t('client_nav_profile'), icon: <User size={16} /> },
   ]
 
@@ -446,6 +451,35 @@ export default function ClientSpacePage() {
                   </motion.div>
                 )
               })}
+            </div>
+          )}
+
+          {activeTab === 'vault' && (
+            <div className="ledger-feed">
+              <div className="ledger-feed-header" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Lock size={14} style={{ color: 'var(--gold)' }} />
+                COFFRE-FORT NUMÉRIQUE
+              </div>
+              <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem', border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.04)' }}>
+                  <Lock size={32} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--gold)', marginBottom: '0.4rem' }}>DÉPÔT SÉCURISÉ SHA-256</div>
+                    <p style={{ fontSize: '0.8rem', opacity: 0.7, margin: 0 }}>
+                      Tous vos documents sont horodatés et scellés cryptographiquement. Chaque téléchargement ou vérification est enregistré dans le journal d'audit.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="quick-action-btn"
+                  style={{ alignSelf: 'flex-start', background: 'var(--gold)', color: 'var(--black)', padding: '0.75rem 2rem' }}
+                  onClick={() => navigate('/cases')}
+                >
+                  <Lock size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                  Accéder au Coffre-fort
+                </button>
+              </div>
             </div>
           )}
 
