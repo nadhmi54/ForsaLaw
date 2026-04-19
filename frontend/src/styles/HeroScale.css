@@ -28,9 +28,9 @@
   font-weight: 900;
   letter-spacing: 0.6em;
   color: var(--gold);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  border-bottom: 1px solid rgba(141, 224, 85, 0.4);
   padding-bottom: 6px;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 0 10px rgba(141, 224, 85, 0.3);
 }
 
 /* ── Lottie Container ──────────────────────────────────────── */
@@ -54,7 +54,7 @@
     sepia(0.8) 
     saturate(0.5) 
     hue-rotate(-15deg)
-    drop-shadow(0 0 20px rgba(212, 175, 55, 0.1));
+    drop-shadow(0 0 20px rgba(141, 224, 85, 0.1));
 }
 
 /* ── Invisible Hit Zones — Mapped to the pans ──────────────── */
@@ -112,7 +112,7 @@
   /* Rest state - visible button styling */
   background: rgba(10, 10, 10, 0.4);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(141, 224, 85, 0.2);
   opacity: 1;
   border-radius: 4px; /* Slight polish */
   transition: all 0.3s ease;
@@ -123,7 +123,7 @@
   /* Glowing Premium Modal style */
   background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(212, 175, 55, 0.6);
+  border: 1px solid rgba(141, 224, 85, 0.6);
   box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   transform: translateX(-50%) translateY(4px);
 }
@@ -134,7 +134,7 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--gold);
-  border-bottom: 1px solid rgba(212,175,55,0.2);
+  border-bottom: 1px solid rgba(141, 224, 85, 0.2);
   width: 100%;
   text-align: center;
   padding-bottom: 4px;
@@ -142,7 +142,7 @@
 }
 
 .scale-label-constant.is-hovered .scale-pan-label {
-  border-bottom-color: rgba(212,175,55,0.6);
+  border-bottom-color: rgba(141, 224, 85, 0.6);
 }
 
 .scale-pan-action {
@@ -171,7 +171,7 @@
   font-weight: 800;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(212, 175, 55, 0.4);
+  color: rgba(141, 224, 85, 0.4);
   animation: pulseHint 3s ease-in-out infinite;
 }
 

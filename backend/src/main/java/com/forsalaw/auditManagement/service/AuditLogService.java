@@ -6,8 +6,9 @@ import com.forsalaw.auditManagement.model.CreateAuditLogRequest;
 import com.forsalaw.auditManagement.repository.AuditLogRepository;
 import com.forsalaw.userManagement.entity.User;
 import com.forsalaw.userManagement.repository.UserRepository;
-import com.forsalaw.userManagement.service.UserService;
+import com.forsalaw.userManagement.service.IdSequenceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,18 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuditLogService {
+
+    /** Maximum length for the details payload stored in audit_log.details (TEXT column, safety guard). */
+    private static final int DETAILS_MAX_LENGTH = 8_000;
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final IdSequenceService idSequenceService;
 
     @Transactional
     public AuditLogDTO createByAdmin(CreateAuditLogRequest request) {
         User actor = resolveOptionalActor(request.getActorUserId());
 
         AuditLog log = new AuditLog();
-        log.setId(userService.generateNextId("ADT"));
+        log.setId(idSequenceService.generateNextId("ADT"));
         log.setActor(actor);
         log.setModuleName(clean(request.getModuleName()));
         log.setAction(clean(request.getAction()));
@@ -36,7 +41,7 @@ public class AuditLogService {
         log.setHttpStatus(request.getHttpStatus());
         log.setIpAddress(clean(request.getIpAddress()));
         log.setUserAgent(clean(request.getUserAgent()));
-        log.setDetails(clean(request.getDetails()));
+        log.setDetails(truncateDetails(clean(request.getDetails())));
 
         return toDTO(auditLogRepository.save(log));
     }
@@ -55,7 +60,7 @@ public class AuditLogService {
             String details
     ) {
         AuditLog log = new AuditLog();
-        log.setId(userService.generateNextId("ADT"));
+        log.setId(idSequenceService.generateNextId("ADT"));
         log.setActor(resolveOptionalActor(actorUserId));
         log.setModuleName(requireField(moduleName, "moduleName"));
         log.setAction(requireField(action, "action"));
@@ -65,7 +70,7 @@ public class AuditLogService {
         log.setHttpStatus(httpStatus);
         log.setIpAddress(clean(ipAddress));
         log.setUserAgent(clean(userAgent));
-        log.setDetails(clean(details));
+        log.setDetails(truncateDetails(clean(details)));
         return toDTO(auditLogRepository.save(log));
     }
 
@@ -116,13 +121,31 @@ public class AuditLogService {
         auditLogRepository.deleteById(id);
     }
 
+    /**
+     * Resolves the actor User from an ID. Returns null if the ID is blank or the user has been
+     * deleted, to avoid crashing audit log writes caused by deleted user accounts.
+     */
     private User resolveOptionalActor(String actorUserId) {
         String cleanedId = blankToNull(actorUserId);
         if (cleanedId == null) {
             return null;
         }
-        return userRepository.findById(cleanedId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur acteur introuvable."));
+        return userRepository.findById(cleanedId).orElseGet(() -> {
+            log.warn("AuditLogService: actor user '{}' not found (deleted?), logging without actor.", cleanedId);
+            return null;
+        });
+    }
+
+    /**
+     * Truncates a details payload to {@value #DETAILS_MAX_LENGTH} characters to prevent
+     * JDBC buffer overflow errors on very large audit payloads.
+     */
+    private String truncateDetails(String details) {
+        if (details == null || details.length() <= DETAILS_MAX_LENGTH) {
+            return details;
+        }
+        log.warn("AuditLogService: details payload truncated from {} to {} chars.", details.length(), DETAILS_MAX_LENGTH);
+        return details.substring(0, DETAILS_MAX_LENGTH - 3) + "...";
     }
 
     private String requireField(String value, String fieldName) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Award, Camera, Key, Loader2, RefreshCw, Scale, Trash2 } from 'lucide-react'
+import { Award, Camera, Key, Loader2, Lock, RefreshCw, Scale, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -1025,6 +1025,33 @@ export default function LawyerSpacePage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </section>
+
+              {/* ── COFFRE-FORT NUMÉRIQUE ── */}
+              <section className="client-pro-card lawyer-space-section">
+                <div className="client-pro-card__head">
+                  <div className="client-pro-card__icon">
+                    <Lock size={18} />
+                  </div>
+                  <div>
+                    <h2 className="client-pro-card__title">Coffre-fort Numérique</h2>
+                    <p className="client-pro-card__sub">Déposez et sécurisez vos documents juridiques via scellement cryptographique SHA-256 inalteré et horodaté.</p>
+                  </div>
+                </div>
+                <div className="client-pro-card__body" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.7, flex: 1 }}>
+                    Vos documents sont accessibles uniquement par vous. Chaque accès est enregistré dans le journal d'audit.
+                  </p>
+                  <button
+                    type="button"
+                    className="lawyer-space-btn-primary"
+                    onClick={() => navigate('/cases')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
+                  >
+                    <Lock size={14} />
+                    Accéder au Coffre-fort
+                  </button>
                 </div>
               </section>
 

@@ -65,15 +65,17 @@ export async function addReclamationMessage(token, id, contenu) {
 
 /**
  * Upload une pièce jointe à une réclamation (fichier).
+ * Backend: POST /api/reclamations/{id}/pieces-jointes, field name 'fichier'.
  * @param {File} file
  */
 export async function uploadReclamationAttachment(token, id, file) {
   const fd = new FormData()
-  fd.append('file', file)
-  const res = await fetch(`/api/reclamations/${encodeURIComponent(id)}/attachments`, {
+  fd.append('fichier', file)
+  const res = await fetch(`/api/reclamations/${encodeURIComponent(id)}/pieces-jointes`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: fd,
   })
-  return jsonOrThrow(res)
+  if (!res.ok) throw new Error(await parseApiError(res))
+  return res.text()
 }

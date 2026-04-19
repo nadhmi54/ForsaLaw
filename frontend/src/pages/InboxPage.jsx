@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Calendar, Paperclip, Loader2, X } from 'lucide-react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useWebSocket } from '../context/WebSocketContext.jsx'
 import * as messengerApi from '../api/messenger.js'
 import * as rdvApi from '../api/rdv.js'
 import '../styles/Inbox.css'
@@ -26,6 +27,7 @@ function displayNameForConversation(c, roleUser) {
 
 export default function InboxPage() {
   const { token, user, isAuthenticated } = useAuth()
+  const { subscribe, publish, connected } = useWebSocket()
   const roleUser = user?.roleUser
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -39,6 +41,7 @@ export default function InboxPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
+  const [remoteTyping, setRemoteTyping] = useState(false)
 
   // RDV Proposal panel (avocat only)
   const [showRdvPanel, setShowRdvPanel] = useState(false)
@@ -52,6 +55,8 @@ export default function InboxPage() {
   const endRef = useRef(null)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
+  const typingTimerRef = useRef(null)   // for clearing the local "stop typing" timer
+  const remoteTypingTimerRef = useRef(null) // for auto-clearing remote typing indicator
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,
@@ -114,6 +119,54 @@ export default function InboxPage() {
     })()
   }, [token, roleUser, searchParams, setSearchParams])
 
+  // ── WebSocket subscription for active conversation ──────────────────────
+  useEffect(() => {
+    if (!activeId || !connected) return
+    const destination = `/topic/messenger/conversation/${activeId}/events`
+    const unsub = subscribe(destination, (event) => {
+      if (!event?.type) return
+      switch (event.type) {
+        case 'NEW_MESSAGE':
+          if (event.message) {
+            setMessages((prev) => {
+              // De-duplicate: don't add if id already exists (own message already added)
+              if (prev.some((m) => m.id === event.message.id)) return prev
+              return [...prev, event.message]
+            })
+            // update conversation list preview
+            setConversations((prev) => prev.map((c) =>
+              c.id === activeId
+                ? { ...c, lastMessageAt: event.message.createdAt, lastMessagePreview: event.message.content?.slice(0, 60) }
+                : c
+            ))
+          }
+          break
+        case 'TYPING':
+          if (event.typing) {
+            setRemoteTyping(event.typing.typing)
+            // Auto-clear typing indicator after 3 seconds (safety net)
+            clearTimeout(remoteTypingTimerRef.current)
+            if (event.typing.typing) {
+              remoteTypingTimerRef.current = setTimeout(() => setRemoteTyping(false), 3000)
+            }
+          }
+          break
+        case 'READ_RECEIPT':
+          // Mark all messages from self as read by the other party
+          setMessages((prev) => prev.map((m) => ({ ...m, readByOther: true })))
+          break
+        default:
+          break
+      }
+    })
+    return () => {
+      unsub()
+      setRemoteTyping(false)
+      clearTimeout(remoteTypingTimerRef.current)
+    }
+  }, [activeId, connected, subscribe])
+
+  // Load messages & reset UI state when active conversation changes
   useEffect(() => {
     if (!activeId) {
       setMessages([])
@@ -122,12 +175,14 @@ export default function InboxPage() {
     loadMessages()
     setInputText('')
     setSelectedFiles([])
+    setRemoteTyping(false)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
   }, [activeId, loadMessages])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
 
   if (!isAuthenticated || !token) {
     return <Navigate to="/" replace />
@@ -136,12 +191,23 @@ export default function InboxPage() {
     return <Navigate to="/" replace />
   }
 
+  // ── Emit typing events (throttled) ──────────────────────────────────────
+  const emitTyping = useCallback((isTyping) => {
+    if (!activeId || !connected) return
+    publish('/app/messenger/typing', { conversationId: activeId, typing: isTyping })
+  }, [activeId, connected, publish])
+
   const onInput = (e) => {
     setInputText(e.target.value)
     const el = e.target
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+    // Emit typing=true, then auto emit typing=false after 2s silence
+    emitTyping(true)
+    clearTimeout(typingTimerRef.current)
+    typingTimerRef.current = setTimeout(() => emitTyping(false), 2000)
   }
+
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -256,7 +322,13 @@ export default function InboxPage() {
               {activeConversation ? displayNameForConversation(activeConversation, roleUser) : 'Aucune conversation'}
             </h2>
             <div className="chat-header-status">
-              {isClosed ? 'Correspondance fermée' : 'Session active'}
+              {isClosed
+                ? 'Correspondance fermée'
+                : remoteTyping
+                  ? 'En train d\'écrire…'
+                  : connected
+                    ? '● En ligne'
+                    : 'Session active'}
             </div>
           </div>
           <span className="chat-header-id">{activeConversation?.id}</span>
@@ -332,6 +404,33 @@ export default function InboxPage() {
               })}
             </AnimatePresence>
           )}
+
+          {/* Remote Typing Indicator */}
+          <AnimatePresence>
+            {remoteTyping && (
+              <motion.div
+                className="msg-row from-them"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.15 }}
+              >
+                <div className="msg-row-inner">
+                  <div className="msg-avatar">
+                    {activeConversation && (roleUser === 'avocat'
+                      ? initials(activeConversation.clientPrenom, activeConversation.clientNom)
+                      : initials(activeConversation.avocatPrenom, activeConversation.avocatNom))}
+                  </div>
+                  <div className="msg-bubble received" style={{ display: 'flex', gap: '3px', alignItems: 'center', padding: '0.55rem 0.9rem' }}>
+                    <span className="typing-dot" />
+                    <span className="typing-dot" style={{ animationDelay: '0.18s' }} />
+                    <span className="typing-dot" style={{ animationDelay: '0.36s' }} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div ref={endRef} />
         </div>
 
